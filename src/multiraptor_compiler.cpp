@@ -120,7 +120,7 @@ void writeFile(const std::string& path, const std::string& data) {
 
 int main(int argc, char** argv) {
     if (argc < 2 || argc > 3) {
-        std::cerr << "Usage: multiraptor_compiler <input.mr> [output.js]\n";
+        std::cerr << "Usage: multiraptor_compiler <input.mp> [output.js]\n";
         return 1;
     }
 

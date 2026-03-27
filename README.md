@@ -4,7 +4,7 @@ MultiRaptor is a tiny experimental language that tries to feel **easier than Pyt
 
 This repo includes:
 
-- A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.raptor` files to JavaScript.
+- A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
 - A browser **HTML playground** (`web/playground.html`) to write and run MultiRaptor instantly.
 
 ## Syntax
@@ -42,7 +42,7 @@ g++ -std=c++17 -O2 -o multiraptor src/multiraptor_compiler.cpp
 ## Compile a MultiRaptor program
 
 ```bash
-./multiraptor examples.raptor output.js
+./multiraptor main.mp output.js
 node output.js
 ```
 
