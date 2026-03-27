@@ -7,31 +7,44 @@ This repo includes:
 - A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
 - A browser **HTML playground** (`web/playground.html`) to write and run MultiRaptor instantly.
 
-## Syntax
+## Syntax (simple + readable)
 
 ```txt
+# comments use # or //
 var x = 10
 const name = "Raptor"
+set x = x + 1
 
 fn greet(person) {
   print "Hello " + person
 }
 
-loop 3 {
-  greet(name)
+when x > 5 {
+  print "big"
+} else {
+  print "small"
+}
+
+repeat while x < 20 {
+  set x = x + 2
 }
 ```
 
 Supported statements:
 
-- `var name = expr`
-- `const name = expr`
+- `var name = expr` (create variable)
+- `const name = expr` (constant)
+- `set name = expr` (change variable value)
 - `print expr`
+- `ask "question" -> name` (read user input in browser)
 - `if condition { ... }`
+- `when condition { ... }` (alias for `if`)
 - `else { ... }`
-- `loop count { ... }`
+- `loop count { ... }` (counted loop)
+- `repeat while condition { ... }` (while loop)
 - `fn name(args) { ... }`
 - `return expr`
+- `stop` (`break`) and `next` (`continue`)
 
 ## Build the C++ compiler
 
@@ -58,6 +71,6 @@ in your browser and click **Compile** / **Run**.
 
 ## Notes on performance
 
-- The language is designed to compile quickly (line-based parser + direct JS emission).
+- The compiler is a fast line-based parser + direct JS emitter.
 - Runtime speed follows JavaScript engine performance.
-- You can later compile this C++ compiler to **WebAssembly** if you want the browser version to run the same compiler binary.
+- You can later compile this C++ compiler to **WebAssembly** for sharing one compiler core in browser/native.

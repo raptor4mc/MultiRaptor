@@ -1,13 +1,18 @@
-// MultiRaptor example
+# MultiRaptor example (.mp)
 var x = 5
 var y = 7
+var total = 0
 
 fn add(a, b) {
   return a + b
 }
 
-if x < y {
+when x < y {
   print "x is smaller"
 }
 
-print add(x, y)
+loop 3 {
+  set total = total + add(x, y)
+}
+
+print "total=" + total

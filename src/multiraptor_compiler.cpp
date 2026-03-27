@@ -4,7 +4,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace {
 
@@ -45,7 +44,7 @@ class Compiler {
         while (std::getline(input, line)) {
             ++lineNo;
             std::string text = trim(line);
-            if (text.empty() || text.rfind("//", 0) == 0) {
+            if (text.empty() || text.rfind("//", 0) == 0 || text.rfind("#", 0) == 0) {
                 continue;
             }
 
@@ -67,19 +66,31 @@ class Compiler {
                 output += indentation(indent) + "let " + match[1].str() + " = " + match[2].str() + ";\n";
             } else if (std::regex_match(text, match, std::regex(R"(^const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$)"))) {
                 output += indentation(indent) + "const " + match[1].str() + " = " + match[2].str() + ";\n";
+            } else if (std::regex_match(text, match, std::regex(R"(^set\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$)"))) {
+                output += indentation(indent) + match[1].str() + " = " + match[2].str() + ";\n";
             } else if (std::regex_match(text, match, std::regex(R"(^print\s+(.+)$)"))) {
                 output += indentation(indent) + "console.log(" + match[1].str() + ");\n";
-            } else if (std::regex_match(text, match, std::regex(R"(^if\s+(.+)\s*\{$)"))) {
+            } else if (std::regex_match(text, match, std::regex(R"(^ask\s+(.+)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)$)"))) {
+                output += indentation(indent) + "let " + match[2].str() + " = prompt(" + match[1].str() + ") ?? \"\";\n";
+            } else if (std::regex_match(text, match, std::regex(R"(^if\s+(.+)\s*\{$)")) ||
+                       std::regex_match(text, match, std::regex(R"(^when\s+(.+)\s*\{$)"))) {
                 output += indentation(indent) + "if (" + match[1].str() + ") {\n";
                 indent += 1;
             } else if (std::regex_match(text, match, std::regex(R"(^loop\s+(.+)\s*\{$)"))) {
                 output += indentation(indent) + "for (let __mr_i = 0; __mr_i < (" + match[1].str() + "); __mr_i += 1) {\n";
+                indent += 1;
+            } else if (std::regex_match(text, match, std::regex(R"(^repeat\s+while\s+(.+)\s*\{$)"))) {
+                output += indentation(indent) + "while (" + match[1].str() + ") {\n";
                 indent += 1;
             } else if (std::regex_match(text, match, std::regex(R"(^fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*\{$)"))) {
                 output += indentation(indent) + "function " + match[1].str() + "(" + match[2].str() + ") {\n";
                 indent += 1;
             } else if (std::regex_match(text, match, std::regex(R"(^return\s+(.+)$)"))) {
                 output += indentation(indent) + "return " + match[1].str() + ";\n";
+            } else if (text == "stop") {
+                output += indentation(indent) + "break;\n";
+            } else if (text == "next") {
+                output += indentation(indent) + "continue;\n";
             } else {
                 throw std::runtime_error("Syntax error at line " + std::to_string(lineNo) + ": `" + escapeBackticks(text) + "`");
             }
