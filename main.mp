@@ -1,4 +1,7 @@
-# MultiRaptor example (.mp)
+//!
+this is a block comment
+!/
+/! MultiRaptor example (.mp)
 var x = 5
 var y = 7
 var total = 0

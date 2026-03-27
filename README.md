@@ -10,7 +10,8 @@ This repo includes:
 ## Syntax (simple + readable)
 
 ```txt
-# comments use # or //
+# comments use #, //, or /!
+//! starts a multi-line comment block (end with !/)
 var x = 10
 const name = "Raptor"
 set x = x + 1
@@ -45,6 +46,7 @@ Supported statements:
 - `fn name(args) { ... }`
 - `return expr`
 - `stop` (`break`) and `next` (`continue`)
+- Comments: `/! one line`, `//!` ... `!/`, plus `#` and `//`
 
 ## Build the C++ compiler
 

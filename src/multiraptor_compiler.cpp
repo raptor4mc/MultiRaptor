@@ -40,11 +40,25 @@ class Compiler {
 
         std::size_t lineNo = 0;
         int indent = 0;
+        bool inBlockComment = false;
 
         while (std::getline(input, line)) {
             ++lineNo;
             std::string text = trim(line);
-            if (text.empty() || text.rfind("//", 0) == 0 || text.rfind("#", 0) == 0) {
+
+            if (inBlockComment) {
+                if (text.find("!/") != std::string::npos) {
+                    inBlockComment = false;
+                }
+                continue;
+            }
+
+            if (text.rfind("//!", 0) == 0) {
+                inBlockComment = true;
+                continue;
+            }
+
+            if (text.empty() || text.rfind("//", 0) == 0 || text.rfind("#", 0) == 0 || text.rfind("/!", 0) == 0) {
                 continue;
             }
 
