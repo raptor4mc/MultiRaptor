@@ -88,6 +88,18 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Standard library (new)
+
+MagPhos now exposes a native standard library surface:
+
+- **Core**: `len`, `type`, `toString`, `random`, `time`
+- **Math**: `sin`, `cos`, `sqrt`, `abs`
+- **Strings**: `split`, `replace`, `substring`
+- **Arrays**: `push`, `pop`, `map`, `filter`
+- **File I/O (native)**: `readFile`, `writeFile`
+
+Implementation is in `src/runtime/stdlib.h` and `src/runtime/stdlib.cpp`.
+
 ## Runtime type system (new)
 
 MagPhos runtime now exposes explicit value categories:
