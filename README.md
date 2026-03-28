@@ -135,7 +135,7 @@ Example style:
 
 ```text
 Error at line 12, column 9:
-  set x =
+  var x =
           ^
 Expected expression.
 Hint: Did you forget a value, identifier, or parentheses?
@@ -231,30 +231,34 @@ Run all tests with:
 ./tools/scripts/run_tests.sh
 ```
 
-## Syntax overview
+## Syntax overview (current parser)
 
 ```txt
+import math
+use "utils.mp"
+
 var x = 10
 const name = "MagPhos"
-set x = x + 1
+x = x + 1
 
 fn greet(person) {
   print "Hello " + person
+  return person
 }
 
-when x > 5 {
-  print "big"
-} else {
-  print "small"
+{
+  print greet(name)
 }
 ```
 
-Supported statements:
+Supported top-level declarations and statements (today):
 
-- `var`, `const`, `set`
-- `print`, `ask "question" -> name`
-- `if`, `when`, `else`
-- `loop`, `repeat while`
-- `fn`, `return`
-- `stop`, `next`
-- comments: `/!`, `//! ... !/`, `#`, `//`
+- modules: `import`, `use`
+- declarations: `fn`, `var`, `const`
+- control flow: `if` / `else`, `while`, `for (...)`
+- statements: assignment (`name = expr`), `print`, `return`, block statements (`{ ... }`)
+- expression statements (e.g. `greet(name)`)
+- expression forms: numbers, strings, booleans, `null`, identifiers, unary (`-`, `not`, `!`), arithmetic, comparisons, equality, logical (`and` / `or`), grouping, calls
+- terminators: newline or `;`
+
+Not implemented yet in parser/lexer: `set`, `ask`, `when`, `loop`, `repeat while`, `stop`, `next`, or comment syntax.

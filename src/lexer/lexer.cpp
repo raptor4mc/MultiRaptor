@@ -138,8 +138,41 @@ std::vector<Token> Lexer::tokenize(const std::string& source) const {
             case '/':
                 pushSimple(tokens, TokenType::Slash, c, line, startColumn);
                 break;
+            case '!':
+                if (index + 1 < source.size() && source[index + 1] == '=') {
+                    tokens.push_back(Token{TokenType::BangEqual, "!=", line, startColumn});
+                    ++index;
+                    ++column;
+                } else {
+                    pushSimple(tokens, TokenType::Bang, c, line, startColumn);
+                }
+                break;
             case '=':
-                pushSimple(tokens, TokenType::Equal, c, line, startColumn);
+                if (index + 1 < source.size() && source[index + 1] == '=') {
+                    tokens.push_back(Token{TokenType::EqualEqual, "==", line, startColumn});
+                    ++index;
+                    ++column;
+                } else {
+                    pushSimple(tokens, TokenType::Equal, c, line, startColumn);
+                }
+                break;
+            case '<':
+                if (index + 1 < source.size() && source[index + 1] == '=') {
+                    tokens.push_back(Token{TokenType::LessEqual, "<=", line, startColumn});
+                    ++index;
+                    ++column;
+                } else {
+                    pushSimple(tokens, TokenType::Less, c, line, startColumn);
+                }
+                break;
+            case '>':
+                if (index + 1 < source.size() && source[index + 1] == '=') {
+                    tokens.push_back(Token{TokenType::GreaterEqual, ">=", line, startColumn});
+                    ++index;
+                    ++column;
+                } else {
+                    pushSimple(tokens, TokenType::Greater, c, line, startColumn);
+                }
                 break;
             default:
                 tokens.push_back(Token{TokenType::Invalid, std::string("Unexpected character: ") + c, line, startColumn});

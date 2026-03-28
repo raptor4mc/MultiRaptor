@@ -9,6 +9,8 @@ namespace magphos::ast {
 enum class ExprKind {
     NumberLiteral,
     StringLiteral,
+    BooleanLiteral,
+    NullLiteral,
     Identifier,
     Unary,
     Binary,
@@ -24,6 +26,9 @@ enum class StmtKind {
     Return,
     Function,
     Block,
+    If,
+    While,
+    For,
     Import,
     Use,
 };
@@ -39,7 +44,11 @@ struct Statement {
     std::string name;
     std::vector<std::string> params;
     std::unique_ptr<Expr> expression;
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Statement> initializer;
+    std::unique_ptr<Statement> increment;
     std::vector<Statement> body;
+    std::vector<Statement> elseBody;
 };
 
 struct Program {
