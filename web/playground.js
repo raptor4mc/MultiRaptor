@@ -42,6 +42,8 @@ async function loadWasmCompiler() {
   } catch (err) {
     wasmLoadError = `${loaderUrl}: ${err.message}`;
   }
+
+  wasmLoadError = attempts.join(' | ');
 }
 
 function compileMagPhos(source) {
