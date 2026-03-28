@@ -32,7 +32,7 @@ Replace `<owner>/<repo>` with your real GitHub path.
 
 ```bash
 git clone <your-repo-url>
-cd MultiRaptor
+cd MagPhos
 ```
 
 Or download ZIP from the "Download places" table above.
@@ -87,11 +87,69 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
+
+## Module / import system (new)
+
+MagPhos now parses module dependencies in source code:
+
+- `import math`
+- `import game.engine`
+- `use "utils.mp"`
+
+Runtime helpers in `src/runtime/module_system.{h,cpp}` resolve and load these forms:
+
+- dotted imports → `baseDir/game/engine.mp`
+- use paths → `baseDir/utils.mp`
+
+## Standard library (new)
+
+MagPhos now exposes a native standard library surface:
+
+- **Core**: `len`, `type`, `toString`, `random`, `time`
+- **Math**: `sin`, `cos`, `sqrt`, `abs`
+- **Strings**: `split`, `replace`, `substring`
+- **Arrays**: `push`, `pop`, `map`, `filter`
+- **File I/O (native)**: `readFile`, `writeFile`
+
+Implementation is in `src/runtime/stdlib.h` and `src/runtime/stdlib.cpp`.
+
+## Runtime type system (new)
+
+MagPhos runtime now exposes explicit value categories:
+
+- `number`
+- `string`
+- `boolean`
+- `null`
+- `function`
+- `object/dict`
+- `array`
+- `map`
+- `class`
+- `struct`
+- `enum`
+
+These are represented in `src/runtime/value.h` via `TypeKind` and `Value`, and stored in `Environment` as typed values instead of plain strings.
+
+## Parser architecture (new)
+
+MagPhos now includes a real front-end pipeline:
+
+- **Tokenizer (`src/lexer`)**: converts source text into typed tokens with line/column tracking.
+- **Parser (`src/parser`)**: builds an AST from tokens (functions, blocks, assignments, print/return, and expression statements).
+- **Expression grammar** with precedence:
+  - unary (`-x`)
+  - multiplicative (`*`, `/`)
+  - additive (`+`, `-`)
+  - grouping/calls (`(expr)`, `name(arg1, arg2)`)
+- **Statement terminators**: supports both semicolons (`;`) and newlines.
+- **Error recovery**: parser synchronizes at statement boundaries to continue collecting errors after malformed code.
+
 ## Syntax overview
 
 ```txt
 var x = 10
-const name = "Raptor"
+const name = "MagPhos"
 set x = x + 1
 
 fn greet(person) {
