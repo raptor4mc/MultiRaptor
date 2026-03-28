@@ -32,7 +32,7 @@ Replace `<owner>/<repo>` with your real GitHub path.
 
 ```bash
 git clone <your-repo-url>
-cd MultiRaptor
+cd MagPhos
 ```
 
 Or download ZIP from the "Download places" table above.
@@ -91,7 +91,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 
 ```txt
 var x = 10
-const name = "Raptor"
+const name = "MagPhos"
 set x = x + 1
 
 fn greet(person) {
