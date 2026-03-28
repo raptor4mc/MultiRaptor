@@ -13,9 +13,9 @@ MagPhos is built to be **download-first** (local compiler on your machine), with
 
 | Version | Date | Download |
 |---|---|---|
-| v0.1.2 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/work.zip |
-| v0.1.1 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/main.zip |
-| v0.1.0 | 2026-03-28 | https://github.com/<owner>/<repo>/releases |
+| v0.1.2 | 2026-03-28 | https://github.com/raptor4mc/MultiRaptor/archive/refs/heads/work.zip |
+| v0.1.1 | 2026-03-28 | https://github.com/raptor4mc/MultiRaptor/archive/refs/heads/main.zip |
+| v0.1.0 | 2026-03-28 | https://github.com/raptr4mc/MultiRaptor/releases |
 
 Replace `<owner>/<repo>` with your real GitHub path.
 
