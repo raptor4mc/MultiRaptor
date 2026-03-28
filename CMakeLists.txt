@@ -111,7 +111,10 @@ endif()
 
 if(MAGPHOS_BUILD_WASM)
   if(NOT EMSCRIPTEN)
-    message(WARNING "MAGPHOS_BUILD_WASM=ON but Emscripten was not detected. Skipping wasm target.")
+    message(FATAL_ERROR
+      "MAGPHOS_BUILD_WASM=ON requires Emscripten, but this configure was not launched via emcmake.\n"
+      "Use: emcmake cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF -DMAGPHOS_BUILD_REPL=OFF"
+    )
   else()
     add_executable(MagPhos_wasm src/web/wasm_api.cpp)
     if(TARGET magphos_core_static)
@@ -132,6 +135,12 @@ if(MAGPHOS_BUILD_WASM)
       "-sENVIRONMENT=web"
       "-sALLOW_MEMORY_GROWTH=1"
       "-sFILESYSTEM=0"
+    )
+    add_custom_command(TARGET MagPhos_wasm POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE_DIR:MagPhos_wasm>/magphos_wasm.wasm"
+        "${CMAKE_SOURCE_DIR}/web/magphos_wasm.wasm"
+      VERBATIM
     )
   endif()
 endif()

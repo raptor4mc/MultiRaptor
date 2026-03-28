@@ -113,6 +113,14 @@ emcmake cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF 
 cmake --build build-web
 ```
 
+Or use the helper script:
+
+```bash
+./tools/scripts/build_web.sh
+```
+
+If you run `-DMAGPHOS_BUILD_WASM=ON` without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
+
 Then host the repo (or just the `web/` folder) on any static site and open:
 
 ```txt
