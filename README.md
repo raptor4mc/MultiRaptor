@@ -87,10 +87,11 @@ Open `web/playground.html` directly in a browser to use **MagPhos Web Studio**.
 
 Web Studio includes a Chromebook-friendly coding workspace with:
 
-- multi-file project sidebar
+- file explorer with both folders and files
 - persistent autosave in browser storage
 - import/export project JSON files
-- in-browser Compile + Run output panes
+- large runtime screen (with fullscreen mode) for visual apps/games
+- bottom dock tabs for Problems, Output, Terminal, and Debug Console
 
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
