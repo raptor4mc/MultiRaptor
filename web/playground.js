@@ -5,6 +5,12 @@ let wasmLoadError = null;
 const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
 
 const loadedClassicScripts = new Set();
+const SCRIPT_BASE_URL = (() => {
+  const scriptSrc = document.currentScript && document.currentScript.src
+    ? document.currentScript.src
+    : window.location.href;
+  return new URL('.', scriptSrc).href;
+})();
 
 function trim(v) {
   return v.trim();
@@ -39,8 +45,8 @@ async function loadWasmCompiler() {
   const wasmCandidates = IS_FILE_PROTOCOL
     ? [null]
     : ['./magphos_wasm.wasm', './magphos.wasm'];
-  const loaderUrls = loaderCandidates.map((path) => new URL(path, import.meta.url).href);
-  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, import.meta.url).href : null));
+  const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
+  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
   for (const loaderUrl of loaderUrls) {
     const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
