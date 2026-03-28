@@ -496,14 +496,12 @@ async function init() {
   syncEditorFromFile();
   renderFileList();
 
-  if (window.location.protocol === 'file:') {
+  if (IS_FILE_PROTOCOL) {
     outputEl.textContent = [
-      'Web Studio cannot run from file:// URLs.',
-      'Start a local static server, then open web/playground.html over http://.',
-      'Example: python3 -m http.server 8000',
-      'Then visit: http://localhost:8000/web/playground.html'
+      'Running from file:// URL.',
+      'Attempting to use web/magphos_wasm_singlefile.js first.',
+      'Tip: if compile fails, run ./tools/scripts/build_web.sh and retry.'
     ].join('\n');
-    return;
   }
 
   await loadWasmCompiler();
