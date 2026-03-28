@@ -1,13 +1,13 @@
-# MultiRaptor
+# MoPr
 
 MultiRaptor is a tiny experimental language that tries to feel **easier than Python** while keeping a **JavaScript-like execution model**.
 
 This repo includes:
 
 - A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
-- A browser **HTML playground** (`web/playground.html`) to write and run MultiRaptor instantly.
+- A browser **HTML playground** (`web/playground.html`) to write and run MoPr instantly.
 
-## Why MultiRaptor (mp)
+## Why MoPr (mp)
 Well, i dont have any reason other then its easier then python, and are built on top of c++ so it might be faster then python, and well, its error searching is top tier, and you can make basicly any game inside of it!
 
 ## Syntax (simple + readable)
