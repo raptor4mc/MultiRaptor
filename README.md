@@ -119,7 +119,9 @@ Or use the helper script:
 ./tools/scripts/build_web.sh
 ```
 
-If you run `-DMAGPHOS_BUILD_WASM=ON` without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
+`build_web.sh` will auto-bootstrap Emscripten into `.tools/emsdk` if `emcmake` is missing, then build and verify `web/magphos_wasm.js` + `web/magphos_wasm.wasm`.
+
+If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
 Then host the repo (or just the `web/` folder) on any static site and open:
 
