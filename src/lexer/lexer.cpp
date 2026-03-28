@@ -43,6 +43,14 @@ std::vector<Token> Lexer::tokenize(const std::string& source) const {
             continue;
         }
 
+        if (c == '#') {
+            while (!atEnd() && source[index] != '\n') {
+                ++index;
+                ++column;
+            }
+            continue;
+        }
+
         if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
             const std::size_t start = index;
             while (!atEnd()) {
@@ -117,6 +125,12 @@ std::vector<Token> Lexer::tokenize(const std::string& source) const {
             case '}':
                 pushSimple(tokens, TokenType::RightBrace, c, line, startColumn);
                 break;
+            case '[':
+                pushSimple(tokens, TokenType::LeftBracket, c, line, startColumn);
+                break;
+            case ']':
+                pushSimple(tokens, TokenType::RightBracket, c, line, startColumn);
+                break;
             case ',':
                 pushSimple(tokens, TokenType::Comma, c, line, startColumn);
                 break;
@@ -136,6 +150,15 @@ std::vector<Token> Lexer::tokenize(const std::string& source) const {
                 pushSimple(tokens, TokenType::Star, c, line, startColumn);
                 break;
             case '/':
+                if (index + 1 < source.size() && source[index + 1] == '/') {
+                    ++index;
+                    ++column;
+                    while (index + 1 <= source.size() && !atEnd() && source[index] != '\n') {
+                        ++index;
+                        ++column;
+                    }
+                    continue;
+                }
                 pushSimple(tokens, TokenType::Slash, c, line, startColumn);
                 break;
             case '!':

@@ -1,6 +1,7 @@
 #include "runtime/engine.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace magphos::runtime {
 
@@ -44,6 +45,13 @@ Value RuntimeEngine::evaluateExpression(const ast::Expr& expr) {
                 args.push_back(evaluateExpression(*expr.children[i]));
             }
             return callFunctionByName(callee.value, args);
+        }
+        case ast::ExprKind::ArrayLiteral: {
+            ArrayValue array;
+            for (const auto& child : expr.children) {
+                array.elements.push_back(std::make_shared<Value>(evaluateExpression(*child)));
+            }
+            return Value::makeArray(array);
         }
     }
 
@@ -140,6 +148,65 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
                 throw;
             }
             current_ = previous;
+            return;
+        }
+        case ast::StmtKind::Set: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Set statement missing expression.");
+            }
+            const Value value = evaluateExpression(*statement.expression);
+            try {
+                current_->assign(statement.name, value);
+            } catch (const RuntimeError&) {
+                current_->define(statement.name, value);
+            }
+            return;
+        }
+        case ast::StmtKind::Ask: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Ask statement missing prompt expression.");
+            }
+            const Value prompt = evaluateExpression(*statement.expression);
+            std::cout << stdlib_.call("toString", {prompt}).asString();
+            std::string input;
+            std::getline(std::cin, input);
+            try {
+                current_->assign(statement.name, Value(input));
+            } catch (const RuntimeError&) {
+                current_->define(statement.name, Value(input));
+            }
+            return;
+        }
+        case ast::StmtKind::When: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "When statement missing condition.");
+            }
+            if (isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Loop: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Loop statement missing count expression.");
+            }
+            const Value countValue = evaluateExpression(*statement.expression);
+            if (countValue.type() != TypeKind::Number) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Loop count must evaluate to a number.");
+            }
+            const long long count = static_cast<long long>(countValue.asNumber());
+            for (long long i = 0; i < count; ++i) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::RepeatWhile: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Repeat while statement missing condition.");
+            }
+            do {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } while (isTruthy(evaluateExpression(*statement.condition)));
             return;
         }
     }
