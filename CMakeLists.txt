@@ -10,9 +10,12 @@ add_library(magphos_core STATIC
   src/interpreter/interpreter.cpp
   src/lexer/lexer.cpp
   src/parser/parser.cpp
+  src/runtime/environment.cpp
   src/runtime/enviroment.cpp
   src/runtime/value.cpp
+  src/runtime/stdlib.cpp
   src/utils/error.cpp
+  src/utils/file_utils.cpp
   src/utils/string_utils.cpp
   src/main.cpp
 )

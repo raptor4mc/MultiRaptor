@@ -1,17 +1,9 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
+#include "runtime/environment.h"
 
 namespace magphos::runtime {
 
-class Enviroment {
-  public:
-    void set(const std::string& name, const std::string& value);
-    std::string get(const std::string& name) const;
-
-  private:
-    std::unordered_map<std::string, std::string> values_;
-};
+using Enviroment = Environment;
 
 } // namespace magphos::runtime
