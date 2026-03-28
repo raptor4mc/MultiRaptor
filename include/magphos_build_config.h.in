@@ -1,0 +1,4 @@
+#pragma once
+
+#define MAGPHOS_VERSION "@PROJECT_VERSION@"
+#define MAGPHOS_PLATFORM "@MAGPHOS_PLATFORM@"

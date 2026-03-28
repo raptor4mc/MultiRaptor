@@ -88,6 +88,24 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Documentation map (new)
+
+- `docs/syntax.md`
+- `docs/grammar.md`
+- `docs/examples.md`
+- `docs/stdlib.md`
+- `docs/error_guide.md`
+- `docs/roadmap.md`
+
+## Package manager scaffold (new)
+
+MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh`:
+
+- `mp.sh install physics`
+- `mp.sh run game.mp`
+
+Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
+
 ## Real runtime model (new)
 
 MagPhos now has language-owned runtime behavior rather than relying on JS semantics:
@@ -176,6 +194,38 @@ MagPhos now includes a real front-end pipeline:
   - grouping/calls (`(expr)`, `name(arg1, arg2)`)
 - **Statement terminators**: supports both semicolons (`;`) and newlines.
 - **Error recovery**: parser synchronizes at statement boundaries to continue collecting errors after malformed code.
+
+## Build system capabilities (new)
+
+CMake now supports:
+
+- platform detection and `MAGPHOS_PLATFORM_OVERRIDE`
+- static + shared core libraries (`MAGPHOS_BUILD_STATIC`, `MAGPHOS_BUILD_SHARED`)
+- CLI tool build (`MAGPHOS_BUILD_CLI`)
+- optional WASM target when using Emscripten (`MAGPHOS_BUILD_WASM`)
+
+Example:
+
+```bash
+cmake -S . -B build -DMAGPHOS_BUILD_SHARED=ON -DMAGPHOS_BUILD_STATIC=ON
+cmake --build build
+```
+
+## Test suite (expanded)
+
+The repository now has dedicated test groups:
+
+- `tests/lexer_tests.cpp`
+- `tests/parser_tests.cpp`
+- `tests/runtime_tests.cpp`
+- `tests/error_tests.cpp`
+- `tests/example_tests.cpp`
+
+Run all tests with:
+
+```bash
+./tools/scripts/run_tests.sh
+```
 
 ## Syntax overview
 
