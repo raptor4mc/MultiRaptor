@@ -1,5 +1,5 @@
-MoPr Open Source License (MOSL) v1.1
-Copyright © Hugo Arusell (Raptor4 / MultiPixel / MoPr)
+MagPhos Open Source License (MOSL) v1.1
+Copyright © Hugo Arusell (MagPhos4 / MultiPixel / MagPhos)
 
 ---
 
@@ -18,7 +18,7 @@ Permission is hereby granted to any person to:
 
 All copies, forks, and projects using this software must include clear and visible credit:
 
-> "MoPr was originally created by Hugo Arusell (Raptor4 / MultiPixel)"
+> "MagPhos was originally created by Hugo Arusell (MagPhos4 / MultiPixel)"
 
 This credit must:
 
@@ -31,7 +31,7 @@ This credit must:
 
 Hugo Arusell must always be identified as:
 
-* The **original creator** of MoPr
+* The **original creator** of MagPhos
 * The **primary developer of the original project**
 
 You may add your own name as a contributor or modifier, but you may NOT:
@@ -50,19 +50,19 @@ You are allowed to modify and extend the software, but:
 
 Example:
 
-> "Modified version of MoPr (originally by Hugo Arusell)"
+> "Modified version of MagPhos (originally by Hugo Arusell)"
 
 ---
 
 ## 5. Naming Rules
 
-* The name **“MoPr”** must not be used to misrepresent ownership
+* The name **“MagPhos”** must not be used to misrepresent ownership
 * Forks must clearly indicate they are forks or modified versions
 
 Examples:
-✔ MoPr (official)
-✔ MoPr – Extended
-✔ MoPr (Community Fork)
+✔ MagPhos (official)
+✔ MagPhos – Extended
+✔ MagPhos (Community Fork)
 
 Not allowed:
 ✘ Renaming it and claiming it as a completely original language
@@ -94,7 +94,7 @@ You must:
 ✔ Keep authorship clear
 
 You cannot:
-✘ Claim you created MultiRaptor
+✘ Claim you created MultiMagPhos
 ✘ Remove attribution
 
 ---

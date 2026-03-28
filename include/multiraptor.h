@@ -6,7 +6,7 @@
 #include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "runtime/enviroment.h"
+#include "runtime/environment.h"
 #include "runtime/value.h"
 #include "utils/file_utils"
 #include "utils/string_utils.h"
