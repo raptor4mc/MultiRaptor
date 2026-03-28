@@ -45,6 +45,8 @@ jobs:
           test -f web/playground.css
           test -f web/magphos_wasm.js
           test -f web/magphos_wasm.wasm
+          test "$(wc -c < web/magphos_wasm.js)" -gt 1024
+          test "$(wc -c < web/magphos_wasm.wasm)" -gt 1024
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

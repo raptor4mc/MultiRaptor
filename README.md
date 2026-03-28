@@ -83,7 +83,19 @@ Binary path after install:
 
 ## Browser playground (bonus mode)
 
-Open `web/playground.html` directly in a browser to use **MagPhos Web Studio**.
+Serve the repository (or just the `web/` folder) with a static HTTP server, then open `web/playground.html` to use **MagPhos Web Studio**.
+
+Example local server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+```txt
+http://localhost:8000/web/playground.html
+```
 
 Web Studio includes a Chromebook-friendly coding workspace with:
 
@@ -100,6 +112,18 @@ Recommended isolated web build (keeps normal Linux/macOS/Windows download workfl
 emcmake cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF -DMAGPHOS_BUILD_REPL=OFF
 cmake --build build-web
 ```
+
+Or use the helper script:
+
+```bash
+./tools/scripts/build_web.sh
+```
+
+`build_web.sh` will auto-bootstrap Emscripten into `.tools/emsdk` if `emcmake` is missing, then build and verify `web/magphos_wasm.js` + `web/magphos_wasm.wasm`.
+
+If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
+
+Important: do **not** keep placeholder 1-byte wasm/js files in the repo. If the generated web artifacts are missing, rebuild them with `./tools/scripts/build_web.sh` before publishing.
 
 Then host the repo (or just the `web/` folder) on any static site and open:
 

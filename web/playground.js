@@ -4,15 +4,12 @@ let wasmCompiler = null;
 let wasmLoadError = null;
 
 const JS_LOADER_CANDIDATES = [
-  './magphos_wasm.js',
-  '../magphos_wasm.js'
+  './magphos_wasm.js'
 ];
 
 const WASM_BINARY_CANDIDATES = [
   './magphos_wasm.wasm',
-  '../magphos_wasm.wasm',
   './magphos.wasm',
-  '../magphos.wasm'
 ];
 
 const loadedClassicScripts = new Set();
@@ -50,6 +47,8 @@ async function loadWasmCompiler() {
   for (const loaderUrl of loaderUrls) {
     for (const wasmUrl of wasmUrls) {
       try {
+        await validateArtifactSize(loaderUrl, 64, 'JavaScript loader');
+        await validateArtifactSize(wasmUrl, 1024, 'WASM binary');
         let moduleFactory = null;
         const imported = await import(loaderUrl);
         if (typeof imported.default === 'function') {
@@ -86,6 +85,26 @@ async function loadWasmCompiler() {
   }
 
   wasmLoadError = attempts.join(' | ');
+}
+
+async function validateArtifactSize(url, minBytes, label) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`${label} failed to load (${response.status}).`);
+  }
+
+  const contentLengthHeader = response.headers.get('content-length');
+  if (contentLengthHeader) {
+    const contentLength = Number(contentLengthHeader);
+    if (Number.isFinite(contentLength) && contentLength > 0 && contentLength < minBytes) {
+      throw new Error(`${label} looks corrupted (${contentLength} bytes).`);
+    }
+  }
+
+  const bytes = await response.arrayBuffer();
+  if (bytes.byteLength < minBytes) {
+    throw new Error(`${label} looks corrupted (${bytes.byteLength} bytes).`);
+  }
 }
 
 function loadClassicScriptModule(loaderUrl, wasmUrl) {
@@ -425,6 +444,16 @@ document.getElementById('importInput').addEventListener('change', async (event) 
 async function init() {
   syncEditorFromFile();
   renderFileList();
+
+  if (window.location.protocol === 'file:') {
+    outputEl.textContent = [
+      'Web Studio cannot run from file:// URLs.',
+      'Start a local static server, then open web/playground.html over http://.',
+      'Example: python3 -m http.server 8000',
+      'Then visit: http://localhost:8000/web/playground.html'
+    ].join('\n');
+    return;
+  }
 
   await loadWasmCompiler();
 
