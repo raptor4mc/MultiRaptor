@@ -299,6 +299,9 @@ const compiledEl = document.getElementById('compiled');
 const outputEl = document.getElementById('output');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
+const compileBtn = document.getElementById('compileBtn');
+const runBtn = document.getElementById('runBtn');
+const enableFallbackBtn = document.getElementById('enableFallbackBtn');
 
 let project = loadProject();
 
@@ -352,6 +355,9 @@ function syncFileFromEditor() {
 
 function doCompile() {
   syncFileFromEditor();
+  if (!wasmCompiler) {
+    throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm.js + web/magphos_wasm.wasm from the C++ code to keep web and native compiler behavior in sync.');
+  }
   const js = compileMagPhos(sourceEl.value);
   compiledEl.textContent = js;
   return js;
@@ -361,7 +367,7 @@ sourceEl.addEventListener('input', () => {
   syncFileFromEditor();
 });
 
-document.getElementById('compileBtn').addEventListener('click', () => {
+compileBtn.addEventListener('click', () => {
   outputEl.textContent = '';
   try {
     doCompile();
@@ -370,7 +376,7 @@ document.getElementById('compileBtn').addEventListener('click', () => {
   }
 });
 
-document.getElementById('runBtn').addEventListener('click', () => {
+runBtn.addEventListener('click', () => {
   outputEl.textContent = '';
   try {
     const js = doCompile();
@@ -513,10 +519,11 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    wasmCompiler = compileWithFallbackTranspiler;
+    compileBtn.disabled = true;
+    runBtn.disabled = true;
+    enableFallbackBtn.hidden = false;
     outputEl.textContent = [
-      'WASM compiler not found.',
-      'Running in fallback transpiler mode.',
+      'WASM compiler not found. Compile/Run are disabled to avoid drifting from C++ behavior.',
       IS_FILE_PROTOCOL
         ? 'Expected file:// loader: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js'
         : 'Expected loader: web/magphos_wasm.js or web/magphos_wasm_singlefile.js',
@@ -524,11 +531,29 @@ async function init() {
         ? 'Tip: run ./tools/scripts/build_web.sh to generate the single-file loader for direct local opening.'
         : 'Expected wasm: web/magphos_wasm.wasm or web/magphos.wasm',
       'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
-      wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
+      wasmLoadError ? `Loader error: ${wasmLoadError}` : '',
+      '',
+      'Only click "Enable Fallback" if you intentionally want non-C++ behavior.'
     ].filter(Boolean).join('\n');
+  } else {
+    compileBtn.disabled = false;
+    runBtn.disabled = false;
+    enableFallbackBtn.hidden = true;
   }
 
-  document.getElementById('compileBtn').click();
+  compileBtn.click();
 }
+
+enableFallbackBtn.addEventListener('click', () => {
+  wasmCompiler = compileWithFallbackTranspiler;
+  compileBtn.disabled = false;
+  runBtn.disabled = false;
+  enableFallbackBtn.hidden = true;
+  outputEl.textContent = [
+    'Fallback transpiler mode enabled manually.',
+    'Warning: this does not guarantee parity with the C++ compiler.',
+    'For C++ parity, rebuild and ship web/magphos_wasm.js + web/magphos_wasm.wasm.'
+  ].join('\n');
+});
 
 init();
