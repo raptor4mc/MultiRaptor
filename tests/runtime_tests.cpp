@@ -157,6 +157,17 @@ if flag and x == 12 {
 while x < 20 {
   x = x + 2
 }
+when x == 21 {
+  set x = x + 1
+}
+loop 2 {
+  set x = x + 1
+}
+repeat while x < 26 {
+  set x = x + 1
+}
+arr = [1, 2, 3]
+arrLen = len(arr)
 sum = 0
 for (var i = 0; i < 3; i = i + 1) {
   sum = sum + i
@@ -169,9 +180,10 @@ for (var i = 0; i < 3; i = i + 1) {
 
     RuntimeEngine engine;
     engine.loadProgram(runtimeParse.program);
-    assert(engine.globals()->get("x").asNumber() == 21.0);
+    assert(engine.globals()->get("x").asNumber() == 26.0);
     assert(engine.globals()->get("flag").asBoolean());
     assert(engine.globals()->get("sum").asNumber() == 3.0);
+    assert(engine.globals()->get("arrLen").asNumber() == 3.0);
 
     const std::string aritySource = R"(
 fn add(a, b) {
@@ -188,6 +200,9 @@ x = add(1)
         arityRaised = ex.code() == RuntimeErrorCode::ArityError;
     }
     assert(arityRaised);
+
+    const std::string semanticBad = magphos::interpreter::analyzeProgram("print unknownVar\n");
+    assert(semanticBad.find("Semantic error: Undefined identifier: unknownVar") != std::string::npos);
 
     return 0;
 }
