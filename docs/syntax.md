@@ -4,15 +4,13 @@
 - Identifiers: `name`, `snake_case`, `_internal`
 - Numbers: `1`, `42`, `3.14`
 - Strings: `"hello"`
-- Comments:
-  - line: `# comment`
-  - line: `// comment`
-  - block-start marker: `/!`
+- Statement terminators: newline or `;`
 
 ## Declarations and assignment
 ```mp
-x = 10
-y = x + 2
+var x = 10
+const y = x + 2
+x = y + 1
 ```
 
 ## Functions
@@ -46,3 +44,6 @@ use "utils.mp"
 Statements can end with:
 - newline
 - semicolon (`;`)
+
+
+> Note: Control-flow keywords (`if`, `when`, `else`, loops), `set`, `ask`, and comments are not tokenized/parsed yet.
