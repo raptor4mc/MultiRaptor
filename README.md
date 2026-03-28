@@ -129,7 +129,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 
 ## Sample programs (new)
 
-Markdown-based sample snippets are in `samples/` (9 files for quick copy/paste into the compiler or web studio).
+Official preview-ready sample snippets are in `samples/` (9 files, each with purpose, code, and expected output for GitHub review pages).
 
 ## Package manager scaffold (new)
 
