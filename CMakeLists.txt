@@ -44,7 +44,6 @@ set(MAGPHOS_CORE_SOURCES
   src/parser/parser.cpp
   src/runtime/environment.cpp
   src/runtime/errors.cpp
-  src/runtime/enviroment.cpp
   src/runtime/value.cpp
   src/runtime/stdlib.cpp
   src/runtime/module_system.cpp
