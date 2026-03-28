@@ -127,6 +127,10 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/repl.md`
 - `docs/game_api.md`
 
+## Sample programs (new)
+
+Markdown-based sample snippets are in `samples/` (9 files for quick copy/paste into the compiler or web studio).
+
 ## Package manager scaffold (new)
 
 MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh`:
