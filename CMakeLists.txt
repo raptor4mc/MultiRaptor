@@ -119,7 +119,11 @@ if(MAGPHOS_BUILD_WASM)
     else()
       target_link_libraries(MagPhos_wasm PRIVATE magphos_core_shared)
     endif()
-    set_target_properties(MagPhos_wasm PROPERTIES OUTPUT_NAME "magphos_wasm" SUFFIX ".js")
+    set_target_properties(MagPhos_wasm PROPERTIES
+      OUTPUT_NAME "magphos_wasm"
+      SUFFIX ".js"
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/web"
+    )
     target_link_options(MagPhos_wasm PRIVATE
       "-sEXPORT_ES6=1"
       "-sMODULARIZE=1"

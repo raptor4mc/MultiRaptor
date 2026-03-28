@@ -92,7 +92,7 @@ Web Studio includes a Chromebook-friendly coding workspace with:
 - import/export project JSON files
 - in-browser Compile + Run output panes powered by the C++ compiler via WASM
 
-To run the web compiler path, build the WASM target with Emscripten (`-DMAGPHOS_BUILD_WASM=ON`) and place generated `magphos_wasm.js/.wasm` assets in `web/`.
+To run the web compiler path, build with Emscripten (`-DMAGPHOS_BUILD_WASM=ON`). The WASM target now emits `magphos_wasm.js/.wasm` directly into `web/` so browser and downloadable flows share the same compiler artifacts.
 
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
