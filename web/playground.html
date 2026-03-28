@@ -24,10 +24,11 @@
     <aside class="panel files-panel">
       <div class="panel-title-row">
         <h2>Files</h2>
+        <button id="newFolderBtn" class="small">+ Folder</button>
         <button id="newFileBtn" class="small">+ File</button>
       </div>
       <ul id="fileList" class="file-list"></ul>
-      <p class="muted tiny">Projects are auto-saved in your browser.</p>
+      <p class="muted tiny">Projects are auto-saved in your browser. Compiler runs through C++ WASM.</p>
     </aside>
 
     <section class="panel editor-panel">
@@ -63,6 +64,6 @@ var student = "Chromebook Coder"
 greet(student)
 </template>
 
-  <script src="playground.js"></script>
+  <script type="module" src="playground.js"></script>
 </body>
 </html>
