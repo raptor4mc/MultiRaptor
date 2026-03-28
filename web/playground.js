@@ -29,28 +29,18 @@ function ensureProjectShape(raw) {
 }
 
 async function loadWasmCompiler() {
-  const loaderCandidates = [
-    './magphos_wasm.js',
-    './MagPhos_wasm.js',
-    '../magphos_wasm.js',
-    '../MagPhos_wasm.js'
-  ];
-  const attempts = [];
+  const loaderUrl = new URL('./magphos_wasm.js', import.meta.url).href;
 
-  for (const candidate of loaderCandidates) {
-    const loaderUrl = new URL(candidate, import.meta.url).href;
-    try {
-      const moduleFactory = (await import(loaderUrl)).default;
-      const wasmModule = await moduleFactory();
-      if (typeof wasmModule.compileMagPhos !== 'function') {
-        throw new Error('WASM module loaded, but compileMagPhos export is missing.');
-      }
-      wasmCompiler = wasmModule.compileMagPhos;
-      wasmLoadError = null;
-      return;
-    } catch (err) {
-      attempts.push(`${loaderUrl}: ${err.message}`);
+  try {
+    const moduleFactory = (await import(loaderUrl)).default;
+    const wasmModule = await moduleFactory();
+    if (typeof wasmModule.compileMagPhos !== 'function') {
+      throw new Error('WASM module loaded, but compileMagPhos export is missing.');
     }
+    wasmCompiler = wasmModule.compileMagPhos;
+    wasmLoadError = null;
+  } catch (err) {
+    wasmLoadError = `${loaderUrl}: ${err.message}`;
   }
 
   wasmLoadError = attempts.join(' | ');
