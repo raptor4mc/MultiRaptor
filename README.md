@@ -23,7 +23,7 @@ Replace `<owner>/<repo>` with your real GitHub path.
 
 - Native compiler source: `src/MagPhos_compiler.cpp`
 - Core module files (lexer/parser/ast/runtime/interpreter/utils) are now wired into the build target.
-- Web playground: `web/playground.html`
+- Web studio playground: `web/playground.html`
 - Example MagPhos program: `main.mp`
 
 ## How to download and make it work (current project)
@@ -83,7 +83,15 @@ Binary path after install:
 
 ## Browser playground (bonus mode)
 
-Open `web/playground.html` directly in a browser, write MagPhos code, then click **Compile** and **Run**.
+Open `web/playground.html` directly in a browser to use **MagPhos Web Studio**.
+
+Web Studio includes a Chromebook-friendly coding workspace with:
+
+- file explorer with both folders and files
+- persistent autosave in browser storage
+- import/export project JSON files
+- large runtime screen (with fullscreen mode) for visual apps/games
+- bottom dock tabs for Problems, Output, Terminal, and Debug Console
 
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
