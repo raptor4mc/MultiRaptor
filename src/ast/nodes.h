@@ -18,6 +18,7 @@ enum class ExprKind {
 
 enum class StmtKind {
     Expression,
+    Variable,
     Assignment,
     Print,
     Return,

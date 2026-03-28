@@ -15,7 +15,7 @@ fn add(a, b) {
   return a + b
 }
 
-x = (a + b) * c;
+var x = (a + b) * c;
 print (x + y) / 2
 )";
 

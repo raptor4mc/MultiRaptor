@@ -30,3 +30,12 @@
 
 ## Notes
 Implemented in `src/runtime/stdlib.cpp` and surfaced via `runtime::StandardLibrary`.
+
+
+## Game/Graphics (preview)
+- `canvasCreate(width, height)`
+- `inputIsKeyDown(key)`
+- `timerNowMs()`
+- `spriteLoad(path)`
+- `spriteDraw(canvas, sprite, x, y)`
+- `audioPlay(path)`

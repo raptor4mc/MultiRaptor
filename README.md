@@ -96,6 +96,8 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/stdlib.md`
 - `docs/error_guide.md`
 - `docs/roadmap.md`
+- `docs/repl.md`
+- `docs/game_api.md`
 
 ## Package manager scaffold (new)
 
@@ -103,6 +105,7 @@ MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh
 
 - `mp.sh install physics`
 - `mp.sh run game.mp`
+- `mp.sh repl`
 
 Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
 
@@ -202,6 +205,7 @@ CMake now supports:
 - platform detection and `MAGPHOS_PLATFORM_OVERRIDE`
 - static + shared core libraries (`MAGPHOS_BUILD_STATIC`, `MAGPHOS_BUILD_SHARED`)
 - CLI tool build (`MAGPHOS_BUILD_CLI`)
+- REPL tool build (`MAGPHOS_BUILD_REPL`)
 - optional WASM target when using Emscripten (`MAGPHOS_BUILD_WASM`)
 
 Example:

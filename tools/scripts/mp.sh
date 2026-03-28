@@ -8,16 +8,17 @@ MagPhos package/runtime helper
 Usage:
   mp.sh install <package>
   mp.sh run <program.mp>
+  mp.sh repl
 USAGE
 }
 
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 1 ]]; then
   usage
   exit 1
 fi
 
 cmd="$1"
-arg="$2"
+arg="${2:-}"
 
 case "$cmd" in
   install)
@@ -50,6 +51,14 @@ PKG
     else
       echo "Compiled output written to $out_js (node not found)."
     fi
+    ;;
+  repl)
+    if [[ ! -x build/magphos_repl ]]; then
+      echo "REPL missing, building first..."
+      cmake -S . -B build
+      cmake --build build
+    fi
+    ./build/magphos_repl
     ;;
   *)
     usage

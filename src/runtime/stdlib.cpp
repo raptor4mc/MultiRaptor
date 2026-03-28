@@ -100,6 +100,7 @@ StandardLibrary::StandardLibrary() {
     registerStrings();
     registerArrays();
     registerFileIO();
+    registerGameGraphics();
 }
 
 bool StandardLibrary::has(const std::string& name) const {
@@ -324,6 +325,47 @@ void StandardLibrary::registerFileIO() {
             throw std::runtime_error("writeFile: cannot open file " + path);
         }
         file << content;
+        return Value::makeNull();
+    };
+}
+
+void StandardLibrary::registerGameGraphics() {
+    functions_["canvasCreate"] = [](const std::vector<Value>& args) {
+        const double width = requireNumber(args, 0, "canvasCreate");
+        const double height = requireNumber(args, 1, "canvasCreate");
+        ObjectValue canvas;
+        canvas.fields["kind"] = std::make_shared<Value>(Value(std::string("canvas")));
+        canvas.fields["width"] = std::make_shared<Value>(Value(width));
+        canvas.fields["height"] = std::make_shared<Value>(Value(height));
+        return Value::makeObject(canvas);
+    };
+
+    functions_["inputIsKeyDown"] = [](const std::vector<Value>& args) {
+        (void)requireString(args, 0, "inputIsKeyDown");
+        return Value(false);
+    };
+
+    functions_["timerNowMs"] = [](const std::vector<Value>&) {
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+        return Value(static_cast<double>(ms));
+    };
+
+    functions_["spriteLoad"] = [](const std::vector<Value>& args) {
+        const std::string path = requireString(args, 0, "spriteLoad");
+        ObjectValue sprite;
+        sprite.fields["kind"] = std::make_shared<Value>(Value(std::string("sprite")));
+        sprite.fields["path"] = std::make_shared<Value>(Value(path));
+        return Value::makeObject(sprite);
+    };
+
+    functions_["spriteDraw"] = [](const std::vector<Value>& args) {
+        (void)args;
+        return Value::makeNull();
+    };
+
+    functions_["audioPlay"] = [](const std::vector<Value>& args) {
+        (void)requireString(args, 0, "audioPlay");
         return Value::makeNull();
     };
 }

@@ -105,7 +105,19 @@ int main() {
     const auto filtered = stdlib.call("filter", {pushed, Value(std::string("gt")), Value(1.5)});
     assert(filtered.asArray().elements.size() == 2);
 
-    const std::string path = "/tmp/magphos_stdlib_test.txt";
+
+    // Game/graphics API placeholders.
+    const auto canvas = stdlib.call("canvasCreate", {Value(800.0), Value(600.0)});
+    assert(canvas.type() == TypeKind::Object);
+    assert(canvas.asObject().fields.find("kind") != canvas.asObject().fields.end());
+    const auto sprite = stdlib.call("spriteLoad", {Value(std::string("hero.png"))});
+    assert(sprite.type() == TypeKind::Object);
+    assert(stdlib.call("inputIsKeyDown", {Value(std::string("Space"))}).type() == TypeKind::Boolean);
+    assert(stdlib.call("timerNowMs", {}).type() == TypeKind::Number);
+    assert(stdlib.call("spriteDraw", {canvas, sprite, Value(10.0), Value(20.0)}).isNull());
+    assert(stdlib.call("audioPlay", {Value(std::string("theme.ogg"))}).isNull());
+
+        const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
 

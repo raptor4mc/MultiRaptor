@@ -59,6 +59,13 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             userFunctions_[statement.name] = &statement;
             globals_->define(statement.name, Value::makeFunction(statement.name, statement.params));
             return;
+        case ast::StmtKind::Variable: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Variable declaration missing expression.");
+            }
+            current_->define(statement.name, evaluateExpression(*statement.expression));
+            return;
+        }
         case ast::StmtKind::Assignment: {
             if (!statement.expression) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Assignment missing expression.");

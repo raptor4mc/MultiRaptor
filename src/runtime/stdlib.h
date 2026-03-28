@@ -27,6 +27,7 @@ class StandardLibrary {
     void registerStrings();
     void registerArrays();
     void registerFileIO();
+    void registerGameGraphics();
 };
 
 } // namespace magphos::runtime

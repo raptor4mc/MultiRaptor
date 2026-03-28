@@ -189,6 +189,9 @@ class ParserImpl {
     }
 
     std::optional<ast::Statement> parseStatement() {
+        if (matchKeyword("var") || matchKeyword("const")) {
+            return parseVariableDeclaration();
+        }
         if (matchKeyword("print")) {
             return parseSingleExprStatement(ast::StmtKind::Print);
         }
@@ -228,6 +231,30 @@ class ParserImpl {
 
         skipTerminators();
         return block;
+    }
+
+
+    std::optional<ast::Statement> parseVariableDeclaration() {
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected variable name after declaration keyword.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Variable;
+        statement.name = advance().lexeme;
+
+        if (!match(TokenType::Equal)) {
+            return errorAtCurrent("Expected '=' after variable name.");
+        }
+
+        auto expr = parseExpression();
+        if (!expr) {
+            return std::nullopt;
+        }
+
+        statement.expression = std::move(expr);
+        consumeTerminator("Expected ';' or newline after variable declaration.");
+        return statement;
     }
 
     std::optional<ast::Statement> parseSingleExprStatement(ast::StmtKind kind) {

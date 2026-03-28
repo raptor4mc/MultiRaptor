@@ -33,3 +33,8 @@ g++ -std=c++17 -Iinclude -Isrc tests/example_tests.cpp src/lexer/lexer.cpp src/p
 /tmp/magphos_tests/example_tests
 
 echo "All MagPhos tests passed."
+
+# REPL smoke test
+g++ -std=c++17 -Iinclude -Isrc src/tools/magphos_repl.cpp "${COMMON_SRCS[@]}" -o /tmp/magphos_tests/magphos_repl
+printf "var x = 10\n:quit\n" | /tmp/magphos_tests/magphos_repl | grep -q "ok"
+
