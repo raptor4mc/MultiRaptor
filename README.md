@@ -1,16 +1,22 @@
 # MoPr
 
-MultiRaptor is a tiny experimental language that tries to feel **easier than Python** while keeping a **JavaScript-like execution model**.
+MoPr (MultiRaptor) is a tiny experimental programming language with a **desktop-first workflow** and a **web playground companion**.
 
-This repo includes:
+## Project direction
 
-- A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
-- A browser **HTML playground** (`web/playground.html`) to write and run MoPr instantly.
+The goal is:
 
-## Why MoPr (mp)
-Well, i dont have any reason other then its easier then python, and are built on top of c++ so it might be faster then python, and well, its error searching is top tier, and you can make basicly any game inside of it!
+1. **Download and code locally first** (main experience).
+2. **Keep browser support as a bonus**, so Chromebook users (and anyone without local toolchain setup) can still code in MoPr.
 
-## Syntax (simple + readable)
+That means MoPr is not "web-only". The browser is convenience; the native/compiler download is the primary path.
+
+## What is in this repository
+
+- A **native C++ compiler** (`src/MoPr_compiler.cpp`) that transpiles `.mp` files to JavaScript.
+- A simple **browser playground** (`web/playground.html`) for instant experimentation.
+
+## Language syntax (simple + readable)
 
 ```txt
 # comments use #, //, or /!
@@ -51,34 +57,45 @@ Supported statements:
 - `stop` (`break`) and `next` (`continue`)
 - Comments: `/! one line`, `//!` ... `!/`, plus `#` and `//`
 
-## Build the C++ compiler
+## Build (download-first workflow)
+
+### Option A: CMake (recommended)
 
 ```bash
-g++ -std=c++17 -O2 -o multiraptor src/multiraptor_compiler.cpp
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 ```
 
-## Compile a MultiRaptor program
+Compiler binary:
+
+- `build/MoPr_compiler` (Linux/macOS)
+- `build/Release/MoPr_compiler.exe` (Windows, multi-config generators)
+
+Optional local install:
 
 ```bash
-./multiraptor main.mp output.js
+cmake --install build --prefix .local
+```
+
+### Option B: single-file compile
+
+```bash
+g++ -std=c++17 -O2 -o MoPr_compiler src/MoPr_compiler.cpp
+```
+
+## Compile and run a MoPr program
+
+```bash
+./MoPr_compiler main.mp output.js
 node output.js
 ```
 
-## Roadmap
-We got this plan on first making this a globaly used language, then keep developing it till i get bored, then il give it to a colluege and i will sleep
+## Browser playground (bonus)
 
-## Browser playground
-
-Open:
-
-```txt
-web/playground.html
-```
-
-in your browser and click **Compile** / **Run**.
+Open `web/playground.html` in your browser and use **Compile** / **Run**.
 
 ## Notes on performance
 
 - The compiler is a fast line-based parser + direct JS emitter.
 - Runtime speed follows JavaScript engine performance.
-- You can later compile this C++ compiler to **WebAssembly** for sharing one compiler core in browser/native.
+- The compiler can later be compiled to WebAssembly to share one compiler core between native and browser environments.
