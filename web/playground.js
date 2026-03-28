@@ -15,6 +15,8 @@ const WASM_BINARY_CANDIDATES = [
   '../magphos.wasm'
 ];
 
+const loadedClassicScripts = new Set();
+
 function trim(v) {
   return v.trim();
 }
@@ -55,19 +57,26 @@ async function loadWasmCompiler() {
         } else if (typeof imported.MagPhosWasmFactory === 'function') {
           moduleFactory = imported.MagPhosWasmFactory;
         }
-        if (typeof moduleFactory !== 'function') {
-          throw new Error('WASM JS loader found, but no module factory export was detected.');
-        }
-        const wasmModule = await moduleFactory({
-          locateFile(path) {
-            if (path.endsWith('.wasm')) return wasmUrl;
-            return new URL(path, loaderUrl).href;
+        if (typeof moduleFactory === 'function') {
+          const wasmModule = await moduleFactory({
+            locateFile(path) {
+              if (path.endsWith('.wasm')) return wasmUrl;
+              return new URL(path, loaderUrl).href;
+            }
+          });
+          if (typeof wasmModule.compileMagPhos !== 'function') {
+            throw new Error('WASM module loaded, but compileMagPhos export is missing.');
           }
-        });
-        if (typeof wasmModule.compileMagPhos !== 'function') {
-          throw new Error('WASM module loaded, but compileMagPhos export is missing.');
+          wasmCompiler = wasmModule.compileMagPhos;
+          wasmLoadError = null;
+          return;
         }
-        wasmCompiler = wasmModule.compileMagPhos;
+
+        const classicModule = await loadClassicScriptModule(loaderUrl, wasmUrl);
+        if (typeof classicModule.compileMagPhos !== 'function') {
+          throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
+        }
+        wasmCompiler = classicModule.compileMagPhos;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -77,6 +86,83 @@ async function loadWasmCompiler() {
   }
 
   wasmLoadError = attempts.join(' | ');
+}
+
+function loadClassicScriptModule(loaderUrl, wasmUrl) {
+  return new Promise((resolve, reject) => {
+    const prevModule = window.Module && typeof window.Module === 'object' ? window.Module : {};
+    const prevInit = typeof prevModule.onRuntimeInitialized === 'function'
+      ? prevModule.onRuntimeInitialized
+      : null;
+
+    let resolved = false;
+    const settleResolve = (moduleRef) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(moduleRef);
+    };
+    const settleReject = (reason) => {
+      if (resolved) return;
+      resolved = true;
+      reject(new Error(reason));
+    };
+
+    window.Module = {
+      ...prevModule,
+      locateFile(path) {
+        if (path.endsWith('.wasm')) return wasmUrl;
+        return new URL(path, loaderUrl).href;
+      },
+      onRuntimeInitialized() {
+        try {
+          if (prevInit) prevInit();
+        } catch (_) {
+          // ignore previous callback errors
+        }
+        if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+          settleResolve(window.Module);
+        } else {
+          settleReject('Classic script loaded, but compileMagPhos was not exported.');
+        }
+      },
+      onAbort(reason) {
+        settleReject(`WASM aborted: ${reason || 'unknown reason'}`);
+      }
+    };
+
+    if (!loadedClassicScripts.has(loaderUrl)) {
+      const script = document.createElement('script');
+      script.src = loaderUrl;
+      script.async = true;
+      script.dataset.magphosLoader = loaderUrl;
+      script.addEventListener('error', () => {
+        settleReject(`Failed to load script: ${loaderUrl}`);
+      });
+      script.addEventListener('load', () => {
+        // If runtime is already initialized before callback wiring, resolve here.
+        if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+          settleResolve(window.Module);
+        }
+      });
+      document.head.appendChild(script);
+      loadedClassicScripts.add(loaderUrl);
+      return;
+    }
+
+    // Script was already injected; runtime might already be ready.
+    if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+      settleResolve(window.Module);
+      return;
+    }
+    // Give runtime initialization callback a short chance to fire.
+    setTimeout(() => {
+      if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+        settleResolve(window.Module);
+      } else {
+        settleReject('Classic loader was present, but runtime did not initialize compileMagPhos.');
+      }
+    }, 1200);
+  });
 }
 
 function compileMagPhos(source) {
