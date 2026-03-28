@@ -34,19 +34,30 @@ async function loadWasmCompiler() {
     new URL('./magphos_wasm.js', import.meta.url).href,
     new URL('../magphos_wasm.js', import.meta.url).href
   ];
+  const wasmUrls = [
+    new URL('./magphos_wasm.wasm', import.meta.url).href,
+    new URL('../magphos_wasm.wasm', import.meta.url).href
+  ];
 
   for (const loaderUrl of loaderUrls) {
-    try {
-      const moduleFactory = (await import(loaderUrl)).default;
-      const wasmModule = await moduleFactory();
-      if (typeof wasmModule.compileMagPhos !== 'function') {
-        throw new Error('WASM module loaded, but compileMagPhos export is missing.');
+    for (const wasmUrl of wasmUrls) {
+      try {
+        const moduleFactory = (await import(loaderUrl)).default;
+        const wasmModule = await moduleFactory({
+          locateFile(path) {
+            if (path.endsWith('.wasm')) return wasmUrl;
+            return new URL(path, loaderUrl).href;
+          }
+        });
+        if (typeof wasmModule.compileMagPhos !== 'function') {
+          throw new Error('WASM module loaded, but compileMagPhos export is missing.');
+        }
+        wasmCompiler = wasmModule.compileMagPhos;
+        wasmLoadError = null;
+        return;
+      } catch (err) {
+        attempts.push(`${loaderUrl} + ${wasmUrl}: ${err.message}`);
       }
-      wasmCompiler = wasmModule.compileMagPhos;
-      wasmLoadError = null;
-      return;
-    } catch (err) {
-      attempts.push(`${loaderUrl}: ${err.message}`);
     }
   }
 
