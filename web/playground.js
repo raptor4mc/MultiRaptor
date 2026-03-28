@@ -5,6 +5,12 @@ let wasmLoadError = null;
 const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
 
 const loadedClassicScripts = new Set();
+const SCRIPT_BASE_URL = (() => {
+  const scriptSrc = document.currentScript && document.currentScript.src
+    ? document.currentScript.src
+    : window.location.href;
+  return new URL('.', scriptSrc).href;
+})();
 
 function trim(v) {
   return v.trim();
@@ -39,8 +45,8 @@ async function loadWasmCompiler() {
   const wasmCandidates = IS_FILE_PROTOCOL
     ? [null]
     : ['./magphos_wasm.wasm', './magphos.wasm'];
-  const loaderUrls = loaderCandidates.map((path) => new URL(path, import.meta.url).href);
-  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, import.meta.url).href : null));
+  const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
+  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
   for (const loaderUrl of loaderUrls) {
     const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
@@ -496,14 +502,12 @@ async function init() {
   syncEditorFromFile();
   renderFileList();
 
-  if (window.location.protocol === 'file:') {
+  if (IS_FILE_PROTOCOL) {
     outputEl.textContent = [
-      'Web Studio cannot run from file:// URLs.',
-      'Start a local static server, then open web/playground.html over http://.',
-      'Example: python3 -m http.server 8000',
-      'Then visit: http://localhost:8000/web/playground.html'
+      'Running from file:// URL.',
+      'Attempting to use web/magphos_wasm_singlefile.js first.',
+      'Tip: if compile fails, run ./tools/scripts/build_web.sh and retry.'
     ].join('\n');
-    return;
   }
 
   await loadWasmCompiler();
