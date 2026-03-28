@@ -35,7 +35,7 @@ async function loadWasmCompiler() {
   const attempts = [];
   const loaderCandidates = IS_FILE_PROTOCOL
     ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
-    : ['./magphos_wasm.js'];
+    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
   const wasmCandidates = IS_FILE_PROTOCOL
     ? [null]
     : ['./magphos_wasm.wasm', './magphos.wasm'];
@@ -43,22 +43,34 @@ async function loadWasmCompiler() {
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, import.meta.url).href : null));
 
   for (const loaderUrl of loaderUrls) {
+    const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
+    try {
+      if (!IS_FILE_PROTOCOL) {
+        await validateArtifactSize(loaderUrl, isSingleFileLoader ? 1024 : 64, 'JavaScript loader');
+      }
+    } catch (err) {
+      attempts.push(`${loaderUrl}: ${err.message}`);
+      continue;
+    }
+
+    if (IS_FILE_PROTOCOL || isSingleFileLoader) {
+      try {
+        const classicModule = await loadClassicScriptModule(loaderUrl, null);
+        if (typeof classicModule.compileMagPhos !== 'function') {
+          throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
+        }
+        wasmCompiler = classicModule.compileMagPhos;
+        wasmLoadError = null;
+        return;
+      } catch (err) {
+        attempts.push(`${loaderUrl}: ${err.message}`);
+        continue;
+      }
+    }
+
     for (const wasmUrl of wasmUrls) {
       try {
-        if (!IS_FILE_PROTOCOL) {
-          await validateArtifactSize(loaderUrl, 64, 'JavaScript loader');
-          if (wasmUrl) await validateArtifactSize(wasmUrl, 1024, 'WASM binary');
-        }
-
-        if (IS_FILE_PROTOCOL) {
-          const classicModule = await loadClassicScriptModule(loaderUrl, null);
-          if (typeof classicModule.compileMagPhos !== 'function') {
-            throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
-          }
-          wasmCompiler = classicModule.compileMagPhos;
-          wasmLoadError = null;
-          return;
-        }
+        if (wasmUrl) await validateArtifactSize(wasmUrl, 1024, 'WASM binary');
 
         let moduleFactory = null;
         const imported = await import(loaderUrl);
@@ -474,7 +486,7 @@ async function init() {
       'WASM compiler not found.',
       IS_FILE_PROTOCOL
         ? 'Expected file:// loader: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js'
-        : 'Expected loader: web/magphos_wasm.js',
+        : 'Expected loader: web/magphos_wasm.js or web/magphos_wasm_singlefile.js',
       IS_FILE_PROTOCOL
         ? 'Tip: run ./tools/scripts/build_web.sh to generate the single-file loader for direct local opening.'
         : 'Expected wasm: web/magphos_wasm.wasm or web/magphos.wasm',
