@@ -1,20 +1,82 @@
-# MoPr
+# MagPhos
 
-MultiRaptor is a tiny experimental language that tries to feel **easier than Python** while keeping a **JavaScript-like execution model**.
+MagPhos is the language name.
 
-This repo includes:
+- File extension / short name: **`.mp`**
+- Meaning of `mp`: **MagnesiumPhosphorus**
 
-- A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
-- A browser **HTML playground** (`web/playground.html`) to write and run MoPr instantly.
+MagPhos is built to be **download-first** (local compiler on your machine), with a **web playground bonus** for quick testing and Chromebook-friendly access.
 
-## Why MoPr (mp)
-Well, i dont have any reason other then its easier then python, and are built on top of c++ so it might be faster then python, and well, its error searching is top tier, and you can make basicly any game inside of it!
+## What is in this repository
 
-## Syntax (simple + readable)
+- Native compiler source: `src/MagPhos_compiler.cpp`
+- Web playground: `web/playground.html`
+- Example MagPhos program: `main.mp`
+
+## How to download and make it work (current project)
+
+### 1) Download the project
+
+```bash
+git clone <your-repo-url>
+cd MultiRaptor
+```
+
+Or download ZIP from GitHub and extract it.
+
+### 2) Build the compiler
+
+#### Recommended (CMake)
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Compiler output:
+
+- Linux/macOS: `build/MagPhos_compiler`
+- Windows (multi-config): `build/Release/MagPhos_compiler.exe`
+
+#### One-file build (no CMake)
+
+```bash
+g++ -std=c++17 -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp
+```
+
+### 3) Compile and run your `.mp` code
+
+```bash
+./build/MagPhos_compiler main.mp output.js
+node output.js
+```
+
+If you used one-file build:
+
+```bash
+./MagPhos_compiler main.mp output.js
+node output.js
+```
+
+### 4) Optional local install
+
+```bash
+cmake --install build --prefix .local
+```
+
+Binary path after install:
+
+- `.local/bin/MagPhos_compiler`
+
+## Browser playground (bonus mode)
+
+Open `web/playground.html` directly in a browser, write MagPhos code, then click **Compile** and **Run**.
+
+This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
+
+## Syntax overview
 
 ```txt
-# comments use #, //, or /!
-//! starts a multi-line comment block (end with !/)
 var x = 10
 const name = "Raptor"
 set x = x + 1
@@ -28,57 +90,14 @@ when x > 5 {
 } else {
   print "small"
 }
-
-repeat while x < 20 {
-  set x = x + 2
-}
 ```
 
 Supported statements:
 
-- `var name = expr` (create variable)
-- `const name = expr` (constant)
-- `set name = expr` (change variable value)
-- `print expr`
-- `ask "question" -> name` (read user input in browser)
-- `if condition { ... }`
-- `when condition { ... }` (alias for `if`)
-- `else { ... }`
-- `loop count { ... }` (counted loop)
-- `repeat while condition { ... }` (while loop)
-- `fn name(args) { ... }`
-- `return expr`
-- `stop` (`break`) and `next` (`continue`)
-- Comments: `/! one line`, `//!` ... `!/`, plus `#` and `//`
-
-## Build the C++ compiler
-
-```bash
-g++ -std=c++17 -O2 -o multiraptor src/multiraptor_compiler.cpp
-```
-
-## Compile a MultiRaptor program
-
-```bash
-./multiraptor main.mp output.js
-node output.js
-```
-
-## Roadmap
-We got this plan on first making this a globaly used language, then keep developing it till i get bored, then il give it to a colluege and i will sleep
-
-## Browser playground
-
-Open:
-
-```txt
-web/playground.html
-```
-
-in your browser and click **Compile** / **Run**.
-
-## Notes on performance
-
-- The compiler is a fast line-based parser + direct JS emitter.
-- Runtime speed follows JavaScript engine performance.
-- You can later compile this C++ compiler to **WebAssembly** for sharing one compiler core in browser/native.
+- `var`, `const`, `set`
+- `print`, `ask "question" -> name`
+- `if`, `when`, `else`
+- `loop`, `repeat while`
+- `fn`, `return`
+- `stop`, `next`
+- comments: `/!`, `//! ... !/`, `#`, `//`
