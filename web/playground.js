@@ -29,15 +29,18 @@ function ensureProjectShape(raw) {
 }
 
 async function loadWasmCompiler() {
+  const loaderUrl = new URL('./magphos_wasm.js', import.meta.url).href;
+
   try {
-    const moduleFactory = (await import('./magphos_wasm.js')).default;
+    const moduleFactory = (await import(loaderUrl)).default;
     const wasmModule = await moduleFactory();
     if (typeof wasmModule.compileMagPhos !== 'function') {
       throw new Error('WASM module loaded, but compileMagPhos export is missing.');
     }
     wasmCompiler = wasmModule.compileMagPhos;
+    wasmLoadError = null;
   } catch (err) {
-    wasmLoadError = err.message;
+    wasmLoadError = `${loaderUrl}: ${err.message}`;
   }
 }
 
@@ -301,7 +304,19 @@ document.getElementById('importInput').addEventListener('change', async (event) 
 async function init() {
   syncEditorFromFile();
   renderFileList();
+
   await loadWasmCompiler();
+
+  if (!wasmCompiler) {
+    outputEl.textContent = [
+      'WASM compiler not found.',
+      'Expected: web/magphos_wasm.js and web/magphos_wasm.wasm',
+      'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
+      wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
+    ].filter(Boolean).join('\n');
+    return;
+  }
+
   document.getElementById('compileBtn').click();
 }
 
