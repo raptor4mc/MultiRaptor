@@ -88,6 +88,18 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Real runtime model (new)
+
+MagPhos now has language-owned runtime behavior rather than relying on JS semantics:
+
+- custom `Value` representation with explicit `TypeKind`
+- hierarchical `Environment` scopes (`define`, `assign`, `get`)
+- function registration and call arity checks in `RuntimeEngine`
+- lexical scope handling for blocks/functions
+- dedicated runtime error types (`RuntimeErrorCode` + `RuntimeError`)
+
+Core runtime execution is implemented in `src/runtime/engine.{h,cpp}` and error types in `src/runtime/errors.{h,cpp}`.
+
 ## Error messages (new)
 
 Parser diagnostics now include beginner-friendly context:

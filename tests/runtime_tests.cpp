@@ -6,7 +6,11 @@
 #include <vector>
 
 #include "interpreter/interpreter.h"
+#include "lexer/lexer.h"
+#include "parser/parser.h"
+#include "runtime/engine.h"
 #include "runtime/environment.h"
+#include "runtime/errors.h"
 #include "runtime/module_system.h"
 #include "runtime/stdlib.h"
 #include "runtime/value.h"
@@ -22,6 +26,9 @@ int main() {
 
     using magphos::runtime::ArrayValue;
     using magphos::runtime::ObjectValue;
+    using magphos::runtime::RuntimeEngine;
+    using magphos::runtime::RuntimeError;
+    using magphos::runtime::RuntimeErrorCode;
     using magphos::runtime::StandardLibrary;
     using magphos::runtime::TypeKind;
     using magphos::runtime::Value;
@@ -64,31 +71,31 @@ int main() {
     magphos::runtime::Environment env;
     env.set("answer", numberValue);
     assert(env.get("answer").asNumber() == 42.0);
-    assert(env.get("missing").isNull());
+    bool missingRaised = false;
+    try {
+        (void)env.get("missing");
+    } catch (const RuntimeError& ex) {
+        missingRaised = ex.code() == RuntimeErrorCode::NameError;
+    }
+    assert(missingRaised);
 
     StandardLibrary stdlib;
-
-    // Core built-ins.
     assert(stdlib.call("len", {stringValue}).asNumber() == 7.0);
     assert(stdlib.call("type", {arrayValue}).asString() == "array");
     assert(stdlib.call("toString", {enumValue}).asString() == "Color.Red");
     assert(stdlib.call("random", {}).type() == TypeKind::Number);
     assert(stdlib.call("time", {}).type() == TypeKind::Number);
-
-    // Math built-ins.
     assert(std::abs(stdlib.call("sin", {Value(0.0)}).asNumber()) < 1e-9);
     assert(std::abs(stdlib.call("cos", {Value(0.0)}).asNumber() - 1.0) < 1e-9);
     assert(stdlib.call("sqrt", {Value(9.0)}).asNumber() == 3.0);
     assert(stdlib.call("abs", {Value(-5.0)}).asNumber() == 5.0);
 
-    // String built-ins.
     const auto splitResult = stdlib.call("split", {Value(std::string("a,b,c")), Value(std::string(","))});
     assert(splitResult.type() == TypeKind::Array);
     assert(splitResult.asArray().elements.size() == 3);
     assert(stdlib.call("replace", {Value(std::string("aa")), Value(std::string("a")), Value(std::string("b"))}).asString() == "bb");
     assert(stdlib.call("substring", {Value(std::string("magphos")), Value(3.0), Value(3.0)}).asString() == "pho");
 
-    // Array built-ins.
     const auto pushed = stdlib.call("push", {arrayValue, Value(3.0)});
     assert(pushed.asArray().elements.size() == 3);
     const auto popped = stdlib.call("pop", {pushed});
@@ -98,12 +105,10 @@ int main() {
     const auto filtered = stdlib.call("filter", {pushed, Value(std::string("gt")), Value(1.5)});
     assert(filtered.asArray().elements.size() == 2);
 
-    // File I/O built-ins.
     const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
 
-    // Module/import system.
     magphos::runtime::ModuleSystem moduleSystem;
     const std::string modBase = "/tmp/magphos_modules";
     std::filesystem::create_directories(modBase + "/game");
@@ -124,6 +129,38 @@ int main() {
     assert(deps.size() == 2);
     assert(deps[0] == "game.engine");
     assert(deps[1] == "utils.mp");
+
+    // Real runtime: function calling + scoping + runtime error types.
+    const std::string runtimeSource = R"(
+fn add(a, b) {
+  return a + b
+}
+x = add(5, 7)
+)";
+    magphos::lexer::Lexer runtimeLexer;
+    magphos::parser::Parser runtimeParser;
+    const auto runtimeParse = runtimeParser.parse(runtimeLexer.tokenize(runtimeSource));
+    assert(runtimeParse.errors.empty());
+
+    RuntimeEngine engine;
+    engine.loadProgram(runtimeParse.program);
+    assert(engine.globals()->get("x").asNumber() == 12.0);
+
+    const std::string aritySource = R"(
+fn add(a, b) {
+  return a + b
+}
+x = add(1)
+)";
+    const auto arityParse = runtimeParser.parse(runtimeLexer.tokenize(aritySource));
+    bool arityRaised = false;
+    try {
+        RuntimeEngine badEngine;
+        badEngine.loadProgram(arityParse.program);
+    } catch (const RuntimeError& ex) {
+        arityRaised = ex.code() == RuntimeErrorCode::ArityError;
+    }
+    assert(arityRaised);
 
     return 0;
 }
