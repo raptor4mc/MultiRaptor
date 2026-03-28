@@ -457,6 +457,16 @@ async function init() {
   syncEditorFromFile();
   renderFileList();
 
+  if (window.location.protocol === 'file:') {
+    outputEl.textContent = [
+      'Web Studio cannot run from file:// URLs.',
+      'Start a local static server, then open web/playground.html over http://.',
+      'Example: python3 -m http.server 8000',
+      'Then visit: http://localhost:8000/web/playground.html'
+    ].join('\n');
+    return;
+  }
+
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
