@@ -255,9 +255,10 @@ Supported top-level declarations and statements (today):
 
 - modules: `import`, `use`
 - declarations: `fn`, `var`, `const`
+- control flow: `if` / `else`, `while`, `for (...)`
 - statements: assignment (`name = expr`), `print`, `return`, block statements (`{ ... }`)
 - expression statements (e.g. `greet(name)`)
-- expression forms: numbers, strings, identifiers, unary `-`, `+`/`-`, `*`/`/`, grouping, calls
+- expression forms: numbers, strings, booleans, `null`, identifiers, unary (`-`, `not`, `!`), arithmetic, comparisons, equality, logical (`and` / `or`), grouping, calls
 - terminators: newline or `;`
 
-Not implemented yet in parser/lexer: `set`, `ask`, `if`/`when`/`else`, `loop`, `repeat while`, `stop`, `next`, or comment syntax.
+Not implemented yet in parser/lexer: `set`, `ask`, `when`, `loop`, `repeat while`, `stop`, `next`, or comment syntax.

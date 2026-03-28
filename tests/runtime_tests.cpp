@@ -148,6 +148,19 @@ fn add(a, b) {
   return a + b
 }
 x = add(5, 7)
+flag = true and not false
+if flag and x == 12 {
+  x = x + 1
+} else {
+  x = 0
+}
+while x < 20 {
+  x = x + 2
+}
+sum = 0
+for (var i = 0; i < 3; i = i + 1) {
+  sum = sum + i
+}
 )";
     magphos::lexer::Lexer runtimeLexer;
     magphos::parser::Parser runtimeParser;
@@ -156,7 +169,9 @@ x = add(5, 7)
 
     RuntimeEngine engine;
     engine.loadProgram(runtimeParse.program);
-    assert(engine.globals()->get("x").asNumber() == 12.0);
+    assert(engine.globals()->get("x").asNumber() == 21.0);
+    assert(engine.globals()->get("flag").asBoolean());
+    assert(engine.globals()->get("sum").asNumber() == 3.0);
 
     const std::string aritySource = R"(
 fn add(a, b) {

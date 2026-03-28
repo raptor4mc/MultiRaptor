@@ -37,6 +37,8 @@ class RuntimeEngine {
     Value callFunctionByName(const std::string& name, const std::vector<Value>& args);
     Value evalBinary(const std::string& op, const Value& left, const Value& right);
     Value evalUnary(const std::string& op, const Value& value);
+    bool isTruthy(const Value& value) const;
+    bool valuesEqual(const Value& left, const Value& right) const;
 };
 
 } // namespace magphos::runtime
