@@ -216,6 +216,33 @@ function compileMagPhos(source) {
   return wasmCompiler(source);
 }
 
+function compileWithFallbackTranspiler(source) {
+  const lines = source.split('\n');
+  const out = [
+    '// Fallback compiler mode (WASM unavailable).',
+    '// Behavior may differ from native MagPhos compiler.'
+  ];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    if (line.startsWith('fn ')) {
+      out.push(rawLine.replace(/\bfn\b/, 'function'));
+      continue;
+    }
+
+    if (line.startsWith('print ')) {
+      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
+      continue;
+    }
+
+    out.push(rawLine);
+  }
+
+  return out.join('\n');
+}
+
 function createDefaultProject() {
   const template = document.getElementById('defaultProgram').content.textContent;
   return {
@@ -482,8 +509,10 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
+    wasmCompiler = compileWithFallbackTranspiler;
     outputEl.textContent = [
       'WASM compiler not found.',
+      'Running in fallback transpiler mode.',
       IS_FILE_PROTOCOL
         ? 'Expected file:// loader: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js'
         : 'Expected loader: web/magphos_wasm.js or web/magphos_wasm_singlefile.js',
@@ -493,7 +522,6 @@ async function init() {
       'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n');
-    return;
   }
 
   document.getElementById('compileBtn').click();
