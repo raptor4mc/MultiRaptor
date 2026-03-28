@@ -116,6 +116,14 @@ pre {
 
 .file-list li:last-child { border-bottom: none; }
 
+
+.folder-item {
+  padding: 0.45rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.18);
+}
+
 .file-btn {
   display: block;
   width: 100%;

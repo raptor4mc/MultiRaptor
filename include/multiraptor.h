@@ -12,6 +12,7 @@
 #include "runtime/value.h"
 #include "runtime/stdlib.h"
 #include "runtime/module_system.h"
+#include "magphos_compiler.h"
 #include "utils/file_utils"
 #include "utils/string_utils.h"
 
