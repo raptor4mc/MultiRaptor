@@ -94,7 +94,22 @@ Web Studio includes a Chromebook-friendly coding workspace with:
 
 To run the web compiler path, build with Emscripten (`-DMAGPHOS_BUILD_WASM=ON`). The WASM target now emits `magphos_wasm.js/.wasm` directly into `web/` so browser and downloadable flows share the same compiler artifacts.
 
-For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and `magphos_wasm.wasm`). If they are missing, the playground cannot compile because it only uses the C++ WASM compiler path.
+Recommended isolated web build (keeps normal Linux/macOS/Windows download workflow untouched):
+
+```bash
+emcmake cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF -DMAGPHOS_BUILD_REPL=OFF
+cmake --build build-web
+```
+
+Then host the repo (or just the `web/` folder) on any static site and open:
+
+```txt
+.../web/playground.html
+```
+
+This gives the same C++ compiler pipeline in-browser (compiled to WASM) while keeping native download builds separate in `build/`.
+
+For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), and it can boot both modern Emscripten module output and classic global-`Module` output from `magphos_wasm.js`.
 
 If you host with **GitHub Pages**, enable **Settings → Pages → Build and deployment → Source = GitHub Actions**. This repo includes `.github/workflows/deploy-web-playground.yml` to build `web/magphos_wasm.js/.wasm` on each push to `main` and deploy them so `https://<user>.github.io/<repo>/web/playground.html` works without manual commits of generated artifacts.
 
@@ -111,6 +126,10 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/roadmap.md`
 - `docs/repl.md`
 - `docs/game_api.md`
+
+## Sample programs (new)
+
+Markdown-based sample snippets are in `samples/` (9 files for quick copy/paste into the compiler or web studio).
 
 ## Package manager scaffold (new)
 
