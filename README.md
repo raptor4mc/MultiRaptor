@@ -123,6 +123,8 @@ Or use the helper script:
 
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
+Important: do **not** keep placeholder 1-byte wasm/js files in the repo. If the generated web artifacts are missing, rebuild them with `./tools/scripts/build_web.sh` before publishing.
+
 Then host the repo (or just the `web/` folder) on any static site and open:
 
 ```txt

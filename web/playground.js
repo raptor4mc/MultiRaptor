@@ -4,15 +4,12 @@ let wasmCompiler = null;
 let wasmLoadError = null;
 
 const JS_LOADER_CANDIDATES = [
-  './magphos_wasm.js',
-  '../magphos_wasm.js'
+  './magphos_wasm.js'
 ];
 
 const WASM_BINARY_CANDIDATES = [
   './magphos_wasm.wasm',
-  '../magphos_wasm.wasm',
   './magphos.wasm',
-  '../magphos.wasm'
 ];
 
 const loadedClassicScripts = new Set();
