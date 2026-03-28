@@ -87,6 +87,21 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
+
+## Parser architecture (new)
+
+MagPhos now includes a real front-end pipeline:
+
+- **Tokenizer (`src/lexer`)**: converts source text into typed tokens with line/column tracking.
+- **Parser (`src/parser`)**: builds an AST from tokens (functions, blocks, assignments, print/return, and expression statements).
+- **Expression grammar** with precedence:
+  - unary (`-x`)
+  - multiplicative (`*`, `/`)
+  - additive (`+`, `-`)
+  - grouping/calls (`(expr)`, `name(arg1, arg2)`)
+- **Statement terminators**: supports both semicolons (`;`) and newlines.
+- **Error recovery**: parser synchronizes at statement boundaries to continue collecting errors after malformed code.
+
 ## Syntax overview
 
 ```txt
