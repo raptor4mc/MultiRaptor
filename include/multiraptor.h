@@ -9,6 +9,7 @@
 #include "runtime/environment.h"
 #include "runtime/value.h"
 #include "runtime/stdlib.h"
+#include "runtime/module_system.h"
 #include "utils/file_utils"
 #include "utils/string_utils.h"
 

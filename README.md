@@ -88,6 +88,19 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Module / import system (new)
+
+MagPhos now parses module dependencies in source code:
+
+- `import math`
+- `import game.engine`
+- `use "utils.mp"`
+
+Runtime helpers in `src/runtime/module_system.{h,cpp}` resolve and load these forms:
+
+- dotted imports → `baseDir/game/engine.mp`
+- use paths → `baseDir/utils.mp`
+
 ## Standard library (new)
 
 MagPhos now exposes a native standard library surface:

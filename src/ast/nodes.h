@@ -23,6 +23,8 @@ enum class StmtKind {
     Return,
     Function,
     Block,
+    Import,
+    Use,
 };
 
 struct Expr {

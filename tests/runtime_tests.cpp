@@ -1,11 +1,13 @@
 #include <cassert>
 #include <cmath>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "interpreter/interpreter.h"
 #include "runtime/environment.h"
+#include "runtime/module_system.h"
 #include "runtime/stdlib.h"
 #include "runtime/value.h"
 
@@ -98,6 +100,28 @@ int main() {
     const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
+
+    // Module/import system.
+    magphos::runtime::ModuleSystem moduleSystem;
+    const std::string modBase = "/tmp/magphos_modules";
+    std::filesystem::create_directories(modBase + "/game");
+    stdlib.call("writeFile", {Value(modBase + "/math.mp"), Value(std::string("print 1\n"))});
+    stdlib.call("writeFile", {Value(modBase + "/game/engine.mp"), Value(std::string("print 2\n"))});
+    stdlib.call("writeFile", {Value(modBase + "/utils.mp"), Value(std::string("print 3\n"))});
+
+    assert(moduleSystem.resolveModulePath("game.engine", modBase) == modBase + "/game/engine.mp");
+    assert(moduleSystem.resolveUsePath("utils.mp", modBase) == modBase + "/utils.mp");
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
+    assert(moduleSystem.loadUsePath("utils.mp", modBase).find("print 3") != std::string::npos);
+
+    const std::string depSource = "import game.engine\nuse \"utils.mp\"\nprint 1\n";
+    magphos::lexer::Lexer depLexer;
+    magphos::parser::Parser depParser;
+    const auto depResult = depParser.parse(depLexer.tokenize(depSource));
+    const auto deps = moduleSystem.collectDependencies(depResult);
+    assert(deps.size() == 2);
+    assert(deps[0] == "game.engine");
+    assert(deps[1] == "utils.mp");
 
     return 0;
 }

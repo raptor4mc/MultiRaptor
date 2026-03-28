@@ -84,10 +84,49 @@ class ParserImpl {
     }
 
     std::optional<ast::Statement> parseDeclaration() {
+        if (matchKeyword("import")) {
+            return parseImportStatement();
+        }
+        if (matchKeyword("use")) {
+            return parseUseStatement();
+        }
         if (matchKeyword("fn")) {
             return parseFunctionDeclaration();
         }
         return parseStatement();
+    }
+
+
+    std::optional<ast::Statement> parseImportStatement() {
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected module name after 'import'.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Import;
+        statement.name = advance().lexeme;
+
+        while (match(TokenType::Dot)) {
+            if (!check(TokenType::Identifier)) {
+                return errorAtCurrent("Expected identifier after '.'.");
+            }
+            statement.name += "." + advance().lexeme;
+        }
+
+        consumeTerminator("Expected ';' or newline after import.");
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseUseStatement() {
+        if (!check(TokenType::String)) {
+            return errorAtCurrent("Expected quoted path after 'use'.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Use;
+        statement.name = advance().lexeme;
+        consumeTerminator("Expected ';' or newline after use.");
+        return statement;
     }
 
     std::optional<ast::Statement> parseFunctionDeclaration() {
@@ -380,7 +419,7 @@ class ParserImpl {
                 return;
             }
 
-            if (checkKeyword("fn") || checkKeyword("print") || checkKeyword("return")) {
+            if (checkKeyword("import") || checkKeyword("use") || checkKeyword("fn") || checkKeyword("print") || checkKeyword("return")) {
                 return;
             }
 
