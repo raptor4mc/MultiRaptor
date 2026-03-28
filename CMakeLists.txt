@@ -113,7 +113,7 @@ if(MAGPHOS_BUILD_WASM)
   if(NOT EMSCRIPTEN)
     message(WARNING "MAGPHOS_BUILD_WASM=ON but Emscripten was not detected. Skipping wasm target.")
   else()
-    add_executable(MagPhos_wasm src/MagPhos_compiler.cpp src/web/wasm_api.cpp)
+    add_executable(MagPhos_wasm src/web/wasm_api.cpp)
     if(TARGET magphos_core_static)
       target_link_libraries(MagPhos_wasm PRIVATE magphos_core_static)
     else()
@@ -125,10 +125,13 @@ if(MAGPHOS_BUILD_WASM)
       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/web"
     )
     target_link_options(MagPhos_wasm PRIVATE
+      "--bind"
       "-sEXPORT_ES6=1"
       "-sMODULARIZE=1"
+      "-sEXPORT_NAME=MagPhosWasmFactory"
       "-sENVIRONMENT=web"
       "-sALLOW_MEMORY_GROWTH=1"
+      "-sFILESYSTEM=0"
     )
   endif()
 endif()
