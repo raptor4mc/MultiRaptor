@@ -7,6 +7,9 @@ This repo includes:
 - A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
 - A browser **HTML playground** (`web/playground.html`) to write and run MultiRaptor instantly.
 
+## Why MultiRaptor (mp)
+Well, i dont have any reason other then its easier then python, and are built on top of c++ so it might be faster then python, and well, its error searching is top tier, and you can make basicly any game inside of it!
+
 ## Syntax (simple + readable)
 
 ```txt
@@ -60,6 +63,9 @@ g++ -std=c++17 -O2 -o multiraptor src/multiraptor_compiler.cpp
 ./multiraptor main.mp output.js
 node output.js
 ```
+
+## Roadmap
+We got this plan on first making this a globaly used language, then keep developing it till i get bored, then il give it to a colluege and i will sleep
 
 ## Browser playground
 
