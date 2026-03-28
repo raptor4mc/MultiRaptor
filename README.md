@@ -88,6 +88,24 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Runtime type system (new)
+
+MagPhos runtime now exposes explicit value categories:
+
+- `number`
+- `string`
+- `boolean`
+- `null`
+- `function`
+- `object/dict`
+- `array`
+- `map`
+- `class`
+- `struct`
+- `enum`
+
+These are represented in `src/runtime/value.h` via `TypeKind` and `Value`, and stored in `Environment` as typed values instead of plain strings.
+
 ## Parser architecture (new)
 
 MagPhos now includes a real front-end pipeline:

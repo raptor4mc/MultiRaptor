@@ -2,14 +2,14 @@
 
 namespace magphos::runtime {
 
-void Environment::set(const std::string& name, const std::string& value) {
-    values_[name] = value;
+void Environment::set(const std::string& name, Value value) {
+    values_[name] = std::move(value);
 }
 
-std::string Environment::get(const std::string& name) const {
+Value Environment::get(const std::string& name) const {
     const auto it = values_.find(name);
     if (it == values_.end()) {
-        return "";
+        return Value::makeNull();
     }
     return it->second;
 }
