@@ -83,7 +83,19 @@ Binary path after install:
 
 ## Browser playground (bonus mode)
 
-Open `web/playground.html` directly in a browser to use **MagPhos Web Studio**.
+Serve the repository (or just the `web/` folder) with a static HTTP server, then open `web/playground.html` to use **MagPhos Web Studio**.
+
+Example local server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+```txt
+http://localhost:8000/web/playground.html
+```
 
 Web Studio includes a Chromebook-friendly coding workspace with:
 
