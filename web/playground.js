@@ -3,6 +3,18 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmLoadError = null;
 
+const JS_LOADER_CANDIDATES = [
+  './magphos_wasm.js',
+  '../magphos_wasm.js'
+];
+
+const WASM_BINARY_CANDIDATES = [
+  './magphos_wasm.wasm',
+  '../magphos_wasm.wasm',
+  './magphos.wasm',
+  '../magphos.wasm'
+];
+
 function trim(v) {
   return v.trim();
 }
@@ -30,19 +42,22 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const loaderUrls = [
-    new URL('./magphos_wasm.js', import.meta.url).href,
-    new URL('../magphos_wasm.js', import.meta.url).href
-  ];
-  const wasmUrls = [
-    new URL('./magphos_wasm.wasm', import.meta.url).href,
-    new URL('../magphos_wasm.wasm', import.meta.url).href
-  ];
+  const loaderUrls = JS_LOADER_CANDIDATES.map((path) => new URL(path, import.meta.url).href);
+  const wasmUrls = WASM_BINARY_CANDIDATES.map((path) => new URL(path, import.meta.url).href);
 
   for (const loaderUrl of loaderUrls) {
     for (const wasmUrl of wasmUrls) {
       try {
-        const moduleFactory = (await import(loaderUrl)).default;
+        let moduleFactory = null;
+        const imported = await import(loaderUrl);
+        if (typeof imported.default === 'function') {
+          moduleFactory = imported.default;
+        } else if (typeof imported.MagPhosWasmFactory === 'function') {
+          moduleFactory = imported.MagPhosWasmFactory;
+        }
+        if (typeof moduleFactory !== 'function') {
+          throw new Error('WASM JS loader found, but no module factory export was detected.');
+        }
         const wasmModule = await moduleFactory({
           locateFile(path) {
             if (path.endsWith('.wasm')) return wasmUrl;
@@ -330,7 +345,8 @@ async function init() {
   if (!wasmCompiler) {
     outputEl.textContent = [
       'WASM compiler not found.',
-      'Expected: web/magphos_wasm.js and web/magphos_wasm.wasm',
+      'Expected loader: web/magphos_wasm.js',
+      'Expected wasm: web/magphos_wasm.wasm or web/magphos.wasm',
       'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n');

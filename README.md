@@ -109,7 +109,7 @@ Then host the repo (or just the `web/` folder) on any static site and open:
 
 This gives the same C++ compiler pipeline in-browser (compiled to WASM) while keeping native download builds separate in `build/`.
 
-For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and `magphos_wasm.wasm`). If they are missing, the playground cannot compile because it only uses the C++ WASM compiler path.
+For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), so either naming works as long as the JS loader stays `magphos_wasm.js`.
 
 If you host with **GitHub Pages**, enable **Settings → Pages → Build and deployment → Source = GitHub Actions**. This repo includes `.github/workflows/deploy-web-playground.yml` to build `web/magphos_wasm.js/.wasm` on each push to `main` and deploy them so `https://<user>.github.io/<repo>/web/playground.html` works without manual commits of generated artifacts.
 
