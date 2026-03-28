@@ -1,0 +1,63 @@
+name: Deploy Web Playground
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "web/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/deploy-web-playground.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.72
+
+      - name: Configure (WASM)
+        run: emcmake cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF -DMAGPHOS_BUILD_REPL=OFF
+
+      - name: Build (WASM)
+        run: cmake --build build-web --config Release
+
+      - name: Verify web artifacts
+        run: |
+          test -f web/playground.html
+          test -f web/playground.js
+          test -f web/playground.css
+          test -f web/magphos_wasm.js
+          test -f web/magphos_wasm.wasm
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

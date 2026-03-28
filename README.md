@@ -96,6 +96,8 @@ To run the web compiler path, build with Emscripten (`-DMAGPHOS_BUILD_WASM=ON`).
 
 For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and `magphos_wasm.wasm`). If they are missing, the playground cannot compile because it only uses the C++ WASM compiler path.
 
+If you host with **GitHub Pages**, enable **Settings → Pages → Build and deployment → Source = GitHub Actions**. This repo includes `.github/workflows/deploy-web-playground.yml` to build `web/magphos_wasm.js/.wasm` on each push to `main` and deploy them so `https://<user>.github.io/<repo>/web/playground.html` works without manual commits of generated artifacts.
+
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
