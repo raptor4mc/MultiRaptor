@@ -1,207 +1,102 @@
-MultiRaptor Private-Use License (MRPUL) v1.1
-Copyright © Raptor4 / MultiPixel / MultiRaptor / Hugo Arusell
+MultiRaptor Open Source License (MOSL) v1.1
+Copyright © Hugo Arusell (Raptor4 / MultiPixel / MultiRaptor)
 
-Permission is hereby granted to any individual to view, use, fork, and modify the source code contained in this repository, subject to the following conditions:
+---
 
-🟥 0. All Rights Reserved Except Where Explicitly Granted
-All rights not expressly granted in this license are reserved by the owner.
-If this license does not explicitly allow an action, that action is forbidden.
+## 1. Permission
 
-1. Private Use Only
-You may use, modify, and experiment with the code privately.
-You may not publicly redistribute modified or unmodified versions of the code.
+Permission is hereby granted to any person to:
 
-2. No Public Distribution
-You may not:
+* Use the software
+* Modify the software
+* Distribute the software
+* Include it in personal, open-source, or commercial projects
 
-Publish the code publicly
+---
 
-Upload it to public repositories
+## 2. Required Attribution
 
-Share it publicly in any form
+All copies, forks, and projects using this software must include clear and visible credit:
 
-Distribute modified or unmodified versions to the public
+> "MultiRaptor was originally created by Hugo Arusell (Raptor4 / MultiPixel)"
 
-If you wish to propose changes, you must do so through a pull request to the original repository.
+This credit must:
 
-🟥 2b. No Hosting, No Mirrors, No Public Access
-You may not host, mirror, or expose the code in any way that makes it publicly accessible, intentionally or accidentally.
-This includes:
+* Be easy to find (README, credits, about page, or documentation)
+* Not be removed, hidden, or altered
 
-Public Git servers
+---
 
-Public file servers
+## 3. Original Author Recognition
 
-Web hosting
+Hugo Arusell must always be identified as:
 
-Cloud storage with public links
+* The **original creator** of MultiRaptor
+* The **primary developer of the original project**
 
-Private use must remain private.
+You may add your own name as a contributor or modifier, but you may NOT:
 
-🟥 2c. No Extractable Distribution
-You may not distribute any product, binary, executable, or compiled form that contains the MultiRaptor source code or any form of the code that can be reasonably extracted, decompiled, reverse‑engineered, or recovered.
+* Claim to be the original creator
+* Present the project as entirely your own
 
-This includes, but is not limited to:
+---
 
-Embedding MultiRaptor in a public binary
+## 4. Modifications
 
-Shipping an executable that contains the interpreter or runtime
+You are allowed to modify and extend the software, but:
 
-Distributing obfuscated or minified versions
+* You must clearly state that changes were made
+* You must not misrepresent the original project
 
-Distributing bytecode or intermediate forms
+Example:
 
-Any distribution where the MultiRaptor code can be reconstructed with reasonable effort
+> "Modified version of MultiRaptor (originally by Hugo Arusell)"
 
-If MultiRaptor is included inside a public project, it must be included only as a private, non‑extractable component, and the MultiRaptor code itself must not be accessible, bundled, or recoverable.
+---
 
-3. No Commercial Use
-You may not:
+## 5. Naming Rules
 
-Sell the code
+* The name **“MultiRaptor”** must not be used to misrepresent ownership
+* Forks must clearly indicate they are forks or modified versions
 
-Use the code in a commercial product
+Examples:
+✔ MultiRaptor (official)
+✔ MultiRaptor – Extended
+✔ MultiRaptor (Community Fork)
 
-Use the code to generate profit
+Not allowed:
+✘ Renaming it and claiming it as a completely original language
 
-License the code to others
+---
 
-This license grants zero commercial rights.
+## 6. License Preservation
 
-🟥 3b. Allowed Use Inside Public Projects (Important Clarification)
-You may use this code inside a public project (such as a game, OS, engine, or Minecraft clone), as long as:
+This license must be included in all copies and substantial portions of the software.
 
-The MultiRaptor code itself is not redistributed publicly
+---
 
-The MultiRaptor code is not modified and released publicly
+## 7. Warranty
 
-The MultiRaptor code keeps its original name and identity
+The software is provided “as is”, without warranty of any kind.
 
-Any modifications remain private
+---
 
-You do not rebrand, rename, or claim ownership of the code
+## 8. Summary (Non-Legal)
 
-Example allowed use:
-✔ Using MultiRaptor internally inside a public game
-✔ Using MultiRaptor as a scripting engine inside a public OS
-✔ Using MultiRaptor as a private dependency in a public project
+You can:
+✔ Use it
+✔ Modify it
+✔ Share it
+✔ Build on it
 
-Example forbidden use:
-✘ Publishing MultiRaptor’s source code
-✘ Renaming it to “ScrappyLang” and releasing it
-✘ Releasing modified versions
-✘ Bundling the source code in a downloadable package
+You must:
+✔ Credit the original creator
+✔ Keep authorship clear
 
-🟥 3d. No Machine Learning or AI Training Use
-You may not use the code, in whole or in part, for:
+You cannot:
+✘ Claim you created MultiRaptor
+✘ Remove attribution
 
-Training machine learning models
-
-Fine‑tuning existing models
-
-Evaluating AI systems
-
-Automated code generation
-
-Dataset creation
-
-Embedding into LLMs or AI pipelines
-
-This restriction applies regardless of whether the model or system is public, private, commercial, or experimental.
-
-Educational Exception
-Certified educational institutions (such as schools, universities, or accredited training programs) may use the code for teaching and learning purposes only, provided that:
-
-The code is not published or redistributed
-
-Students do not publicly release modified versions
-
-The code is not used for machine learning, dataset creation, or AI training
-
-All use remains non‑commercial
-
-This exception does not grant any rights to publish, distribute, or commercialize the code.
-
-🟥 5c. No Public Derivative Languages or Systems
-You may not create, publish, or distribute any programming language, tool, framework, or system that is derived from, based on, or inspired by MultiRaptor, even if:
-
-The MultiRaptor source code is not directly included
-
-The derivative language is rewritten from scratch
-
-The derivative language uses different syntax or branding
-
-The derivative language is claimed to be “new”
-
-Any derivative language or system must remain private and may not be released publicly under any circumstances.
-
-This prevents:
-
-Rebranding MultiRaptor into a new language
-
-Creating a “ScrappyLang” or similar fork
-
-Publishing a modified or rewritten version
-
-Using MultiRaptor as the foundation for a public tool or engine
-
-All derivative works remain private and under this license.
-
-4. Ownership
-All rights, title, and ownership of the code remain exclusively with:
-
-Raptor4 / MultiPixel / MultiRaptor / Hugo Arusell
-
-This ownership is permanent unless explicitly stated otherwise by the owner.
-
-5. No Relicensing
-You may not:
-
-Re-license the code
-
-Apply a different license
-
-Claim authorship or ownership
-
-All derivative works remain under this license as long as they remain private.
-
-🟥 5b. No Circumvention
-You may not attempt to bypass, avoid, or exploit loopholes in this license.
-Any attempt to circumvent these terms is considered a violation.
-
-6. Pull Requests
-If you wish to contribute improvements or changes, you may submit a pull request.
-Acceptance of contributions is at the sole discretion of the owner.
-
-🟥 6b. Enforcement Clause
-Any violation of this license constitutes copyright infringement.
-The owner reserves the right to pursue legal remedies, including:
-
-Revocation of all granted rights
-
-DMCA takedowns
-
-Legal action under applicable copyright law
-
-🟥 7. Termination
-If you violate any part of this license:
-
-Your rights under this license terminate immediately
-
-You must stop using the code
-
-You must delete all copies in your possession
-
-You may not request reinstatement
-
-Termination does not require notice.
-
-🟥 8. Governing Law & Jurisdiction
-This license is governed by the laws of Sweden.
-Any disputes shall be resolved exclusively in Swedish courts unless the owner specifies otherwise.
-
-9. No Warranty
-The code is provided “as is,” without warranty of any kind.
-The owner is not liable for any damages arising from use of the code.
+---
 
 END OF LICENSE
