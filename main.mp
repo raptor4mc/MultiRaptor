@@ -1,7 +1,7 @@
 //!
 this is a block comment
 !/
-/! MoPr example (.mp)
+/! MagPhos example (.mp)
 var x = 5
 var y = 7
 var total = 0
