@@ -1,6 +1,7 @@
 #include "parser/parser.h"
 
 #include <memory>
+#include <sstream>
 #include <optional>
 #include <utility>
 
@@ -38,7 +39,30 @@ class ParserImpl {
   private:
     const std::vector<Token>& tokens_;
     std::size_t current_ = 0;
-    ParseError lastError_{1, 1, "Unknown parse error"};
+    ParseError lastError_{1, 1, "Unknown parse error", "Check the syntax near this token."};
+
+
+    static std::string makeHint(const std::string& message) {
+        if (message.find("Expected expression") != std::string::npos) {
+            return "Did you forget a value, identifier, or parentheses?";
+        }
+        if (message.find("Expected ';' or newline") != std::string::npos) {
+            return "End the statement with a newline or ';'.";
+        }
+        if (message.find("Expected ')'") != std::string::npos) {
+            return "Check for an opening '(' without a matching closing ')'.";
+        }
+        if (message.find("Expected '}'") != std::string::npos) {
+            return "Check for a block opened with '{' that was never closed.";
+        }
+        if (message.find("Expected quoted path after 'use'") != std::string::npos) {
+            return "Use double quotes, for example: use \"utils.mp\"";
+        }
+        if (message.find("Expected module name after 'import'") != std::string::npos) {
+            return "Use identifiers like import math or import game.engine.";
+        }
+        return "Review the syntax near the marked position.";
+    }
 
     bool isAtEnd() const { return peek().type == TokenType::EndOfFile; }
 
@@ -402,13 +426,13 @@ class ParserImpl {
 
     std::optional<ast::Statement> errorAtCurrent(const std::string& message) {
         const Token& token = peek();
-        lastError_ = ParseError{token.line, token.column, message};
+        lastError_ = ParseError{token.line, token.column, message, makeHint(message)};
         return std::nullopt;
     }
 
     std::unique_ptr<ast::Expr> errorExprAtCurrent(const std::string& message) {
         const Token& token = peek();
-        lastError_ = ParseError{token.line, token.column, message};
+        lastError_ = ParseError{token.line, token.column, message, makeHint(message)};
         return nullptr;
     }
 
@@ -437,6 +461,52 @@ ParseResult Parser::parse(const std::vector<lexer::Token>& tokens) const {
 
 std::string normalizeLine(const std::string& line) {
     return magphos::utils::trim(line);
+}
+
+
+std::string renderError(const ParseError& error, const std::string& source) {
+    std::istringstream in(source);
+    std::string lineText;
+    std::size_t currentLine = 1;
+    while (currentLine <= error.line && std::getline(in, lineText)) {
+        if (currentLine == error.line) {
+            break;
+        }
+        ++currentLine;
+    }
+
+    if (lineText.empty()) {
+        lineText = "<line unavailable>";
+    }
+
+    const std::size_t caretColumn = error.column > 0 ? error.column - 1 : 0;
+    std::string caret(caretColumn, ' ');
+    caret += '^';
+
+    std::ostringstream out;
+    out << "Error at line " << error.line << ", column " << error.column << ":\n";
+    out << "  " << lineText << "\n";
+    out << "  " << caret << "\n";
+    out << error.message << "\n";
+    if (!error.hint.empty()) {
+        out << "Hint: " << error.hint;
+    }
+    return out.str();
+}
+
+std::string renderErrors(const std::vector<ParseError>& errors, const std::string& source) {
+    if (errors.empty()) {
+        return "";
+    }
+
+    std::ostringstream out;
+    for (std::size_t i = 0; i < errors.size(); ++i) {
+        if (i > 0) {
+            out << "\n\n";
+        }
+        out << renderError(errors[i], source);
+    }
+    return out.str();
 }
 
 } // namespace magphos::parser

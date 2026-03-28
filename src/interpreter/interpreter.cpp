@@ -1,7 +1,5 @@
 #include "interpreter/interpreter.h"
 
-#include <sstream>
-
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 
@@ -22,10 +20,7 @@ std::string analyzeProgram(const std::string& source) {
         return "ok";
     }
 
-    std::ostringstream out;
-    out << "errors=" << result.errors.size() << " first=" << result.errors.front().line << ':'
-        << result.errors.front().column << ' ' << result.errors.front().message;
-    return out.str();
+    return parser::renderErrors(result.errors, source);
 }
 
 } // namespace magphos::interpreter

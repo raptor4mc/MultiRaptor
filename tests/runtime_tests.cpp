@@ -16,7 +16,9 @@ int main() {
     assert(ok == "ok");
 
     const std::string bad = magphos::interpreter::analyzeProgram("fn broken(a {\n");
-    assert(bad.rfind("errors=", 0) == 0);
+    assert(bad.find("Error at line") != std::string::npos);
+    assert(bad.find("^") != std::string::npos);
+    assert(bad.find("Hint:") != std::string::npos);
 
     using magphos::runtime::ArrayValue;
     using magphos::runtime::ObjectValue;

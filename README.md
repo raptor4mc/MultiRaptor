@@ -88,6 +88,26 @@ Open `web/playground.html` directly in a browser, write MagPhos code, then click
 This is support mode (especially useful on Chromebook). The primary workflow remains the downloadable local compiler.
 
 
+## Error messages (new)
+
+Parser diagnostics now include beginner-friendly context:
+
+- exact line + column
+- source line snippet
+- caret indicator (`^`)
+- clear message
+- actionable hint
+
+Example style:
+
+```text
+Error at line 12, column 9:
+  set x =
+          ^
+Expected expression.
+Hint: Did you forget a value, identifier, or parentheses?
+```
+
 ## Module / import system (new)
 
 MagPhos now parses module dependencies in source code:
