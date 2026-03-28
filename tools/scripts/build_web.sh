@@ -51,6 +51,12 @@ if [[ ! -s web/magphos_wasm.wasm ]]; then
   exit 1
 fi
 
+if [[ ! -s web/magphos_wasm_singlefile.js ]]; then
+  echo "Error: web/magphos_wasm_singlefile.js was not generated."
+  exit 1
+fi
+
 echo "Web artifacts ready:"
 echo "  - web/magphos_wasm.js ($(wc -c < web/magphos_wasm.js) bytes)"
 echo "  - web/magphos_wasm.wasm ($(wc -c < web/magphos_wasm.wasm) bytes)"
+echo "  - web/magphos_wasm_singlefile.js ($(wc -c < web/magphos_wasm_singlefile.js) bytes)"

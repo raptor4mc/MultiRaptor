@@ -142,6 +142,25 @@ if(MAGPHOS_BUILD_WASM)
         "${CMAKE_SOURCE_DIR}/web/magphos_wasm.wasm"
       VERBATIM
     )
+
+    add_executable(MagPhos_wasm_singlefile src/web/wasm_api.cpp)
+    if(TARGET magphos_core_static)
+      target_link_libraries(MagPhos_wasm_singlefile PRIVATE magphos_core_static)
+    else()
+      target_link_libraries(MagPhos_wasm_singlefile PRIVATE magphos_core_shared)
+    endif()
+    set_target_properties(MagPhos_wasm_singlefile PROPERTIES
+      OUTPUT_NAME "magphos_wasm_singlefile"
+      SUFFIX ".js"
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/web"
+    )
+    target_link_options(MagPhos_wasm_singlefile PRIVATE
+      "--bind"
+      "-sENVIRONMENT=web"
+      "-sALLOW_MEMORY_GROWTH=1"
+      "-sFILESYSTEM=0"
+      "-sSINGLE_FILE=1"
+    )
   endif()
 endif()
 
