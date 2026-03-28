@@ -1,84 +1,72 @@
-# MoPr
+# MagPhos
 
-MultiRaptor is a tiny experimental language that tries to feel **easier than Python** while keeping a **JavaScript-like execution model**.
+MagPhos is the language name.
 
-This repo includes:
+- File extension / short name: **`.mp`**
+- Meaning of `mp`: **MagnesiumPhosphorus**
 
-- A **C++ compiler** (`src/multiraptor_compiler.cpp`) that transpiles `.mp` files to JavaScript.
-- A browser **HTML playground** (`web/playground.html`) to write and run MoPr instantly.
+## Download places (versioned)
 
-## Why MoPr (mp)
-Well, i dont have any reason other then its easier then python, and are built on top of c++ so it might be faster then python, and well, its error searching is top tier, and you can make basicly any game inside of it!
+> A new row should be added on every update so users can download specific versions.
 
-## Syntax (simple + readable)
+| Version | Date | Download |
+|---|---|---|
+| v0.1.3 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/work.zip |
+| v0.1.2 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/main.zip |
+| v0.1.1 | 2026-03-28 | https://github.com/<owner>/<repo>/releases |
+
+Replace `<owner>/<repo>` with your GitHub repository path.
+
+## Folder structure
 
 ```txt
-# comments use #, //, or /!
-//! starts a multi-line comment block (end with !/)
-var x = 10
-const name = "Raptor"
-set x = x + 1
+/src
+  main.cpp
+  lexer/lexer.cpp, lexer.h
+  parser/parser.cpp, parser.h
+  ast/nodes.cpp, nodes.h
+  runtime/value.cpp, value.h, environment.cpp, environment.h
+  interpreter/interpreter.cpp, interpreter.h
+  utils/string_utils.cpp, file_utils.cpp, error.cpp
 
-fn greet(person) {
-  print "Hello " + person
-}
+/include
+  magphos.h
+  multiraptor.h
 
-when x > 5 {
-  print "big"
-} else {
-  print "small"
-}
+/platform
+  linux/, windows/, macos/, chromeos/, android/
 
-repeat while x < 20 {
-  set x = x + 2
-}
+/tests
+  lexer_tests.cpp, parser_tests.cpp, runtime_tests.cpp
+
+/examples
+  hello_world.mp, loops.mp, functions.mp
+
+/docs
+  syntax.md, roadmap.md, internals/*
+
+/web
+  playground.html, playground.js, playground.css
+
+/tools
+  scripts/*, generators/*
 ```
 
-Supported statements:
-
-- `var name = expr` (create variable)
-- `const name = expr` (constant)
-- `set name = expr` (change variable value)
-- `print expr`
-- `ask "question" -> name` (read user input in browser)
-- `if condition { ... }`
-- `when condition { ... }` (alias for `if`)
-- `else { ... }`
-- `loop count { ... }` (counted loop)
-- `repeat while condition { ... }` (while loop)
-- `fn name(args) { ... }`
-- `return expr`
-- `stop` (`break`) and `next` (`continue`)
-- Comments: `/! one line`, `//!` ... `!/`, plus `#` and `//`
-
-## Build the C++ compiler
+## Build and run
 
 ```bash
-g++ -std=c++17 -O2 -o multiraptor src/multiraptor_compiler.cpp
-```
-
-## Compile a MultiRaptor program
-
-```bash
-./multiraptor main.mp output.js
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/MagPhos_compiler main.mp output.js
 node output.js
 ```
 
-## Roadmap
-We got this plan on first making this a globaly used language, then keep developing it till i get bored, then il give it to a colluege and i will sleep
+## Optional manual compile
+
+```bash
+g++ -std=c++17 -Iinclude -Isrc -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp src/ast/nodes.cpp src/interpreter/interpreter.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/runtime/environment.cpp src/runtime/value.cpp src/utils/error.cpp src/utils/file_utils.cpp src/utils/string_utils.cpp src/main.cpp
+```
 
 ## Browser playground
 
-Open:
-
-```txt
-web/playground.html
-```
-
-in your browser and click **Compile** / **Run**.
-
-## Notes on performance
-
-- The compiler is a fast line-based parser + direct JS emitter.
-- Runtime speed follows JavaScript engine performance.
-- You can later compile this C++ compiler to **WebAssembly** for sharing one compiler core in browser/native.
+Open `web/playground.html` in your browser.
