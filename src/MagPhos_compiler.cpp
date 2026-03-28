@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "MoPr.h"
+#include "multiraptor.h"
 #include "utils/error.h"
 
 namespace {
@@ -94,7 +94,7 @@ class Compiler {
                 output += indentation(indent) + "if (" + match[1].str() + ") {\n";
                 indent += 1;
             } else if (std::regex_match(text, match, std::regex(R"(^loop\s+(.+)\s*\{$)"))) {
-                output += indentation(indent) + "for (let __mr_i = 0; __mr_i < (" + match[1].str() + "); __mr_i += 1) {\n";
+                output += indentation(indent) + "for (let __mp_i = 0; __mp_i < (" + match[1].str() + "); __mp_i += 1) {\n";
                 indent += 1;
             } else if (std::regex_match(text, match, std::regex(R"(^repeat\s+while\s+(.+)\s*\{$)"))) {
                 output += indentation(indent) + "while (" + match[1].str() + ") {\n";
