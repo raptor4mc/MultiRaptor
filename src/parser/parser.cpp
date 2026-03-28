@@ -189,6 +189,15 @@ class ParserImpl {
     }
 
     std::optional<ast::Statement> parseStatement() {
+        if (matchKeyword("if")) {
+            return parseIfStatement();
+        }
+        if (matchKeyword("while")) {
+            return parseWhileStatement();
+        }
+        if (matchKeyword("for")) {
+            return parseForStatement();
+        }
         if (matchKeyword("var") || matchKeyword("const")) {
             return parseVariableDeclaration();
         }
@@ -202,6 +211,142 @@ class ParserImpl {
             return parseBlockStatement();
         }
         return parseAssignmentOrExpression();
+    }
+
+    std::optional<ast::Statement> parseIfStatement() {
+        auto condition = parseExpression();
+        if (!condition) {
+            return std::nullopt;
+        }
+
+        auto thenBlock = parseBlockStatement();
+        if (!thenBlock.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::If;
+        statement.condition = std::move(condition);
+        statement.body = std::move(thenBlock->body);
+
+        if (matchKeyword("else")) {
+            auto elseBlock = parseBlockStatement();
+            if (!elseBlock.has_value()) {
+                return std::nullopt;
+            }
+            statement.elseBody = std::move(elseBlock->body);
+        }
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseWhileStatement() {
+        auto condition = parseExpression();
+        if (!condition) {
+            return std::nullopt;
+        }
+
+        auto block = parseBlockStatement();
+        if (!block.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::While;
+        statement.condition = std::move(condition);
+        statement.body = std::move(block->body);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseForStatement() {
+        if (!match(TokenType::LeftParen)) {
+            return errorAtCurrent("Expected '(' after 'for'.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::For;
+
+        if (!check(TokenType::Semicolon)) {
+            auto init = parseForInitializer();
+            if (!init.has_value()) {
+                return std::nullopt;
+            }
+            statement.initializer = std::make_unique<ast::Statement>(std::move(init.value()));
+        }
+
+        if (!match(TokenType::Semicolon)) {
+            return errorAtCurrent("Expected ';' after for-loop initializer.");
+        }
+
+        if (!check(TokenType::Semicolon)) {
+            statement.condition = parseExpression();
+            if (!statement.condition) {
+                return std::nullopt;
+            }
+        }
+
+        if (!match(TokenType::Semicolon)) {
+            return errorAtCurrent("Expected ';' after for-loop condition.");
+        }
+
+        if (!check(TokenType::RightParen)) {
+            auto increment = parseForInitializer();
+            if (!increment.has_value()) {
+                return std::nullopt;
+            }
+            statement.increment = std::make_unique<ast::Statement>(std::move(increment.value()));
+        }
+
+        if (!match(TokenType::RightParen)) {
+            return errorAtCurrent("Expected ')' after for-loop clauses.");
+        }
+
+        auto block = parseBlockStatement();
+        if (!block.has_value()) {
+            return std::nullopt;
+        }
+        statement.body = std::move(block->body);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseForInitializer() {
+        if (matchKeyword("var") || matchKeyword("const")) {
+            if (!check(TokenType::Identifier)) {
+                return errorAtCurrent("Expected variable name after declaration keyword.");
+            }
+            ast::Statement statement;
+            statement.kind = ast::StmtKind::Variable;
+            statement.name = advance().lexeme;
+            if (!match(TokenType::Equal)) {
+                return errorAtCurrent("Expected '=' after variable name.");
+            }
+            auto expr = parseExpression();
+            if (!expr) {
+                return std::nullopt;
+            }
+            statement.expression = std::move(expr);
+            return statement;
+        }
+
+        if (check(TokenType::Identifier) && peekNext().type == TokenType::Equal) {
+            ast::Statement statement;
+            statement.kind = ast::StmtKind::Assignment;
+            statement.name = advance().lexeme;
+            advance();
+            auto expr = parseExpression();
+            if (!expr) {
+                return std::nullopt;
+            }
+            statement.expression = std::move(expr);
+            return statement;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Expression;
+        statement.expression = parseExpression();
+        if (!statement.expression) {
+            return std::nullopt;
+        }
+        return statement;
     }
 
     std::optional<ast::Statement> parseBlockStatement() {
@@ -305,7 +450,97 @@ class ParserImpl {
         return tokens_[current_ + 1];
     }
 
-    std::unique_ptr<ast::Expr> parseExpression() { return parseAddition(); }
+    std::unique_ptr<ast::Expr> parseExpression() { return parseLogicalOr(); }
+
+    std::unique_ptr<ast::Expr> parseLogicalOr() {
+        auto left = parseLogicalAnd();
+        if (!left) {
+            return nullptr;
+        }
+
+        while (matchKeyword("or")) {
+            auto right = parseLogicalAnd();
+            if (!right) {
+                return nullptr;
+            }
+
+            auto binary = std::make_unique<ast::Expr>();
+            binary->kind = ast::ExprKind::Binary;
+            binary->value = "or";
+            binary->children.push_back(std::move(left));
+            binary->children.push_back(std::move(right));
+            left = std::move(binary);
+        }
+        return left;
+    }
+
+    std::unique_ptr<ast::Expr> parseLogicalAnd() {
+        auto left = parseEquality();
+        if (!left) {
+            return nullptr;
+        }
+
+        while (matchKeyword("and")) {
+            auto right = parseEquality();
+            if (!right) {
+                return nullptr;
+            }
+
+            auto binary = std::make_unique<ast::Expr>();
+            binary->kind = ast::ExprKind::Binary;
+            binary->value = "and";
+            binary->children.push_back(std::move(left));
+            binary->children.push_back(std::move(right));
+            left = std::move(binary);
+        }
+        return left;
+    }
+
+    std::unique_ptr<ast::Expr> parseEquality() {
+        auto left = parseComparison();
+        if (!left) {
+            return nullptr;
+        }
+
+        while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
+            const Token op = previous();
+            auto right = parseComparison();
+            if (!right) {
+                return nullptr;
+            }
+
+            auto binary = std::make_unique<ast::Expr>();
+            binary->kind = ast::ExprKind::Binary;
+            binary->value = op.lexeme;
+            binary->children.push_back(std::move(left));
+            binary->children.push_back(std::move(right));
+            left = std::move(binary);
+        }
+        return left;
+    }
+
+    std::unique_ptr<ast::Expr> parseComparison() {
+        auto left = parseAddition();
+        if (!left) {
+            return nullptr;
+        }
+
+        while (match(TokenType::Less) || match(TokenType::LessEqual) || match(TokenType::Greater) || match(TokenType::GreaterEqual)) {
+            const Token op = previous();
+            auto right = parseAddition();
+            if (!right) {
+                return nullptr;
+            }
+
+            auto binary = std::make_unique<ast::Expr>();
+            binary->kind = ast::ExprKind::Binary;
+            binary->value = op.lexeme;
+            binary->children.push_back(std::move(left));
+            binary->children.push_back(std::move(right));
+            left = std::move(binary);
+        }
+        return left;
+    }
 
     std::unique_ptr<ast::Expr> parseAddition() {
         auto left = parseMultiplication();
@@ -356,7 +591,7 @@ class ParserImpl {
     }
 
     std::unique_ptr<ast::Expr> parseUnary() {
-        if (match(TokenType::Minus)) {
+        if (match(TokenType::Minus) || match(TokenType::Bang)) {
             auto operand = parseUnary();
             if (!operand) {
                 return nullptr;
@@ -364,7 +599,19 @@ class ParserImpl {
 
             auto unary = std::make_unique<ast::Expr>();
             unary->kind = ast::ExprKind::Unary;
-            unary->value = "-";
+            unary->value = previous().lexeme;
+            unary->children.push_back(std::move(operand));
+            return unary;
+        }
+        if (matchKeyword("not")) {
+            auto operand = parseUnary();
+            if (!operand) {
+                return nullptr;
+            }
+
+            auto unary = std::make_unique<ast::Expr>();
+            unary->kind = ast::ExprKind::Unary;
+            unary->value = "not";
             unary->children.push_back(std::move(operand));
             return unary;
         }
@@ -419,6 +666,18 @@ class ParserImpl {
         }
 
         if (match(TokenType::Identifier)) {
+            if (previous().lexeme == "true" || previous().lexeme == "false") {
+                auto expr = std::make_unique<ast::Expr>();
+                expr->kind = ast::ExprKind::BooleanLiteral;
+                expr->value = previous().lexeme;
+                return expr;
+            }
+            if (previous().lexeme == "null") {
+                auto expr = std::make_unique<ast::Expr>();
+                expr->kind = ast::ExprKind::NullLiteral;
+                expr->value = "null";
+                return expr;
+            }
             auto expr = std::make_unique<ast::Expr>();
             expr->kind = ast::ExprKind::Identifier;
             expr->value = previous().lexeme;
@@ -470,7 +729,8 @@ class ParserImpl {
                 return;
             }
 
-            if (checkKeyword("import") || checkKeyword("use") || checkKeyword("fn") || checkKeyword("print") || checkKeyword("return")) {
+            if (checkKeyword("import") || checkKeyword("use") || checkKeyword("fn") || checkKeyword("print") || checkKeyword("return") ||
+                checkKeyword("if") || checkKeyword("else") || checkKeyword("while") || checkKeyword("for")) {
                 return;
             }
 

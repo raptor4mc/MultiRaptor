@@ -26,6 +26,9 @@ result = add(2, 3)
 - `print <expr>`
 - `return <expr>`
 - block statements `{ ... }`
+- `if <expr> { ... } else { ... }`
+- `while <expr> { ... }`
+- `for (<init>; <condition>; <increment>) { ... }`
 
 ## Modules
 ```mp
@@ -46,4 +49,4 @@ Statements can end with:
 - semicolon (`;`)
 
 
-> Note: Control-flow keywords (`if`, `when`, `else`, loops), `set`, `ask`, and comments are not tokenized/parsed yet.
+> Note: `set`, `ask`, `when`, `loop`, `repeat while`, and comment syntax are not tokenized/parsed yet.

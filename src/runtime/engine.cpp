@@ -18,6 +18,10 @@ Value RuntimeEngine::evaluateExpression(const ast::Expr& expr) {
             return Value(std::stod(expr.value));
         case ast::ExprKind::StringLiteral:
             return Value(expr.value);
+        case ast::ExprKind::BooleanLiteral:
+            return Value(expr.value == "true");
+        case ast::ExprKind::NullLiteral:
+            return Value::makeNull();
         case ast::ExprKind::Identifier:
             return current_->get(expr.value);
         case ast::ExprKind::Grouping:
@@ -97,6 +101,47 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             executeBlock(statement.body, child);
             return;
         }
+        case ast::StmtKind::If: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "If statement missing condition.");
+            }
+            if (isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } else if (!statement.elseBody.empty()) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::While: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "While statement missing condition.");
+            }
+            while (isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::For: {
+            auto loopScope = std::make_shared<Environment>(current_);
+            const auto previous = current_;
+            current_ = loopScope;
+            try {
+                if (statement.initializer) {
+                    executeStatement(*statement.initializer);
+                }
+                while (!statement.condition || isTruthy(evaluateExpression(*statement.condition))) {
+                    executeBlock(statement.body, std::make_shared<Environment>(loopScope));
+                    if (statement.increment) {
+                        executeStatement(*statement.increment);
+                    }
+                }
+            } catch (...) {
+                current_ = previous;
+                throw;
+            }
+            current_ = previous;
+            return;
+        }
     }
 }
 
@@ -149,6 +194,34 @@ Value RuntimeEngine::callFunctionByName(const std::string& name, const std::vect
 }
 
 Value RuntimeEngine::evalBinary(const std::string& op, const Value& left, const Value& right) {
+    if (op == "and") {
+        return Value(isTruthy(left) && isTruthy(right));
+    }
+    if (op == "or") {
+        return Value(isTruthy(left) || isTruthy(right));
+    }
+    if (op == "==" || op == "!=") {
+        const bool equal = valuesEqual(left, right);
+        return Value(op == "==" ? equal : !equal);
+    }
+    if (op == "<" || op == "<=" || op == ">" || op == ">=") {
+        if (left.type() != TypeKind::Number || right.type() != TypeKind::Number) {
+            throw RuntimeError(RuntimeErrorCode::TypeError,
+                               "Comparison operators require numeric operands.",
+                               "Use numbers with <, <=, >, >=.");
+        }
+        if (op == "<") {
+            return Value(left.asNumber() < right.asNumber());
+        }
+        if (op == "<=") {
+            return Value(left.asNumber() <= right.asNumber());
+        }
+        if (op == ">") {
+            return Value(left.asNumber() > right.asNumber());
+        }
+        return Value(left.asNumber() >= right.asNumber());
+    }
+
     if (op == "+") {
         if (left.type() == TypeKind::String || right.type() == TypeKind::String) {
             return Value(stdlib_.call("toString", {left}).asString() + stdlib_.call("toString", {right}).asString());
@@ -185,7 +258,7 @@ Value RuntimeEngine::evalBinary(const std::string& op, const Value& left, const 
 }
 
 Value RuntimeEngine::evalUnary(const std::string& op, const Value& value) {
-    if (op == "-") {
+    if (op == "-" ) {
         if (value.type() != TypeKind::Number) {
             throw RuntimeError(RuntimeErrorCode::TypeError,
                                "Unary '-' expects a number.",
@@ -193,8 +266,45 @@ Value RuntimeEngine::evalUnary(const std::string& op, const Value& value) {
         }
         return Value(-value.asNumber());
     }
+    if (op == "!" || op == "not") {
+        return Value(!isTruthy(value));
+    }
 
     throw RuntimeError(RuntimeErrorCode::TypeError, "Unsupported unary operator: " + op);
+}
+
+bool RuntimeEngine::isTruthy(const Value& value) const {
+    if (value.isNull()) {
+        return false;
+    }
+    if (value.type() == TypeKind::Boolean) {
+        return value.asBoolean();
+    }
+    if (value.type() == TypeKind::Number) {
+        return std::abs(value.asNumber()) > 1e-12;
+    }
+    if (value.type() == TypeKind::String) {
+        return !value.asString().empty();
+    }
+    return true;
+}
+
+bool RuntimeEngine::valuesEqual(const Value& left, const Value& right) const {
+    if (left.type() != right.type()) {
+        return false;
+    }
+    switch (left.type()) {
+        case TypeKind::Null:
+            return true;
+        case TypeKind::Boolean:
+            return left.asBoolean() == right.asBoolean();
+        case TypeKind::Number:
+            return std::abs(left.asNumber() - right.asNumber()) < 1e-12;
+        case TypeKind::String:
+            return left.asString() == right.asString();
+        default:
+            return false;
+    }
 }
 
 } // namespace magphos::runtime

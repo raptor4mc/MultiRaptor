@@ -10,10 +10,20 @@ useDecl        = "use" string terminator ;
 functionDecl   = "fn" ident "(" [ params ] ")" block ;
 params         = ident { "," ident } ;
 
-statement      = printStmt
+statement      = ifStmt
+               | whileStmt
+               | forStmt
+               | printStmt
                | returnStmt
                | assignmentOrExpr
                | block ;
+
+ifStmt         = "if" expression block [ "else" block ] ;
+whileStmt      = "while" expression block ;
+forStmt        = "for" "(" [ forInitializer ] ";" [ expression ] ";" [ expression ] ")" block ;
+forInitializer = varDeclNoTerminator | assignmentOrExprNoTerminator ;
+varDeclNoTerminator = ("var" | "const") ident "=" expression ;
+assignmentOrExprNoTerminator = ident "=" expression | expression ;
 
 printStmt      = "print" expression terminator ;
 returnStmt     = "return" expression terminator ;
@@ -22,13 +32,17 @@ assignmentOrExpr = ident "=" expression terminator
 
 block          = "{" { declaration } "}" ;
 
-expression     = addition ;
+expression     = logicalOr ;
+logicalOr      = logicalAnd { "or" logicalAnd } ;
+logicalAnd     = equality { "and" equality } ;
+equality       = comparison { ("==" | "!=") comparison } ;
+comparison     = addition { ("<" | "<=" | ">" | ">=") addition } ;
 addition       = multiplication { ("+" | "-") multiplication } ;
 multiplication = unary { ("*" | "/") unary } ;
-unary          = ["-"] call ;
+unary          = ["-" | "!" | "not"] call ;
 call           = primary { "(" [ arguments ] ")" } ;
 arguments      = expression { "," expression } ;
-primary        = number | string | ident | "(" expression ")" ;
+primary        = number | string | "true" | "false" | "null" | ident | "(" expression ")" ;
 
 terminator     = ";" | NEWLINE ;
 ident          = IDENTIFIER ;
