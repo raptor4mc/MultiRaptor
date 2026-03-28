@@ -7,9 +7,22 @@ MagPhos is the language name.
 
 MagPhos is built to be **download-first** (local compiler on your machine), with a **web playground bonus** for quick testing and Chromebook-friendly access.
 
+## Download places (versioned)
+
+> We will keep adding a **new row on every update** so people can download older/newer versions.
+
+| Version | Date | Download |
+|---|---|---|
+| v0.1.2 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/work.zip |
+| v0.1.1 | 2026-03-28 | https://github.com/<owner>/<repo>/archive/refs/heads/main.zip |
+| v0.1.0 | 2026-03-28 | https://github.com/<owner>/<repo>/releases |
+
+Replace `<owner>/<repo>` with your real GitHub path.
+
 ## What is in this repository
 
 - Native compiler source: `src/MagPhos_compiler.cpp`
+- Core module files (lexer/parser/ast/runtime/interpreter/utils) are now wired into the build target.
 - Web playground: `web/playground.html`
 - Example MagPhos program: `main.mp`
 
@@ -22,7 +35,7 @@ git clone <your-repo-url>
 cd MultiRaptor
 ```
 
-Or download ZIP from GitHub and extract it.
+Or download ZIP from the "Download places" table above.
 
 ### 2) Build the compiler
 
@@ -41,7 +54,7 @@ Compiler output:
 #### One-file build (no CMake)
 
 ```bash
-g++ -std=c++17 -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp
+g++ -std=c++17 -Iinclude -Isrc -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp src/ast/nodes.cpp src/interpreter/interpreter.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/runtime/enviroment.cpp src/runtime/value.cpp src/utils/error.cpp src/utils/string_utils.cpp src/main.cpp
 ```
 
 ### 3) Compile and run your `.mp` code
