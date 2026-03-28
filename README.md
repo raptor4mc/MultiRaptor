@@ -264,6 +264,7 @@ CMake now supports:
 - static + shared core libraries (`MAGPHOS_BUILD_STATIC`, `MAGPHOS_BUILD_SHARED`)
 - CLI tool build (`MAGPHOS_BUILD_CLI`)
 - REPL tool build (`MAGPHOS_BUILD_REPL`)
+- unified VSCode launcher build (`MAGPHOS_BUILD_VSCODE`)
 - optional WASM target when using Emscripten (`MAGPHOS_BUILD_WASM`)
 
 Example:
@@ -271,6 +272,14 @@ Example:
 ```bash
 cmake -S . -B build -DMAGPHOS_BUILD_SHARED=ON -DMAGPHOS_BUILD_STATIC=ON
 cmake --build build
+```
+
+VSCode launcher (single entrypoint for compiler/CLI/REPL):
+
+```bash
+./build/magphos_vscode --compile main.mp output.js
+./build/magphos_vscode --cli --version
+./build/magphos_vscode --repl
 ```
 
 ## Test suite (expanded)
