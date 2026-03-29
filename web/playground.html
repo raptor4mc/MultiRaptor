@@ -54,7 +54,13 @@
       </div>
       <h3 id="outputTitle">Console</h3>
       <pre id="consoleOutput"></pre>
-      <pre id="terminalOutput" hidden></pre>
+      <section id="terminalOutput" class="terminal-shell" hidden>
+        <pre id="terminalHistory" class="terminal-history"></pre>
+        <div class="terminal-input-row">
+          <span class="terminal-prompt" id="terminalPrompt">$</span>
+          <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" />
+        </div>
+      </section>
     </section>
   </main>
 
