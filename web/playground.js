@@ -268,19 +268,18 @@ function compileMagPhos(source) {
 }
 
 function createDefaultProject() {
-  const template = document.getElementById('defaultProgram').content.textContent;
   return {
-    projectName: 'chromebook-studio',
-    activeFile: 'main.mp',
-    folders: [
-      { path: 'src', createdAt: new Date().toISOString() },
-      { path: 'notes', createdAt: new Date().toISOString() }
-    ],
-    files: {
-      'main.mp': template,
-      'notes/tips.mp': '# Put extra snippets here'
-    }
+    projectName: 'multiraptor-workspace',
+    activeFile: '',
+    folders: [],
+    files: {}
   };
+}
+
+function createStarterFile(projectRef = project) {
+  const template = document.getElementById('defaultProgram').content.textContent;
+  if (!projectRef.files['main.mp']) projectRef.files['main.mp'] = template;
+  projectRef.activeFile = 'main.mp';
 }
 
 function loadProject() {
@@ -289,7 +288,7 @@ function loadProject() {
     if (!raw) return createDefaultProject();
     const parsed = ensureProjectShape(JSON.parse(raw));
     Object.keys(parsed.files).forEach((filePath) => ensureParentFolders(parsed, filePath));
-    if (!Object.keys(parsed.files).length) return createDefaultProject();
+    return parsed;
     return parsed;
   } catch (_) {
     return createDefaultProject();
@@ -328,6 +327,10 @@ const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
 const runBtn = document.getElementById('runBtn');
+const welcomePanel = document.getElementById('welcomePanel');
+const fileTreeFilterEl = document.getElementById('fileTreeFilter');
+const globalSearchInputEl = document.getElementById('globalSearchInput');
+const searchResultsEl = document.getElementById('searchResults');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
 const deleteFolderBtn = document.getElementById('deleteFolderBtn');
@@ -340,6 +343,17 @@ let terminalHistoryIndex = -1;
 const terminalCommandHistory = [];
 const collapsedFolders = new Set();
 let selectedFolder = '';
+let treeFilter = '';
+
+function showPanel(panelId) {
+  document.querySelectorAll('.side-panel').forEach((panel) => {
+    panel.classList.toggle('hidden', panel.id !== panelId);
+  });
+  document.querySelectorAll('.activity-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.panel === panelId);
+  });
+}
+
 
 function setOutputMode(mode) {
   outputMode = mode === 'terminal' ? 'terminal' : 'console';
@@ -363,7 +377,7 @@ let project = loadProject();
 
 function ensureActiveFile() {
   if (!project.files[project.activeFile]) {
-    project.activeFile = Object.keys(project.files).sort()[0];
+    project.activeFile = Object.keys(project.files).sort()[0] || '';
   }
 }
 
@@ -400,19 +414,19 @@ function renderFileList() {
   fileListEl.innerHTML = '';
 
   const tree = buildProjectTree(project);
+  const query = treeFilter.toLowerCase();
 
   const renderNode = (node, prefix = '') => {
     const sortedFolders = Object.keys(node.folders).sort((a, b) => a.localeCompare(b));
     sortedFolders.forEach((folderName) => {
       const fullPath = prefix ? `${prefix}/${folderName}` : folderName;
       const folderLi = document.createElement('li');
-      folderLi.className = 'folder-item tree-item';
       const folderBtn = document.createElement('button');
       const depth = fullPath.split('/').length - 1;
       const expanded = !collapsedFolders.has(fullPath);
       folderBtn.className = 'folder-btn';
       if (selectedFolder === fullPath) folderBtn.classList.add('active');
-      folderBtn.style.paddingLeft = `${12 + depth * 16}px`;
+      folderBtn.style.paddingLeft = `${12 + depth * 14}px`;
       folderBtn.textContent = `${expanded ? '📂' : '📁'} ${folderName}`;
       folderBtn.addEventListener('click', () => {
         selectedFolder = fullPath;
@@ -425,40 +439,83 @@ function renderFileList() {
       if (expanded) renderNode(node.folders[folderName], fullPath);
     });
 
-    node.files
-      .slice()
-      .sort((a, b) => a.localeCompare(b))
-      .forEach((fileName) => {
-        const fullPath = prefix ? `${prefix}/${fileName}` : fileName;
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        const depth = fullPath.split('/').length - 1;
-        btn.className = 'file-btn tree-item';
-        btn.style.paddingLeft = `${12 + depth * 16}px`;
-        if (fullPath === project.activeFile) btn.classList.add('active');
-        btn.textContent = `📄 ${fileName}`;
-        btn.addEventListener('click', () => {
-          project.activeFile = fullPath;
-          selectedFolder = '';
-          syncEditorFromFile();
-          renderFileList();
-          saveProject(project);
-        });
-        li.appendChild(btn);
-        fileListEl.appendChild(li);
+    node.files.slice().sort((a, b) => a.localeCompare(b)).forEach((fileName) => {
+      const fullPath = prefix ? `${prefix}/${fileName}` : fileName;
+      if (query && !fullPath.toLowerCase().includes(query)) return;
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      const depth = fullPath.split('/').length - 1;
+      btn.className = 'file-btn';
+      btn.style.paddingLeft = `${12 + depth * 14}px`;
+      if (fullPath === project.activeFile) btn.classList.add('active');
+      btn.textContent = `📄 ${fileName}`;
+      btn.addEventListener('click', () => {
+        project.activeFile = fullPath;
+        selectedFolder = '';
+        syncEditorFromFile();
+        renderFileList();
+        saveProject(project);
       });
+      li.appendChild(btn);
+      fileListEl.appendChild(li);
+    });
   };
 
   renderNode(tree);
+  if (!fileListEl.children.length) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="muted" style="display:block;padding:8px;">No files yet.</span>';
+    fileListEl.appendChild(li);
+  }
+}
 
-  activeFileLabel.textContent = `Editor — ${project.activeFile}`;
+function runGlobalSearch() {
+  const term = (globalSearchInputEl.value || '').trim().toLowerCase();
+  searchResultsEl.innerHTML = '';
+  if (!term) return;
+  const files = Object.keys(project.files).sort((a, b) => a.localeCompare(b));
+  files.forEach((path) => {
+    const lines = String(project.files[path] || '').split('\n');
+    lines.forEach((line, index) => {
+      if (!line.toLowerCase().includes(term)) return;
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.className = 'file-btn';
+      btn.textContent = `${path} — L${index + 1}: ${line.trim().slice(0, 90)}`;
+      btn.addEventListener('click', () => {
+        project.activeFile = path;
+        syncEditorFromFile();
+        renderFileList();
+        showPanel('explorerPanel');
+      });
+      li.appendChild(btn);
+      searchResultsEl.appendChild(li);
+    });
+  });
+  if (!searchResultsEl.children.length) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="muted" style="display:block;padding:8px;">No matches.</span>';
+    searchResultsEl.appendChild(li);
+  }
 }
 
 function syncEditorFromFile() {
+  if (!hasActiveFile()) {
+    sourceEl.value = '';
+    sourceEl.disabled = true;
+    activeFileLabel.textContent = 'Editor';
+    runBtn.disabled = true;
+    welcomePanel.classList.remove('hidden');
+    return;
+  }
+  sourceEl.disabled = false;
   sourceEl.value = project.files[project.activeFile] ?? '';
+  activeFileLabel.textContent = `Editor — ${project.activeFile}`;
+  welcomePanel.classList.add('hidden');
 }
 
 function syncFileFromEditor() {
+  if (!hasActiveFile()) return;
   project.files[project.activeFile] = sourceEl.value;
   saveProject(project);
 }
@@ -619,6 +676,7 @@ function runTerminalCommand(rawCommand) {
 }
 
 function doRun() {
+  if (!hasActiveFile()) throw new Error('No active file. Create or import code first.');
   syncFileFromEditor();
   if (!wasmCompiler) {
     const why = wasmLoadError ? `\nLoader error: ${wasmLoadError}` : '';
@@ -659,6 +717,7 @@ sourceEl.addEventListener('input', () => {
 });
 
 runBtn.addEventListener('click', () => {
+  if (!hasActiveFile()) return;
   setOutputs('', '');
   try {
     doRun();
@@ -769,6 +828,7 @@ document.getElementById('newFileBtn').addEventListener('click', () => {
 });
 
 document.getElementById('renameFileBtn').addEventListener('click', () => {
+  if (!hasActiveFile()) return;
   const oldName = project.activeFile;
   const nextName = prompt('Rename file path', oldName);
   if (!nextName || normalizeFilePath(nextName) === oldName) return;
@@ -787,22 +847,22 @@ document.getElementById('renameFileBtn').addEventListener('click', () => {
 });
 
 document.getElementById('deleteFileBtn').addEventListener('click', () => {
-  const allFiles = Object.keys(project.files);
-  if (allFiles.length <= 1) {
-    alert('You need at least one file in the project.');
-    return;
-  }
+  if (!hasActiveFile()) return;
   if (!confirm(`Delete ${project.activeFile}?`)) return;
   delete project.files[project.activeFile];
-  project.activeFile = Object.keys(project.files).sort()[0];
+  project.activeFile = Object.keys(project.files).sort()[0] || '';
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
 });
 
 document.getElementById('newProjectBtn').addEventListener('click', () => {
-  if (!confirm('Create a new project? This replaces the current local project.')) return;
-  project = createDefaultProject();
+  if (!Object.keys(project.files).length) {
+    createStarterFile(project);
+  } else if (confirm('Create new code from scratch?')) {
+    project = createDefaultProject();
+    createStarterFile(project);
+  }
   selectedFolder = '';
   saveProject(project);
   syncEditorFromFile();
@@ -820,6 +880,18 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   document.body.appendChild(a);
   a.click();
   a.remove();
+});
+
+
+fileTreeFilterEl.addEventListener('input', () => {
+  treeFilter = fileTreeFilterEl.value || '';
+  renderFileList();
+});
+
+globalSearchInputEl.addEventListener('input', runGlobalSearch);
+
+document.querySelectorAll('.activity-btn').forEach((btn) => {
+  btn.addEventListener('click', () => showPanel(btn.dataset.panel));
 });
 
 document.getElementById('importInput').addEventListener('change', async (event) => {
@@ -868,10 +940,11 @@ async function init() {
     }
     setOutputs(lines.filter(Boolean).join('\n'));
   } else {
-    runBtn.disabled = false;
     setOutputs('C++ WASM compiler connected. Press Run to execute MagPhos code.');
   }
+  syncEditorFromFile();
 }
 
 setOutputMode('console');
+showPanel('explorerPanel');
 init();
