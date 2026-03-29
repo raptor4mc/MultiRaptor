@@ -63,7 +63,7 @@ async function loadWasmCompiler() {
   const loaderCandidates = isFileProtocol
     ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
     : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
-  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
+  const wasmCandidates = [null, './magphos_wasm.wasm.64', './magphos_wasm.wasm', './magphos.wasm.64', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
@@ -886,7 +886,7 @@ async function init() {
     enableFallbackBtn.hidden = true;
     setOutputs([
       'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
-      'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.',
+      'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.64 (or .wasm).',
       'Build with Emscripten: ./tools/scripts/build_web.sh.',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n'));
@@ -905,7 +905,7 @@ enableFallbackBtn.addEventListener('click', () => {
   setOutputs([
     'Fallback transpiler mode enabled manually.',
     'Warning: this does not guarantee parity with the C++ compiler.',
-    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
+    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm.64 / .wasm).'
   ].join('\n'));
 });
 

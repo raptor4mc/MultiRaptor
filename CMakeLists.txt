@@ -158,7 +158,7 @@ if(MAGPHOS_BUILD_WASM)
     add_custom_command(TARGET MagPhos_wasm POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE_DIR:MagPhos_wasm>/magphos_wasm.wasm"
-        "${CMAKE_SOURCE_DIR}/web/magphos_wasm.wasm"
+        "${CMAKE_SOURCE_DIR}/web/magphos_wasm.wasm.64"
       VERBATIM
     )
 
