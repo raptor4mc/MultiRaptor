@@ -179,6 +179,11 @@ pre {
   font-size: 0.86rem;
 }
 
+.folder-btn.active {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fecaca;
+}
+
 .tree-item {
   position: relative;
 }

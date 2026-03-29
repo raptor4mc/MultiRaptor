@@ -355,6 +355,7 @@ const runBtn = document.getElementById('runBtn');
 const enableFallbackBtn = document.getElementById('enableFallbackBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
+const deleteFolderBtn = document.getElementById('deleteFolderBtn');
 runBtn.disabled = true;
 
 let outputMode = 'console';
@@ -363,6 +364,7 @@ let terminalLines = [];
 let terminalHistoryIndex = -1;
 const terminalCommandHistory = [];
 const collapsedFolders = new Set();
+let selectedFolder = '';
 
 function setOutputMode(mode) {
   outputMode = mode === 'terminal' ? 'terminal' : 'console';
@@ -434,9 +436,11 @@ function renderFileList() {
       const depth = fullPath.split('/').length - 1;
       const expanded = !collapsedFolders.has(fullPath);
       folderBtn.className = 'folder-btn';
+      if (selectedFolder === fullPath) folderBtn.classList.add('active');
       folderBtn.style.paddingLeft = `${12 + depth * 16}px`;
       folderBtn.textContent = `${expanded ? '📂' : '📁'} ${folderName}`;
       folderBtn.addEventListener('click', () => {
+        selectedFolder = fullPath;
         if (expanded) collapsedFolders.add(fullPath);
         else collapsedFolders.delete(fullPath);
         renderFileList();
@@ -460,6 +464,7 @@ function renderFileList() {
         btn.textContent = `📄 ${fileName}`;
         btn.addEventListener('click', () => {
           project.activeFile = fullPath;
+          selectedFolder = '';
           syncEditorFromFile();
           renderFileList();
           saveProject(project);
@@ -733,6 +738,43 @@ document.getElementById('newFolderBtn').addEventListener('click', () => {
   renderFileList();
 });
 
+deleteFolderBtn.addEventListener('click', () => {
+  const folderToDelete = selectedFolder || normalizeFolderPath(prompt('Folder path to delete'));
+  if (!folderToDelete) return;
+  const exists = project.folders.some((f) => f.path === folderToDelete);
+  if (!exists) {
+    alert(`Folder not found: ${folderToDelete}`);
+    return;
+  }
+  if (!confirm(`Delete folder "${folderToDelete}" and all nested files/subfolders?`)) return;
+
+  project.folders = project.folders.filter(
+    (f) => !(f.path === folderToDelete || f.path.startsWith(`${folderToDelete}/`))
+  );
+  Object.keys(project.files).forEach((filePath) => {
+    if (filePath === folderToDelete || filePath.startsWith(`${folderToDelete}/`)) {
+      delete project.files[filePath];
+    }
+  });
+
+  selectedFolder = '';
+  const remainingFiles = Object.keys(project.files);
+  if (!remainingFiles.length) {
+    project.files['main.mp'] = '# New file';
+    project.activeFile = 'main.mp';
+  } else if (!project.files[project.activeFile]) {
+    project.activeFile = remainingFiles.sort((a, b) => a.localeCompare(b))[0];
+  }
+
+  syncEditorFromFile();
+  saveProject(project);
+  renderFileList();
+  setOutputs(
+    `Deleted folder ${folderToDelete}`,
+    `${terminalPromptEl.textContent} rm -r ${folderToDelete}\nDeleted folder ${folderToDelete}`
+  );
+});
+
 document.getElementById('newFileBtn').addEventListener('click', () => {
   const name = prompt('New file path (example: src/utils/math.mp)');
   if (!name) return;
@@ -785,6 +827,7 @@ document.getElementById('deleteFileBtn').addEventListener('click', () => {
 document.getElementById('newProjectBtn').addEventListener('click', () => {
   if (!confirm('Create a new project? This replaces the current local project.')) return;
   project = createDefaultProject();
+  selectedFolder = '';
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
@@ -814,6 +857,7 @@ document.getElementById('importInput').addEventListener('change', async (event) 
     }
     Object.keys(parsed.files).forEach((filePath) => ensureParentFolders(parsed, filePath));
     project = parsed;
+    selectedFolder = '';
     ensureActiveFile();
     saveProject(project);
     syncEditorFromFile();
