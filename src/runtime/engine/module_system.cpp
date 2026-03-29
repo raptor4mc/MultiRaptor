@@ -1,11 +1,11 @@
-#include "runtime/module_system.h"
+#include "runtime/engine/module_system.h"
 
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 
-#include "ast/nodes.h"
+#include "compiler/ast/nodes.h"
 
 namespace magphos::runtime {
 

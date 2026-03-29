@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "ast/nodes.h"
-#include "lexer/lexer.h"
+#include "compiler/ast/nodes.h"
+#include "compiler/lexer/lexer.h"
 
 namespace magphos::parser {
 

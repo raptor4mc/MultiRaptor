@@ -1,4 +1,4 @@
-#include "lexer/lexer.h"
+#include "compiler/lexer/lexer.h"
 
 #include <cctype>
 #include <sstream>

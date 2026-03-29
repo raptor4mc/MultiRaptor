@@ -1,4 +1,4 @@
-#include "semantic/analyzer.h"
+#include "compiler/semantic/analyzer.h"
 
 #include <sstream>
 #include <unordered_set>

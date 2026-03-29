@@ -4,8 +4,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "runtime/errors.h"
-#include "runtime/value.h"
+#include "runtime/engine/errors.h"
+#include "runtime/engine/value.h"
 
 namespace magphos::runtime {
 

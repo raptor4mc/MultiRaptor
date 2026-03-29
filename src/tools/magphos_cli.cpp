@@ -7,13 +7,13 @@
 #include <tuple>
 #include <vector>
 
-#include "interpreter/interpreter.h"
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "runtime/engine.h"
-#include "runtime/errors.h"
-#include "runtime/module_system.h"
-#include "semantic/analyzer.h"
+#include "runtime/interpreter/interpreter.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
+#include "runtime/engine/engine.h"
+#include "runtime/engine/errors.h"
+#include "runtime/engine/module_system.h"
+#include "compiler/semantic/analyzer.h"
 
 namespace {
 std::optional<std::string> readFile(const std::string& path) {
