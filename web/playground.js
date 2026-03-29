@@ -5,7 +5,6 @@ let wasmAnalyzer = null;
 let wasmLoadError = null;
 const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
-const loadedClassicScripts = new Set();
 const SCRIPT_BASE_URL = (() => {
   const scriptSrc = document.currentScript && document.currentScript.src
     ? document.currentScript.src
@@ -222,36 +221,29 @@ function loadClassicScriptModule(loaderUrl, wasmUrl) {
       }
     };
 
-    if (!loadedClassicScripts.has(loaderUrl)) {
-      const script = document.createElement('script');
-      script.src = loaderUrl;
-      script.async = true;
-      script.dataset.magphosLoader = loaderUrl;
-      script.addEventListener('error', () => {
-        settleReject(`Failed to load script: ${loaderUrl}`);
-      });
-      script.addEventListener('load', () => {
-        // If runtime is already initialized before callback wiring, resolve here.
-        if (window.Module && typeof window.Module.compileMagPhos === 'function') {
-          settleResolve(window.Module);
-        }
-      });
-      document.head.appendChild(script);
-      loadedClassicScripts.add(loaderUrl);
-      return;
-    }
+    const script = document.createElement('script');
+    const bust = `magphos_retry=${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const joiner = loaderUrl.includes('?') ? '&' : '?';
+    script.src = `${loaderUrl}${joiner}${bust}`;
+    script.async = true;
+    script.dataset.magphosLoader = loaderUrl;
+    script.addEventListener('error', () => {
+      settleReject(`Failed to load script: ${loaderUrl}`);
+    });
+    script.addEventListener('load', () => {
+      // If runtime is already initialized before callback wiring, resolve here.
+      if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+        settleResolve(window.Module);
+      }
+    });
+    document.head.appendChild(script);
 
-    // Script was already injected; runtime might already be ready.
-    if (window.Module && typeof window.Module.compileMagPhos === 'function') {
-      settleResolve(window.Module);
-      return;
-    }
     // Give runtime initialization callback a short chance to fire.
     setTimeout(() => {
       if (window.Module && typeof window.Module.compileMagPhos === 'function') {
         settleResolve(window.Module);
       } else {
-        settleReject('Classic loader was present, but runtime did not initialize compileMagPhos.');
+        settleReject('Classic loader runtime did not initialize compileMagPhos.');
       }
     }, 1200);
   });
@@ -574,14 +566,11 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    wasmCompiler = compileWithFallbackTranspiler;
-    wasmAnalyzer = () => 'ok';
-    compileBtn.disabled = false;
-    runBtn.disabled = false;
+    compileBtn.disabled = true;
+    runBtn.disabled = true;
     enableFallbackBtn.hidden = true;
     outputEl.textContent = [
-      'WASM compiler not found. Fallback transpiler mode enabled automatically.',
-      'Warning: fallback mode does not guarantee parity with the C++ compiler.',
+      'C++ WASM compiler is required for web compile/run and is not loaded.',
       'Expected loader in repo: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js',
       'Expected wasm in repo (if using modular loader): web/magphos_wasm.wasm',
       'Build with Emscripten: ./tools/scripts/build_web.sh',
@@ -592,22 +581,12 @@ async function init() {
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
     outputEl.textContent = 'C++ WASM compiler connected. Web compile is linked to native parser/semantic/compiler pipeline.';
+    compileBtn.click();
   }
-
-  compileBtn.click();
 }
 
 enableFallbackBtn.addEventListener('click', () => {
-  wasmCompiler = compileWithFallbackTranspiler;
-  wasmAnalyzer = () => 'ok';
-  compileBtn.disabled = false;
-  runBtn.disabled = false;
-  enableFallbackBtn.hidden = true;
-  outputEl.textContent = [
-    'Fallback transpiler mode enabled manually.',
-    'Warning: this does not guarantee parity with the C++ compiler.',
-    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
-  ].join('\n');
+  outputEl.textContent = 'Fallback transpiler is disabled. Build C++ WASM artifacts with ./tools/scripts/build_web.sh.';
 });
 
 init();
