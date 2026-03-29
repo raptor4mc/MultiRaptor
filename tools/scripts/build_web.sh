@@ -3,6 +3,8 @@ set -euo pipefail
 
 EMSDK_VERSION="${MAGPHOS_EMSDK_VERSION:-3.1.72}"
 EMSDK_DIR="${MAGPHOS_EMSDK_DIR:-.tools/emsdk}"
+DOCKER_EMSDK_IMAGE="${MAGPHOS_DOCKER_EMSDK_IMAGE:-emscripten/emsdk:${EMSDK_VERSION}}"
+USE_DOCKER_FALLBACK="${MAGPHOS_USE_DOCKER_FALLBACK:-1}"
 
 BUILD_DIR="${1:-build-web}"
 
@@ -19,31 +21,68 @@ ensure_emscripten() {
   mkdir -p "$(dirname "${EMSDK_DIR}")"
 
   if [[ ! -d "${EMSDK_DIR}" ]]; then
-    git clone https://github.com/emscripten-core/emsdk.git "${EMSDK_DIR}"
+    if ! git clone https://github.com/emscripten-core/emsdk.git "${EMSDK_DIR}"; then
+      echo "Warning: failed to clone emsdk from GitHub."
+      return 1
+    fi
   fi
 
   pushd "${EMSDK_DIR}" >/dev/null
-  ./emsdk install "${EMSDK_VERSION}"
-  ./emsdk activate "${EMSDK_VERSION}"
+  if ! ./emsdk install "${EMSDK_VERSION}"; then
+    popd >/dev/null
+    echo "Warning: failed to install emsdk ${EMSDK_VERSION}."
+    return 1
+  fi
+  if ! ./emsdk activate "${EMSDK_VERSION}"; then
+    popd >/dev/null
+    echo "Warning: failed to activate emsdk ${EMSDK_VERSION}."
+    return 1
+  fi
   # shellcheck disable=SC1091
   source ./emsdk_env.sh
   popd >/dev/null
 
   if ! command -v emcmake >/dev/null 2>&1; then
-    echo "Error: emcmake is still unavailable after Emscripten bootstrap."
-    exit 1
+    echo "Warning: emcmake is still unavailable after Emscripten bootstrap."
+    return 1
   fi
+
+  return 0
 }
 
-ensure_emscripten
+build_with_docker_emscripten() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Error: docker is not available for fallback web build."
+    return 1
+  fi
 
-emcmake cmake -S . -B "${BUILD_DIR}" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DMAGPHOS_BUILD_WASM=ON \
-  -DMAGPHOS_BUILD_CLI=OFF \
-  -DMAGPHOS_BUILD_REPL=OFF
+  local repo_root
+  repo_root="$(pwd)"
 
-cmake --build "${BUILD_DIR}"
+  echo "Building web artifacts with Docker image ${DOCKER_EMSDK_IMAGE}..."
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${repo_root}:/src" \
+    -w /src \
+    "${DOCKER_EMSDK_IMAGE}" \
+    bash -lc 'emcmake cmake -S . -B "'"${BUILD_DIR}"'" -DCMAKE_BUILD_TYPE=Release -DMAGPHOS_BUILD_WASM=ON -DMAGPHOS_BUILD_CLI=OFF -DMAGPHOS_BUILD_REPL=OFF && cmake --build "'"${BUILD_DIR}"'"'
+}
+
+if ensure_emscripten; then
+  emcmake cmake -S . -B "${BUILD_DIR}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DMAGPHOS_BUILD_WASM=ON \
+    -DMAGPHOS_BUILD_CLI=OFF \
+    -DMAGPHOS_BUILD_REPL=OFF
+
+  cmake --build "${BUILD_DIR}"
+elif [[ "${USE_DOCKER_FALLBACK}" == "1" ]]; then
+  build_with_docker_emscripten
+else
+  echo "Error: Emscripten is unavailable and Docker fallback is disabled."
+  echo "Hint: install emcmake, or set MAGPHOS_USE_DOCKER_FALLBACK=1 and install Docker."
+  exit 1
+fi
 
 require_nonempty_file() {
   local path="$1"
