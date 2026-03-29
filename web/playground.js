@@ -260,33 +260,6 @@ function compileMagPhos(source) {
   return wasmCompiler(source);
 }
 
-function compileWithFallbackTranspiler(source) {
-  const lines = source.split('\n');
-  const out = [
-    '// Fallback compiler mode (WASM unavailable).',
-    '// Behavior may differ from native MagPhos compiler.'
-  ];
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    if (line.startsWith('fn ')) {
-      out.push(rawLine.replace(/\bfn\b/, 'function'));
-      continue;
-    }
-
-    if (line.startsWith('print ')) {
-      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
-      continue;
-    }
-
-    out.push(rawLine);
-  }
-
-  return out.join('\n');
-}
-
 function createDefaultProject() {
   const template = document.getElementById('defaultProgram').content.textContent;
   return {
@@ -569,10 +542,8 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    wasmCompiler = compileWithFallbackTranspiler;
-    wasmAnalyzer = () => 'ok';
-    compileBtn.disabled = false;
-    runBtn.disabled = false;
+    compileBtn.disabled = true;
+    runBtn.disabled = true;
     enableFallbackBtn.hidden = true;
     outputEl.textContent = [
       'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
@@ -590,16 +561,7 @@ async function init() {
 }
 
 enableFallbackBtn.addEventListener('click', () => {
-  wasmCompiler = compileWithFallbackTranspiler;
-  wasmAnalyzer = () => 'ok';
-  compileBtn.disabled = false;
-  runBtn.disabled = false;
-  enableFallbackBtn.hidden = true;
-  outputEl.textContent = [
-    'Fallback transpiler mode enabled manually.',
-    'Warning: this does not guarantee parity with the C++ compiler.',
-    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
-  ].join('\n');
+  outputEl.textContent = 'Fallback transpiler is disabled. Build C++ WASM artifacts with ./tools/scripts/build_web.sh.';
 });
 
 init();
