@@ -86,12 +86,19 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             current_->assign(statement.name, value);
             return;
         }
-        case ast::StmtKind::Expression:
-        case ast::StmtKind::Print: {
+        case ast::StmtKind::Expression: {
             if (!statement.expression) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Statement missing expression.");
             }
             (void)evaluateExpression(*statement.expression);
+            return;
+        }
+        case ast::StmtKind::Print: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Print statement missing expression.");
+            }
+            const Value printed = evaluateExpression(*statement.expression);
+            std::cout << stdlib_.call("toString", {printed}).asString() << "\n";
             return;
         }
         case ast::StmtKind::Return: {
