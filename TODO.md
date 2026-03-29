@@ -1,3 +1,15 @@
+## TODO rules (read first)
+1. Keep this rules section at the top of the file.
+2. For every newly implemented feature, add one new `priority` section with exactly five `sub priority` items.
+3. When a feature/sub-priority is fully implemented, remove it from the active TODO list (or mark the whole priority completed and move on).
+4. Always work on the first `priority` that is not completed.
+5. Each `sub priority` must be implementation-oriented and directly testable.
+6. No bloat priorities: every priority/sub-priority must fix a real error or move the language/runtime/tooling forward.
+7. If a `sub priority` is completed, remove it from active list and add one new `priority` with five concrete `sub priority` items.
+8. If a full `priority` is completed, add five new non-overlapping priorities (merge near-duplicates).
+
+---
+
 ## priority 1: folder-aware project management in Web Studio
 Status: ✅ completed in current milestone.
 
@@ -64,15 +76,6 @@ Enforce consistent TODO structure and spelling (`priority` / `sub priority`).
 ## priority 4: language safety and predictability
 Status: 🔄 in progress.
 
-### sub priority 4.1
-Enforce declaration-before-assignment for all assignment forms.
-
-### sub priority 4.2
-Reject invalid control usage early (for example `return` outside functions).
-
-### sub priority 4.3
-Keep semantic diagnostics short, actionable, and line-oriented.
-
 ### sub priority 4.4
 Guarantee runtime errors map to stable error codes/messages.
 
@@ -118,26 +121,6 @@ Add closure capture semantics for lexical environments.
 
 ### sub priority 6.5
 Add semantic checks and tests for arity/default/variadic combinations.
-
----
-
-## priority 7: CLI and developer workflow quality
-Status: 🔄 in progress.
-
-### sub priority 7.1
-Add machine-readable CLI output mode (JSON) for automation.
-
-### sub priority 7.2
-Add `--format-errors` option to normalize parse/semantic/runtime diagnostics.
-
-### sub priority 7.3
-Add `--run` workflow command for parse+check+execute in one step.
-
-### sub priority 7.4
-Add `--module-graph` command to print dependency graph edges.
-
-### sub priority 7.5
-Add CLI integration tests for exit codes and failure-path consistency.
 
 ---
 
@@ -238,3 +221,63 @@ Add export option for minified vs pretty JSON.
 
 ### sub priority 12.5
 Add schema validation tests for backward compatibility.
+
+---
+
+## priority 13: CLI JSON contract stabilization (added after CLI feature rollout)
+Status: 🔄 in progress.
+
+### sub priority 13.1
+Add deterministic ordering guarantees for JSON arrays (`deps`, `tokens`, `moduleGraph`) where applicable.
+
+### sub priority 13.2
+Add explicit JSON schema version key to every CLI JSON response.
+
+### sub priority 13.3
+Add `stderr` field support in JSON responses for runtime failures.
+
+### sub priority 13.4
+Add golden-file tests for `--check/--deps/--tokens/--run/--module-graph --json`.
+
+### sub priority 13.5
+Document the CLI JSON response contract in `docs/` with stability guarantees.
+
+---
+
+## priority 14: control-flow diagnostics hardening
+Status: 🔄 in progress.
+
+### sub priority 14.1
+Reject `return` outside function scope with stable diagnostic wording.
+
+### sub priority 14.2
+Add regression tests for invalid control flow in top-level and block scopes.
+
+### sub priority 14.3
+Normalize control-flow diagnostic prefixes for machine filtering.
+
+### sub priority 14.4
+Ensure CLI `--check --json` includes control-flow diagnostics in `errors[]`.
+
+### sub priority 14.5
+Document control-flow semantic rules in `docs/syntax.md`.
+
+---
+
+## priority 15: semantic diagnostic contract stabilization
+Status: 🔄 in progress.
+
+### sub priority 15.1
+Guarantee semantic diagnostics render as one-line entries (no embedded newlines per issue).
+
+### sub priority 15.2
+Add deterministic ordering for semantic issues emitted from a single file.
+
+### sub priority 15.3
+Add machine-stable semantic error code prefixes (`SEM###`) for CLI/IDE filtering.
+
+### sub priority 15.4
+Expose semantic issue count in CLI JSON responses for `--check`.
+
+### sub priority 15.5
+Document semantic diagnostic format and compatibility policy in `docs/error_guide.md`.
