@@ -260,33 +260,6 @@ function compileMagPhos(source) {
   return wasmCompiler(source);
 }
 
-function compileWithFallbackTranspiler(source) {
-  const lines = source.split('\n');
-  const out = [
-    '// Fallback compiler mode (WASM unavailable).',
-    '// Behavior may differ from native MagPhos compiler.'
-  ];
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    if (line.startsWith('fn ')) {
-      out.push(rawLine.replace(/\bfn\b/, 'function'));
-      continue;
-    }
-
-    if (line.startsWith('print ')) {
-      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
-      continue;
-    }
-
-    out.push(rawLine);
-  }
-
-  return out.join('\n');
-}
-
 function createDefaultProject() {
   const template = document.getElementById('defaultProgram').content.textContent;
   return {
@@ -430,6 +403,8 @@ function doRun() {
     if (analysis !== 'ok') {
       throw new Error(analysis);
     }
+    outputEl.textContent = 'No errors found. Program is valid.';
+    return 'ok';
   }
 
   const js = compileMagPhos(sourceEl.value);
