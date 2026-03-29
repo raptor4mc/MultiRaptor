@@ -3,7 +3,6 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmAnalyzer = null;
 let wasmLoadError = null;
-const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
 
 const loadedClassicScripts = new Set();
 const SCRIPT_BASE_URL = (() => {
@@ -60,27 +59,21 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const loaderCandidates = IS_FILE_PROTOCOL
-    ? ['./magphos_wasm_singlefile.js']
-    : ['./magphos_wasm.js'];
-  const wasmCandidates = IS_FILE_PROTOCOL
-    ? [null]
-    : ['./magphos_wasm.wasm', './magphos.wasm'];
+  const loaderCandidates = ['./magphos_wasm_singlefile.js', './magphos_wasm.js'];
+  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
   for (const loaderUrl of loaderUrls) {
     const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
     try {
-      if (!IS_FILE_PROTOCOL) {
-        await validateArtifactSize(loaderUrl, isSingleFileLoader ? 1024 : 64, 'JavaScript loader');
-      }
+      await validateArtifactSize(loaderUrl, isSingleFileLoader ? 1024 : 64, 'JavaScript loader');
     } catch (err) {
       attempts.push(`${loaderUrl}: ${err.message}`);
       continue;
     }
 
-    if (IS_FILE_PROTOCOL || isSingleFileLoader) {
+    if (isSingleFileLoader) {
       try {
         const classicModule = await loadClassicScriptModule(loaderUrl, null);
         if (typeof classicModule.compileMagPhos !== 'function') {
@@ -398,7 +391,7 @@ function syncFileFromEditor() {
 function doCompile() {
   syncFileFromEditor();
   if (!wasmCompiler) {
-    throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm.js + web/magphos_wasm.wasm from the C++ code to keep web and native compiler behavior in sync.');
+    throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm_singlefile.js from C++ using ./tools/scripts/build_web.sh to keep web and native behavior in sync.');
   }
   if (wasmAnalyzer) {
     const analysis = wasmAnalyzer(sourceEl.value);
@@ -558,14 +551,6 @@ async function init() {
   syncEditorFromFile();
   renderFileList();
 
-  if (IS_FILE_PROTOCOL) {
-    outputEl.textContent = [
-      'Running from file:// URL.',
-      'Attempting to use web/magphos_wasm_singlefile.js first.',
-      'Tip: if compile fails, run ./tools/scripts/build_web.sh and retry.'
-    ].join('\n');
-  }
-
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
@@ -577,13 +562,9 @@ async function init() {
     outputEl.textContent = [
       'WASM compiler not found. Fallback transpiler mode enabled automatically.',
       'Warning: fallback mode does not guarantee parity with the C++ compiler.',
-      IS_FILE_PROTOCOL
-        ? 'Expected file:// loader: web/magphos_wasm_singlefile.js'
-        : 'Expected loader: web/magphos_wasm.js',
-      IS_FILE_PROTOCOL
-        ? 'Tip: run ./tools/scripts/build_web.sh to generate the single-file loader for direct local opening.'
-        : 'Expected wasm: web/magphos_wasm.wasm',
-      'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
+      'Expected loader in repo: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js',
+      'Expected wasm in repo (if using modular loader): web/magphos_wasm.wasm',
+      'Build with Emscripten: ./tools/scripts/build_web.sh',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n');
   } else {
@@ -605,7 +586,7 @@ enableFallbackBtn.addEventListener('click', () => {
   outputEl.textContent = [
     'Fallback transpiler mode enabled manually.',
     'Warning: this does not guarantee parity with the C++ compiler.',
-    'For C++ parity, rebuild and ship web/magphos_wasm.js + web/magphos_wasm.wasm.'
+    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
   ].join('\n');
 });
 
