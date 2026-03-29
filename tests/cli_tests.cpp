@@ -23,6 +23,7 @@ int exitCodeOf(int rc) {
 int main() {
     const std::string sourcePath = "/tmp/magphos_cli_test.mp";
     const std::string brokenPath = "/tmp/magphos_cli_broken.mp";
+    const std::string runtimeFailPath = "/tmp/magphos_cli_runtime_fail.mp";
     {
         std::ofstream out(sourcePath);
         out << "import game.engine\n";
@@ -32,6 +33,12 @@ int main() {
         std::ofstream out(brokenPath);
         out << "print \"Hello\"\n";
         out << "if {\n";
+    }
+    {
+        std::ofstream out(runtimeFailPath);
+        out << "var x = 10\n";
+        out << "var y = 0\n";
+        out << "print x / y\n";
     }
 
     int rc = std::system(("/tmp/magphos_tests/magphos_cli --check " + sourcePath + " >/tmp/cli_check.txt 2>/tmp/cli_check_err.txt").c_str());
@@ -71,6 +78,11 @@ int main() {
     assert(exitCodeOf(rc) == 0);
     assert(readFile("/tmp/cli_module_graph_json.txt").find("\"moduleGraph\"") != std::string::npos);
     assert(readFile("/tmp/cli_module_graph_json.txt").find("game.engine") != std::string::npos);
+
+    rc = std::system(("/tmp/magphos_tests/magphos_cli --run --json " + runtimeFailPath + " >/tmp/cli_run_runtime_fail_json.txt 2>/tmp/cli_run_runtime_fail_json_err.txt").c_str());
+    assert(exitCodeOf(rc) == 3);
+    assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("\"runtimeErrorCode\":\"RUNTIME_FAILURE\"") != std::string::npos);
+    assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("Division by zero") != std::string::npos);
 
     rc = std::system("/tmp/magphos_tests/magphos_cli --check /tmp/does_not_exist.mp >/tmp/cli_missing.txt 2>/tmp/cli_missing_err.txt");
     assert(exitCodeOf(rc) == 2);

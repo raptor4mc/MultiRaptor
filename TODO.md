@@ -76,9 +76,6 @@ Enforce consistent TODO structure and spelling (`priority` / `sub priority`).
 ## priority 4: language safety and predictability
 Status: 🔄 in progress.
 
-### sub priority 4.4
-Guarantee runtime errors map to stable error codes/messages.
-
 ### sub priority 4.5
 Add regression tests for every safety rule added to parser/semantic/runtime.
 
@@ -281,3 +278,23 @@ Expose semantic issue count in CLI JSON responses for `--check`.
 
 ### sub priority 15.5
 Document semantic diagnostic format and compatibility policy in `docs/error_guide.md`.
+
+---
+
+## priority 16: runtime error taxonomy + transport stability
+Status: 🔄 in progress.
+
+### sub priority 16.1
+Expose runtime error code strings through shared runtime API helpers.
+
+### sub priority 16.2
+Include runtime error code field in CLI JSON output for `--run` failures.
+
+### sub priority 16.3
+Add deterministic formatting for runtime error hints in plain and JSON modes.
+
+### sub priority 16.4
+Add CLI integration tests for runtime failure code mapping (e.g. division by zero).
+
+### sub priority 16.5
+Document runtime error code catalog and migration policy in `docs/error_guide.md`.

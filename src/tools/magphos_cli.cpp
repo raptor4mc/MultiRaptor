@@ -101,6 +101,7 @@ struct CliResponse {
     std::vector<magphos::lexer::Token> tokens;
     std::vector<std::pair<std::string, std::string>> moduleEdges;
     std::string stdoutText;
+    std::string runtimeErrorCode;
 };
 
 std::string shortenError(const std::string& text) {
@@ -151,6 +152,7 @@ void emitResponse(const CliResponse& response, bool jsonMode, ErrorFormat errorF
         }
         std::cout << "]";
         std::cout << ",\"stdout\":\"" << jsonEscape(response.stdoutText) << "\"";
+        std::cout << ",\"runtimeErrorCode\":\"" << jsonEscape(response.runtimeErrorCode) << "\"";
         std::cout << "}\n";
         return;
     }
@@ -300,6 +302,14 @@ int main(int argc, char** argv) {
         try {
             magphos::runtime::RuntimeEngine engine;
             engine.loadProgram(parsed.program);
+        } catch (const magphos::runtime::RuntimeError& runtimeError) {
+            std::cout.rdbuf(oldOut);
+            response.code = 3;
+            response.message = "runtime failed";
+            response.runtimeErrorCode = magphos::runtime::runtimeErrorCodeName(runtimeError.code());
+            response.errors.push_back(magphos::runtime::renderRuntimeError(runtimeError));
+            emitResponse(response, jsonMode, errorFormat);
+            return 3;
         } catch (const std::exception& ex) {
             std::cout.rdbuf(oldOut);
             response.code = 3;
