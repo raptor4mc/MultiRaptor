@@ -3,6 +3,7 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmAnalyzer = null;
 let wasmLoadError = null;
+const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
 const loadedClassicScripts = new Set();
 const SCRIPT_BASE_URL = (() => {
@@ -79,6 +80,7 @@ async function loadWasmCompiler() {
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
         }
+        assertRealWasmCompiler(classicModule.compileMagPhos);
         wasmCompiler = classicModule.compileMagPhos;
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
@@ -112,6 +114,7 @@ async function loadWasmCompiler() {
           if (typeof wasmModule.compileMagPhos !== 'function') {
             throw new Error('WASM module loaded, but compileMagPhos export is missing.');
           }
+          assertRealWasmCompiler(wasmModule.compileMagPhos);
           wasmCompiler = wasmModule.compileMagPhos;
           wasmAnalyzer = typeof wasmModule.analyzeMagPhos === 'function'
             ? wasmModule.analyzeMagPhos
@@ -124,6 +127,7 @@ async function loadWasmCompiler() {
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
         }
+        assertRealWasmCompiler(classicModule.compileMagPhos);
         wasmCompiler = classicModule.compileMagPhos;
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
@@ -140,7 +144,23 @@ async function loadWasmCompiler() {
   wasmLoadError = attempts.join(' | ');
 }
 
+function assertRealWasmCompiler(compileFn) {
+  const probeOutput = String(compileFn('print "__MAGPHOS_WASM_PROBE__"'));
+  if (probeOutput.includes(FALLBACK_BANNER)) {
+    throw new Error(
+      'Detected bundled fallback loader instead of compiled C++ WASM artifact. Build real WASM via ./tools/scripts/build_web.sh.'
+    );
+  }
+}
+
 async function validateArtifactSize(url, minBytes, label) {
+  const parsedUrl = new URL(url, window.location.href);
+  if (parsedUrl.protocol === 'file:') {
+    // `fetch(file://...)` is blocked in many browsers. For direct file usage,
+    // skip size preflight and let script/module loading determine validity.
+    return;
+  }
+
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`${label} failed to load (${response.status}).`);
