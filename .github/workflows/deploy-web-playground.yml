@@ -45,10 +45,15 @@ jobs:
           test -f web/playground.css
           test -f web/magphos_wasm.js
           test -f web/magphos_wasm.wasm
+          test -f web/magphos_wasm.wasm.64
           test -f web/magphos_wasm_singlefile.js
-          test "$(wc -c < web/magphos_wasm.js)" -gt 1024
-          test "$(wc -c < web/magphos_wasm.wasm)" -gt 1024
-          test "$(wc -c < web/magphos_wasm_singlefile.js)" -gt 1024
+          ! grep -Fq "Repo bundled fallback loader (WASM artifact not built)." web/magphos_wasm.js
+          ! grep -Fq "Repo bundled fallback loader (WASM artifact not built)." web/magphos_wasm_singlefile.js
+          test "$(od -An -tx1 -N 4 web/magphos_wasm.wasm | tr -d ' \n')" = "0061736d"
+          test "$(wc -c < web/magphos_wasm.js)" -gt 51200
+          test "$(wc -c < web/magphos_wasm.wasm)" -gt 102400
+          test "$(wc -c < web/magphos_wasm.wasm.64)" -gt 102400
+          test "$(wc -c < web/magphos_wasm_singlefile.js)" -gt 204800
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

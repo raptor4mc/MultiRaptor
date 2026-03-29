@@ -122,10 +122,21 @@ Or use the helper script:
 
 `build_web.sh` will auto-bootstrap Emscripten into `.tools/emsdk` if `emcmake` is missing, then build and verify `web/magphos_wasm.js` + `web/magphos_wasm.wasm`.
 It also generates `web/magphos_wasm_singlefile.js` so `web/playground.html` can run when opened directly from disk (`file://`) without a separate wasm fetch.
+It now also emits `web/magphos_wasm.wasm.64` (base64 wasm) for hosts/setups that prefer serving text-only wasm payloads.
+If GitHub clone/install for emsdk fails, the script now falls back to Docker (`emscripten/emsdk:<version>`) when available, so you can still build real browser artifacts without local Emscripten setup.
+
+The script now hard-fails if generated JS still contains the fallback loader banner, if `web/magphos_wasm.wasm` is not a real wasm binary (magic bytes `00 61 73 6d`), or if artifacts are suspiciously small (`magphos_wasm.js` < 50 KB, `magphos_wasm.wasm` < 100 KB, `magphos_wasm_singlefile.js` < 200 KB). This catches placeholder/base64-text artifacts before publish.
+
+If needed, you can tune those size gates with:
+- `MAGPHOS_MIN_WASM_JS_BYTES`
+- `MAGPHOS_MIN_WASM_BYTES`
+- `MAGPHOS_MIN_SINGLEFILE_JS_BYTES`
+- `MAGPHOS_USE_DOCKER_FALLBACK` (`1` by default)
+- `MAGPHOS_DOCKER_EMSDK_IMAGE` (defaults to `emscripten/emsdk:$MAGPHOS_EMSDK_VERSION`)
 
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
-Important: do **not** keep placeholder 1-byte wasm/js files in the repo. If the generated web artifacts are missing, rebuild them with `./tools/scripts/build_web.sh` before publishing.
+Important: the repo keeps text-friendly web shim artifacts (`web/magphos_wasm.js`, `web/magphos_wasm_singlefile.js`, `web/magphos_wasm.wasm.64`) checked in, while binary `web/magphos_wasm.wasm` is generated at build time. For full native C++ parity, rebuild real Emscripten artifacts with `./tools/scripts/build_web.sh`.
 If wasm artifacts are missing at runtime, the playground now falls back to a minimal JS transpiler mode so editing/testing is still possible (but behavior is not identical to the real C++ compiler).
 
 Then host the repo (or just the `web/` folder) on any static site and open:
@@ -136,7 +147,7 @@ Then host the repo (or just the `web/` folder) on any static site and open:
 
 This gives the same C++ compiler pipeline in-browser (compiled to WASM) while keeping native download builds separate in `build/`.
 
-For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), and it can boot both modern Emscripten module output and classic global-`Module` output from `magphos_wasm.js`.
+For GitHub Pages (or any static hosting), publish the generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), and it can boot both modern Emscripten module output and classic global-`Module` output from `magphos_wasm.js`.
 
 If you host with **GitHub Pages**, enable **Settings → Pages → Build and deployment → Source = GitHub Actions**. This repo includes `.github/workflows/deploy-web-playground.yml` to build `web/magphos_wasm.js/.wasm` on each push to `main` and deploy them so `https://<user>.github.io/<repo>/web/playground.html` works without manual commits of generated artifacts.
 

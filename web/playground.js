@@ -63,7 +63,7 @@ async function loadWasmCompiler() {
   const loaderCandidates = isFileProtocol
     ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
     : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
-  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
+  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos_wasm.wasm.64', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
@@ -96,8 +96,11 @@ async function loadWasmCompiler() {
     }
 
     for (const wasmUrl of wasmUrls) {
+      let preparedWasm = null;
       try {
         if (wasmUrl) await validateArtifactSize(wasmUrl, 1024, 'WASM binary');
+        preparedWasm = await prepareWasmUrl(wasmUrl);
+        const runtimeWasmUrl = preparedWasm.url;
 
         let moduleFactory = null;
         const imported = await import(loaderUrl);
@@ -109,7 +112,7 @@ async function loadWasmCompiler() {
         if (typeof moduleFactory === 'function') {
           const wasmModule = await moduleFactory({
             locateFile(path) {
-              if (path.endsWith('.wasm')) return wasmUrl;
+              if (path.endsWith('.wasm')) return runtimeWasmUrl;
               return new URL(path, loaderUrl).href;
             }
           });
@@ -125,7 +128,7 @@ async function loadWasmCompiler() {
           return;
         }
 
-        const classicModule = await loadClassicScriptModule(loaderUrl, wasmUrl);
+        const classicModule = await loadClassicScriptModule(loaderUrl, runtimeWasmUrl);
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
         }
@@ -139,6 +142,10 @@ async function loadWasmCompiler() {
       } catch (err) {
         const wasmPart = wasmUrl ? ` + ${wasmUrl}` : '';
         attempts.push(`${loaderUrl}${wasmPart}: ${err.message}`);
+      } finally {
+        if (preparedWasm && typeof preparedWasm.cleanup === 'function') {
+          preparedWasm.cleanup();
+        }
       }
     }
   }
@@ -153,6 +160,33 @@ function assertRealWasmCompiler(compileFn) {
       'Detected bundled fallback loader instead of compiled C++ WASM artifact. Build real WASM via ./tools/scripts/build_web.sh.'
     );
   }
+}
+
+async function prepareWasmUrl(wasmUrl) {
+  if (!wasmUrl) return { url: null, cleanup: null };
+  if (!wasmUrl.endsWith('.wasm.64')) return { url: wasmUrl, cleanup: null };
+
+  const response = await fetch(wasmUrl, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Base64 wasm failed to load (${response.status}).`);
+  }
+
+  const encoded = (await response.text()).replace(/\s+/g, '');
+  if (!encoded) {
+    throw new Error('Base64 wasm was empty.');
+  }
+
+  const binaryString = atob(encoded);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i += 1) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/wasm' }));
+  return {
+    url: blobUrl,
+    cleanup: () => URL.revokeObjectURL(blobUrl)
+  };
 }
 
 async function validateArtifactSize(url, minBytes, label) {
@@ -344,7 +378,10 @@ function ensureParentFolders(project, filePath) {
 
 const sourceEl = document.getElementById('source');
 const consoleOutputEl = document.getElementById('consoleOutput');
-const terminalOutputEl = document.getElementById('terminalOutput');
+const terminalShellEl = document.getElementById('terminalOutput');
+const terminalHistoryEl = document.getElementById('terminalHistory');
+const terminalInputEl = document.getElementById('terminalInput');
+const terminalPromptEl = document.getElementById('terminalPrompt');
 const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
@@ -352,21 +389,33 @@ const runBtn = document.getElementById('runBtn');
 const enableFallbackBtn = document.getElementById('enableFallbackBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
+const deleteFolderBtn = document.getElementById('deleteFolderBtn');
 runBtn.disabled = true;
 
 let outputMode = 'console';
+let terminalCwd = '';
+let terminalLines = [];
+let terminalHistoryIndex = -1;
+const terminalCommandHistory = [];
+const collapsedFolders = new Set();
+let selectedFolder = '';
 
 function setOutputMode(mode) {
   outputMode = mode === 'terminal' ? 'terminal' : 'console';
   const showConsole = outputMode === 'console';
   consoleOutputEl.hidden = !showConsole;
-  terminalOutputEl.hidden = showConsole;
+  terminalShellEl.hidden = showConsole;
   outputTitleEl.textContent = showConsole ? 'Console' : 'Terminal';
+  if (!showConsole) {
+    refreshTerminalPrompt();
+    terminalInputEl.focus();
+  }
 }
 
 function setOutputs(message, terminalMessage = '') {
   consoleOutputEl.textContent = message;
-  terminalOutputEl.textContent = terminalMessage || message;
+  const payload = terminalMessage || message;
+  pushTerminalLine(payload);
 }
 
 let project = loadProject();
@@ -377,41 +426,89 @@ function ensureActiveFile() {
   }
 }
 
+function buildProjectTree(currentProject) {
+  const root = { folders: {}, files: [] };
+
+  const ensureTreeFolder = (folderPath) => {
+    if (!folderPath) return root;
+    const parts = folderPath.split('/').filter(Boolean);
+    let cursor = root;
+    parts.forEach((part) => {
+      if (!cursor.folders[part]) cursor.folders[part] = { folders: {}, files: [] };
+      cursor = cursor.folders[part];
+    });
+    return cursor;
+  };
+
+  currentProject.folders.forEach((folder) => {
+    ensureTreeFolder(folder.path);
+  });
+
+  Object.keys(currentProject.files).forEach((filePath) => {
+    const parts = filePath.split('/').filter(Boolean);
+    const fileName = parts.pop();
+    const parent = ensureTreeFolder(parts.join('/'));
+    parent.files.push(fileName);
+  });
+
+  return root;
+}
+
 function renderFileList() {
   ensureActiveFile();
   fileListEl.innerHTML = '';
 
-  const folderNames = project.folders
-    .map((folder) => folder.path)
-    .sort((a, b) => a.localeCompare(b));
-  const fileNames = Object.keys(project.files).sort((a, b) => a.localeCompare(b));
+  const tree = buildProjectTree(project);
 
-  folderNames.forEach((folderName) => {
-    const li = document.createElement('li');
-    const depth = folderName.split('/').length - 1;
-    li.className = 'folder-item tree-item';
-    li.style.paddingLeft = `${12 + depth * 16}px`;
-    li.textContent = `📁 ${folderName}`;
-    fileListEl.appendChild(li);
-  });
-
-  fileNames.forEach((fileName) => {
-    const li = document.createElement('li');
-    const btn = document.createElement('button');
-    const depth = fileName.split('/').length - 1;
-    btn.className = 'file-btn tree-item';
-    btn.style.paddingLeft = `${12 + depth * 16}px`;
-    if (fileName === project.activeFile) btn.classList.add('active');
-    btn.textContent = `📄 ${fileName}`;
-    btn.addEventListener('click', () => {
-      project.activeFile = fileName;
-      syncEditorFromFile();
-      renderFileList();
-      saveProject(project);
+  const renderNode = (node, prefix = '') => {
+    const sortedFolders = Object.keys(node.folders).sort((a, b) => a.localeCompare(b));
+    sortedFolders.forEach((folderName) => {
+      const fullPath = prefix ? `${prefix}/${folderName}` : folderName;
+      const folderLi = document.createElement('li');
+      folderLi.className = 'folder-item tree-item';
+      const folderBtn = document.createElement('button');
+      const depth = fullPath.split('/').length - 1;
+      const expanded = !collapsedFolders.has(fullPath);
+      folderBtn.className = 'folder-btn';
+      if (selectedFolder === fullPath) folderBtn.classList.add('active');
+      folderBtn.style.paddingLeft = `${12 + depth * 16}px`;
+      folderBtn.textContent = `${expanded ? '📂' : '📁'} ${folderName}`;
+      folderBtn.addEventListener('click', () => {
+        selectedFolder = fullPath;
+        if (expanded) collapsedFolders.add(fullPath);
+        else collapsedFolders.delete(fullPath);
+        renderFileList();
+      });
+      folderLi.appendChild(folderBtn);
+      fileListEl.appendChild(folderLi);
+      if (expanded) renderNode(node.folders[folderName], fullPath);
     });
-    li.appendChild(btn);
-    fileListEl.appendChild(li);
-  });
+
+    node.files
+      .slice()
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((fileName) => {
+        const fullPath = prefix ? `${prefix}/${fileName}` : fileName;
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        const depth = fullPath.split('/').length - 1;
+        btn.className = 'file-btn tree-item';
+        btn.style.paddingLeft = `${12 + depth * 16}px`;
+        if (fullPath === project.activeFile) btn.classList.add('active');
+        btn.textContent = `📄 ${fileName}`;
+        btn.addEventListener('click', () => {
+          project.activeFile = fullPath;
+          selectedFolder = '';
+          syncEditorFromFile();
+          renderFileList();
+          saveProject(project);
+        });
+        li.appendChild(btn);
+        fileListEl.appendChild(li);
+      });
+  };
+
+  renderNode(tree);
 
   activeFileLabel.textContent = `Editor — ${project.activeFile}`;
 }
@@ -425,6 +522,161 @@ function syncFileFromEditor() {
   saveProject(project);
 }
 
+function refreshTerminalPrompt() {
+  terminalPromptEl.textContent = `${terminalCwd || '~'} $`;
+}
+
+function pushTerminalLine(message = '') {
+  const lines = String(message).split('\n');
+  terminalLines.push(...lines);
+  if (terminalLines.length > 300) {
+    terminalLines = terminalLines.slice(terminalLines.length - 300);
+  }
+  terminalHistoryEl.textContent = terminalLines.join('\n');
+  terminalHistoryEl.scrollTop = terminalHistoryEl.scrollHeight;
+}
+
+function resolveProjectPath(inputPath, basePath = terminalCwd) {
+  const raw = String(inputPath || '').trim();
+  if (!raw) return normalizeFolderPath(basePath || '');
+  const absolute = raw.startsWith('/');
+  const stack = [];
+  const seed = absolute ? '' : normalizeFolderPath(basePath || '');
+  if (seed) stack.push(...seed.split('/').filter(Boolean));
+  raw.split('/').forEach((part) => {
+    if (!part || part === '.') return;
+    if (part === '..') stack.pop();
+    else stack.push(part);
+  });
+  return stack.join('/');
+}
+
+function listDirectory(path = terminalCwd) {
+  const dir = resolveProjectPath(path);
+  const prefix = dir ? `${dir}/` : '';
+  const folders = new Set();
+  const files = [];
+
+  project.folders.forEach(({ path: folderPath }) => {
+    if (!folderPath.startsWith(prefix)) return;
+    const remainder = folderPath.slice(prefix.length);
+    if (!remainder || remainder.includes('/')) return;
+    folders.add(remainder);
+  });
+
+  Object.keys(project.files).forEach((filePath) => {
+    if (!filePath.startsWith(prefix)) return;
+    const remainder = filePath.slice(prefix.length);
+    if (!remainder || remainder.includes('/')) return;
+    files.push(remainder);
+  });
+
+  return {
+    dir,
+    folders: [...folders].sort((a, b) => a.localeCompare(b)),
+    files: files.sort((a, b) => a.localeCompare(b))
+  };
+}
+
+function runTerminalCommand(rawCommand) {
+  const command = String(rawCommand || '').trim();
+  if (!command) return;
+  pushTerminalLine(`${terminalPromptEl.textContent} ${command}`);
+
+  const [name, ...args] = command.split(/\s+/);
+  const cmd = name.toLowerCase();
+
+  if (cmd === 'help') {
+    pushTerminalLine('Commands: help, clear, pwd, ls [path], tree, cd <path>, cat <file>, open <file>, run [file].');
+    return;
+  }
+  if (cmd === 'clear') {
+    terminalLines = [];
+    pushTerminalLine('');
+    return;
+  }
+  if (cmd === 'pwd') {
+    pushTerminalLine(`/${terminalCwd}`);
+    return;
+  }
+  if (cmd === 'ls') {
+    const result = listDirectory(args[0] || terminalCwd);
+    const output = [
+      ...result.folders.map((f) => `📁 ${f}`),
+      ...result.files.map((f) => `📄 ${f}`)
+    ];
+    pushTerminalLine(output.length ? output.join('\n') : '(empty)');
+    return;
+  }
+  if (cmd === 'tree') {
+    const tree = buildProjectTree(project);
+    const lines = [];
+    const walk = (node, depth = 0, prefix = '') => {
+      Object.keys(node.folders).sort().forEach((folder) => {
+        const path = prefix ? `${prefix}/${folder}` : folder;
+        lines.push(`${'  '.repeat(depth)}📁 ${folder}`);
+        walk(node.folders[folder], depth + 1, path);
+      });
+      node.files.slice().sort().forEach((file) => lines.push(`${'  '.repeat(depth)}📄 ${file}`));
+    };
+    walk(tree);
+    pushTerminalLine(lines.length ? lines.join('\n') : '(empty project)');
+    return;
+  }
+  if (cmd === 'cd') {
+    const target = resolveProjectPath(args[0] || '');
+    const validFolder = !target || project.folders.some((f) => f.path === target);
+    if (!validFolder) {
+      pushTerminalLine(`cd: folder not found: ${args[0] || ''}`);
+      return;
+    }
+    terminalCwd = target;
+    refreshTerminalPrompt();
+    return;
+  }
+  if (cmd === 'cat') {
+    const target = resolveProjectPath(args[0] || '', terminalCwd);
+    if (!project.files[target]) {
+      pushTerminalLine(`cat: file not found: ${args[0] || ''}`);
+      return;
+    }
+    pushTerminalLine(project.files[target]);
+    return;
+  }
+  if (cmd === 'open') {
+    const target = resolveProjectPath(args[0] || '', terminalCwd);
+    if (!project.files[target]) {
+      pushTerminalLine(`open: file not found: ${args[0] || ''}`);
+      return;
+    }
+    project.activeFile = target;
+    syncEditorFromFile();
+    renderFileList();
+    saveProject(project);
+    pushTerminalLine(`Opened ${target}`);
+    return;
+  }
+  if (cmd === 'run') {
+    const target = args[0] ? resolveProjectPath(args[0], terminalCwd) : project.activeFile;
+    if (!project.files[target]) {
+      pushTerminalLine(`run: file not found: ${args[0] || ''}`);
+      return;
+    }
+    project.activeFile = target;
+    syncEditorFromFile();
+    renderFileList();
+    try {
+      doRun();
+      pushTerminalLine('Done.');
+    } catch (err) {
+      pushTerminalLine(err.message);
+    }
+    return;
+  }
+
+  pushTerminalLine(`Unknown command: ${name}. Type "help".`);
+}
+
 function doRun() {
   syncFileFromEditor();
   if (!wasmCompiler) {
@@ -435,7 +687,10 @@ function doRun() {
     if (analysis !== 'ok') {
       throw new Error(analysis);
     }
-    outputEl.textContent = 'No errors found. Program is valid.';
+    setOutputs(
+      'No errors found. Program is valid.',
+      `${terminalPromptEl.textContent} mp analyze ${project.activeFile}\nNo errors found. Program is valid.`
+    );
     return 'ok';
   }
 
@@ -472,6 +727,32 @@ runBtn.addEventListener('click', () => {
 
 consoleTabBtn.addEventListener('click', () => setOutputMode('console'));
 terminalTabBtn.addEventListener('click', () => setOutputMode('terminal'));
+terminalInputEl.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowUp') {
+    if (!terminalCommandHistory.length) return;
+    event.preventDefault();
+    terminalHistoryIndex = terminalHistoryIndex < 0
+      ? terminalCommandHistory.length - 1
+      : Math.max(0, terminalHistoryIndex - 1);
+    terminalInputEl.value = terminalCommandHistory[terminalHistoryIndex] || '';
+    return;
+  }
+  if (event.key === 'ArrowDown') {
+    if (!terminalCommandHistory.length) return;
+    event.preventDefault();
+    terminalHistoryIndex = Math.min(terminalCommandHistory.length, terminalHistoryIndex + 1);
+    terminalInputEl.value = terminalCommandHistory[terminalHistoryIndex] || '';
+    return;
+  }
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const command = terminalInputEl.value.trim();
+  if (!command) return;
+  terminalCommandHistory.push(command);
+  terminalHistoryIndex = terminalCommandHistory.length;
+  terminalInputEl.value = '';
+  runTerminalCommand(command);
+});
 
 document.getElementById('newFolderBtn').addEventListener('click', () => {
   const raw = prompt('New folder path (example: src/utils)');
@@ -489,6 +770,43 @@ document.getElementById('newFolderBtn').addEventListener('click', () => {
   project.folders.sort((a, b) => a.path.localeCompare(b.path));
   saveProject(project);
   renderFileList();
+});
+
+deleteFolderBtn.addEventListener('click', () => {
+  const folderToDelete = selectedFolder || normalizeFolderPath(prompt('Folder path to delete'));
+  if (!folderToDelete) return;
+  const exists = project.folders.some((f) => f.path === folderToDelete);
+  if (!exists) {
+    alert(`Folder not found: ${folderToDelete}`);
+    return;
+  }
+  if (!confirm(`Delete folder "${folderToDelete}" and all nested files/subfolders?`)) return;
+
+  project.folders = project.folders.filter(
+    (f) => !(f.path === folderToDelete || f.path.startsWith(`${folderToDelete}/`))
+  );
+  Object.keys(project.files).forEach((filePath) => {
+    if (filePath === folderToDelete || filePath.startsWith(`${folderToDelete}/`)) {
+      delete project.files[filePath];
+    }
+  });
+
+  selectedFolder = '';
+  const remainingFiles = Object.keys(project.files);
+  if (!remainingFiles.length) {
+    project.files['main.mp'] = '# New file';
+    project.activeFile = 'main.mp';
+  } else if (!project.files[project.activeFile]) {
+    project.activeFile = remainingFiles.sort((a, b) => a.localeCompare(b))[0];
+  }
+
+  syncEditorFromFile();
+  saveProject(project);
+  renderFileList();
+  setOutputs(
+    `Deleted folder ${folderToDelete}`,
+    `${terminalPromptEl.textContent} rm -r ${folderToDelete}\nDeleted folder ${folderToDelete}`
+  );
 });
 
 document.getElementById('newFileBtn').addEventListener('click', () => {
@@ -543,6 +861,7 @@ document.getElementById('deleteFileBtn').addEventListener('click', () => {
 document.getElementById('newProjectBtn').addEventListener('click', () => {
   if (!confirm('Create a new project? This replaces the current local project.')) return;
   project = createDefaultProject();
+  selectedFolder = '';
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
@@ -572,6 +891,7 @@ document.getElementById('importInput').addEventListener('change', async (event) 
     }
     Object.keys(parsed.files).forEach((filePath) => ensureParentFolders(parsed, filePath));
     project = parsed;
+    selectedFolder = '';
     ensureActiveFile();
     saveProject(project);
     syncEditorFromFile();
@@ -587,6 +907,9 @@ document.getElementById('importInput').addEventListener('change', async (event) 
 async function init() {
   syncEditorFromFile();
   renderFileList();
+  terminalCwd = '';
+  refreshTerminalPrompt();
+  pushTerminalLine('MagPhos Terminal — type "help" for commands.');
 
   await loadWasmCompiler();
 
