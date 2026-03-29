@@ -198,6 +198,21 @@ class ParserImpl {
         if (matchKeyword("for")) {
             return parseForStatement();
         }
+        if (matchKeyword("when")) {
+            return parseWhenStatement();
+        }
+        if (matchKeyword("loop")) {
+            return parseLoopStatement();
+        }
+        if (matchKeyword("repeat")) {
+            return parseRepeatWhileStatement();
+        }
+        if (matchKeyword("set")) {
+            return parseSetStatement();
+        }
+        if (matchKeyword("ask")) {
+            return parseAskStatement();
+        }
         if (matchKeyword("var") || matchKeyword("const")) {
             return parseVariableDeclaration();
         }
@@ -211,6 +226,103 @@ class ParserImpl {
             return parseBlockStatement();
         }
         return parseAssignmentOrExpression();
+    }
+
+    std::optional<ast::Statement> parseWhenStatement() {
+        auto condition = parseExpression();
+        if (!condition) {
+            return std::nullopt;
+        }
+        auto block = parseBlockStatement();
+        if (!block.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::When;
+        statement.condition = std::move(condition);
+        statement.body = std::move(block->body);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseLoopStatement() {
+        auto countExpr = parseExpression();
+        if (!countExpr) {
+            return std::nullopt;
+        }
+        auto block = parseBlockStatement();
+        if (!block.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Loop;
+        statement.expression = std::move(countExpr);
+        statement.body = std::move(block->body);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseRepeatWhileStatement() {
+        if (!matchKeyword("while")) {
+            return errorAtCurrent("Expected 'while' after 'repeat'.");
+        }
+        auto condition = parseExpression();
+        if (!condition) {
+            return std::nullopt;
+        }
+        auto block = parseBlockStatement();
+        if (!block.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::RepeatWhile;
+        statement.condition = std::move(condition);
+        statement.body = std::move(block->body);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseSetStatement() {
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected identifier after 'set'.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Set;
+        statement.name = advance().lexeme;
+
+        if (!match(TokenType::Equal)) {
+            return errorAtCurrent("Expected '=' after identifier in set statement.");
+        }
+        auto expr = parseExpression();
+        if (!expr) {
+            return std::nullopt;
+        }
+        statement.expression = std::move(expr);
+        consumeTerminator("Expected ';' or newline after set statement.");
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseAskStatement() {
+        if (!check(TokenType::String)) {
+            return errorAtCurrent("Expected quoted prompt after 'ask'.");
+        }
+        auto prompt = std::make_unique<ast::Expr>();
+        prompt->kind = ast::ExprKind::StringLiteral;
+        prompt->value = advance().lexeme;
+        if (!match(TokenType::Minus) || !match(TokenType::Greater)) {
+            return errorAtCurrent("Expected '->' after ask prompt.");
+        }
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected variable name after '->'.");
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Ask;
+        statement.name = advance().lexeme;
+        statement.expression = std::move(prompt);
+        consumeTerminator("Expected ';' or newline after ask statement.");
+        return statement;
     }
 
     std::optional<ast::Statement> parseIfStatement() {
@@ -699,6 +811,24 @@ class ParserImpl {
             return grouping;
         }
 
+        if (match(TokenType::LeftBracket)) {
+            auto array = std::make_unique<ast::Expr>();
+            array->kind = ast::ExprKind::ArrayLiteral;
+            if (!check(TokenType::RightBracket)) {
+                do {
+                    auto element = parseExpression();
+                    if (!element) {
+                        return nullptr;
+                    }
+                    array->children.push_back(std::move(element));
+                } while (match(TokenType::Comma));
+            }
+            if (!match(TokenType::RightBracket)) {
+                return errorExprAtCurrent("Expected ']' after array literal.");
+            }
+            return array;
+        }
+
         return errorExprAtCurrent("Expected expression.");
     }
 
@@ -730,7 +860,8 @@ class ParserImpl {
             }
 
             if (checkKeyword("import") || checkKeyword("use") || checkKeyword("fn") || checkKeyword("print") || checkKeyword("return") ||
-                checkKeyword("if") || checkKeyword("else") || checkKeyword("while") || checkKeyword("for")) {
+                checkKeyword("if") || checkKeyword("else") || checkKeyword("while") || checkKeyword("for") || checkKeyword("when") ||
+                checkKeyword("loop") || checkKeyword("repeat") || checkKeyword("set") || checkKeyword("ask")) {
                 return;
             }
 

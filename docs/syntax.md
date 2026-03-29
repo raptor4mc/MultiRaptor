@@ -29,6 +29,17 @@ result = add(2, 3)
 - `if <expr> { ... } else { ... }`
 - `while <expr> { ... }`
 - `for (<init>; <condition>; <increment>) { ... }`
+- `when <expr> { ... }`
+- `loop <countExpr> { ... }`
+- `repeat while <expr> { ... }`
+- `set <name> = <expr>`
+- `ask <promptExpr> -> <name>`
+- comments: `# ...` and `// ...`
+
+Safety notes:
+- `name = expr` and `set name = expr` require `name` to already exist.
+- `ask "..." -> name` requires `name` to already exist.
+- `return` is only valid inside `fn` blocks.
 
 ## Modules
 ```mp
@@ -47,6 +58,3 @@ use "utils.mp"
 Statements can end with:
 - newline
 - semicolon (`;`)
-
-
-> Note: `set`, `ask`, `when`, `loop`, `repeat while`, and comment syntax are not tokenized/parsed yet.

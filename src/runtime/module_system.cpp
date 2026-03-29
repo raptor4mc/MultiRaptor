@@ -42,11 +42,35 @@ std::string ModuleSystem::resolveUsePath(const std::string& relativePath, const 
 }
 
 std::string ModuleSystem::loadImportedModule(const std::string& moduleName, const std::string& baseDir) const {
-    return readFile(resolveModulePath(moduleName, baseDir));
+    const std::string path = resolveModulePath(moduleName, baseDir);
+    const auto cached = cache_.find(path);
+    if (cached != cache_.end()) {
+        return cached->second;
+    }
+    if (loadStack_.find(path) != loadStack_.end()) {
+        throw std::runtime_error("ModuleSystem: cyclic import detected for " + path);
+    }
+    loadStack_.insert(path);
+    const std::string content = readFile(path);
+    cache_[path] = content;
+    loadStack_.erase(path);
+    return content;
 }
 
 std::string ModuleSystem::loadUsePath(const std::string& relativePath, const std::string& baseDir) const {
-    return readFile(resolveUsePath(relativePath, baseDir));
+    const std::string path = resolveUsePath(relativePath, baseDir);
+    const auto cached = cache_.find(path);
+    if (cached != cache_.end()) {
+        return cached->second;
+    }
+    if (loadStack_.find(path) != loadStack_.end()) {
+        throw std::runtime_error("ModuleSystem: cyclic use-path detected for " + path);
+    }
+    loadStack_.insert(path);
+    const std::string content = readFile(path);
+    cache_[path] = content;
+    loadStack_.erase(path);
+    return content;
 }
 
 std::vector<std::string> ModuleSystem::collectDependencies(const parser::ParseResult& parseResult) const {
@@ -57,6 +81,11 @@ std::vector<std::string> ModuleSystem::collectDependencies(const parser::ParseRe
         }
     }
     return dependencies;
+}
+
+void ModuleSystem::clearCache() {
+    cache_.clear();
+    loadStack_.clear();
 }
 
 } // namespace magphos::runtime
