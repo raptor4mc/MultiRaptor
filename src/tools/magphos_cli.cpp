@@ -14,10 +14,10 @@
 #include "semantic/analyzer.h"
 
 namespace {
-std::string readFile(const std::string& path) {
+std::optional<std::string> readFile(const std::string& path) {
     std::ifstream file(path);
     if (!file) {
-        return "";
+        return std::nullopt;
     }
     std::ostringstream out;
     out << file.rdbuf();
@@ -247,15 +247,15 @@ int main(int argc, char** argv) {
     if (cmd == "--check" && positional.size() >= 2) {
         CliResponse response;
         response.command = "--check";
-        const std::string source = readFile(positional[1]);
-        if (source.empty()) {
+        const auto source = readFile(positional[1]);
+        if (!source.has_value()) {
             response.code = 2;
             response.message = "Cannot read file: " + positional[1];
             response.errors.push_back(response.message);
             emitResponse(response, jsonMode, errorFormat);
             return 2;
         }
-        const std::string result = magphos::interpreter::analyzeProgram(source);
+        const std::string result = magphos::interpreter::analyzeProgram(*source);
         if (result == "ok") {
             response.ok = true;
             response.message = "ok";
@@ -271,8 +271,8 @@ int main(int argc, char** argv) {
     if (cmd == "--run" && positional.size() >= 2) {
         CliResponse response;
         response.command = "--run";
-        const std::string source = readFile(positional[1]);
-        if (source.empty()) {
+        const auto source = readFile(positional[1]);
+        if (!source.has_value()) {
             response.code = 2;
             response.message = "Cannot read file: " + positional[1];
             response.errors.push_back(response.message);
@@ -281,11 +281,11 @@ int main(int argc, char** argv) {
         }
         magphos::lexer::Lexer lexer;
         magphos::parser::Parser parser;
-        const auto parsed = parser.parse(lexer.tokenize(source));
+        const auto parsed = parser.parse(lexer.tokenize(*source));
         if (!parsed.errors.empty()) {
             response.code = 3;
             response.message = "parse failed";
-            response.errors.push_back(magphos::parser::renderErrors(parsed.errors, source));
+            response.errors.push_back(magphos::parser::renderErrors(parsed.errors, *source));
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }
@@ -328,8 +328,8 @@ int main(int argc, char** argv) {
     if (cmd == "--tokens" && positional.size() >= 2) {
         CliResponse response;
         response.command = "--tokens";
-        const std::string source = readFile(positional[1]);
-        if (source.empty()) {
+        const auto source = readFile(positional[1]);
+        if (!source.has_value()) {
             response.code = 2;
             response.message = "Cannot read file: " + positional[1];
             response.errors.push_back(response.message);
@@ -339,7 +339,7 @@ int main(int argc, char** argv) {
         magphos::lexer::Lexer lexer;
         response.ok = true;
         response.command = "--tokens";
-        response.tokens = lexer.tokenize(source);
+        response.tokens = lexer.tokenize(*source);
         response.message = "ok";
         emitResponse(response, jsonMode, errorFormat);
         return 0;
@@ -347,8 +347,8 @@ int main(int argc, char** argv) {
     if ((cmd == "--deps" || cmd == "--module-graph") && positional.size() >= 2) {
         CliResponse response;
         response.command = cmd;
-        const std::string source = readFile(positional[1]);
-        if (source.empty()) {
+        const auto source = readFile(positional[1]);
+        if (!source.has_value()) {
             response.code = 2;
             response.message = "Cannot read file: " + positional[1];
             response.errors.push_back(response.message);
@@ -357,11 +357,11 @@ int main(int argc, char** argv) {
         }
         magphos::lexer::Lexer lexer;
         magphos::parser::Parser parser;
-        const auto parsed = parser.parse(lexer.tokenize(source));
+        const auto parsed = parser.parse(lexer.tokenize(*source));
         if (!parsed.errors.empty()) {
             response.code = 3;
             response.message = "parse failed";
-            response.errors.push_back(magphos::parser::renderErrors(parsed.errors, source));
+            response.errors.push_back(magphos::parser::renderErrors(parsed.errors, *source));
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }

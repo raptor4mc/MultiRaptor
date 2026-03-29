@@ -24,6 +24,7 @@ int main() {
     const std::string sourcePath = "/tmp/magphos_cli_test.mp";
     const std::string brokenPath = "/tmp/magphos_cli_broken.mp";
     const std::string runtimeFailPath = "/tmp/magphos_cli_runtime_fail.mp";
+    const std::string emptyPath = "/tmp/magphos_cli_empty.mp";
     {
         std::ofstream out(sourcePath);
         out << "import game.engine\n";
@@ -39,6 +40,9 @@ int main() {
         out << "var x = 10\n";
         out << "var y = 0\n";
         out << "print x / y\n";
+    }
+    {
+        std::ofstream out(emptyPath);
     }
 
     int rc = std::system(("/tmp/magphos_tests/magphos_cli --check " + sourcePath + " >/tmp/cli_check.txt 2>/tmp/cli_check_err.txt").c_str());
@@ -56,6 +60,10 @@ int main() {
     rc = std::system(("/tmp/magphos_tests/magphos_cli --check --json " + sourcePath + " >/tmp/cli_check_json.txt 2>/tmp/cli_check_json_err.txt").c_str());
     assert(exitCodeOf(rc) == 0);
     assert(readFile("/tmp/cli_check_json.txt").find("\"ok\":true") != std::string::npos);
+
+    rc = std::system(("/tmp/magphos_tests/magphos_cli --check --json " + emptyPath + " >/tmp/cli_check_empty_json.txt 2>/tmp/cli_check_empty_json_err.txt").c_str());
+    assert(exitCodeOf(rc) == 0);
+    assert(readFile("/tmp/cli_check_empty_json.txt").find("\"ok\":true") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --check --json " + brokenPath + " >/tmp/cli_check_bad_json.txt 2>/tmp/cli_check_bad_json_err.txt").c_str());
     assert(exitCodeOf(rc) == 3);
