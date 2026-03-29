@@ -124,6 +124,20 @@ pre {
   border-bottom: 1px dashed rgba(148, 163, 184, 0.18);
 }
 
+.tree-item {
+  position: relative;
+}
+
+.tree-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
 .file-btn {
   display: block;
   width: 100%;

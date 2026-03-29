@@ -1,0 +1,29 @@
+MagPhos Language Rules (Consistency + Simplicity + Predictability + Safety)
+
+1) Consistency
+- Variables must be declared before use.
+- Assignment (`name = expr`) updates existing variables only.
+- `set name = expr` also updates existing variables only.
+- `ask "prompt" -> name` writes into an existing variable only.
+
+2) Simplicity
+- Use `var` and `const` for declarations.
+- Keep syntax straightforward: explicit blocks `{ ... }`, explicit loop forms.
+- Prefer readable names and short expressions.
+- Prefer short builtins when available (for example `read/write/append`).
+
+3) Predictability
+- No implicit variable creation from assignment.
+- `return` is only valid inside `fn` blocks.
+- Re-declaring a symbol in the same scope is rejected.
+
+4) Error safety
+- Parse errors stop execution.
+- Semantic errors (undefined names, invalid return location, duplicate declarations)
+  stop execution before runtime.
+- Runtime builtins surface structured errors with actionable hints.
+
+5) Extendability guidelines
+- Add one capability at a time.
+- Every new syntax/runtime feature should include tests.
+- Keep defaults conservative to prevent surprising behavior.

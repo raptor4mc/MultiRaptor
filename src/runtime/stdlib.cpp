@@ -1,8 +1,12 @@
 #include "runtime/stdlib.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <random>
 #include <sstream>
@@ -101,6 +105,8 @@ StandardLibrary::StandardLibrary() {
     registerArrays();
     registerFileIO();
     registerGameGraphics();
+    registerNetworking();
+    registerInteroperability();
 }
 
 bool StandardLibrary::has(const std::string& name) const {
@@ -304,7 +310,7 @@ void StandardLibrary::registerArrays() {
 }
 
 void StandardLibrary::registerFileIO() {
-    functions_["readFile"] = [](const std::vector<Value>& args) {
+    const auto readImpl = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "readFile");
         std::ifstream file(path);
         if (!file) {
@@ -315,8 +321,10 @@ void StandardLibrary::registerFileIO() {
         out << file.rdbuf();
         return Value(out.str());
     };
+    functions_["readFile"] = readImpl;
+    functions_["read"] = readImpl;
 
-    functions_["writeFile"] = [](const std::vector<Value>& args) {
+    const auto writeImpl = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "writeFile");
         const std::string content = requireString(args, 1, "writeFile");
 
@@ -326,6 +334,26 @@ void StandardLibrary::registerFileIO() {
         }
         file << content;
         return Value::makeNull();
+    };
+    functions_["writeFile"] = writeImpl;
+    functions_["write"] = writeImpl;
+
+    const auto appendImpl = [](const std::vector<Value>& args) {
+        const std::string path = requireString(args, 0, "appendFile");
+        const std::string content = requireString(args, 1, "appendFile");
+        std::ofstream file(path, std::ios::app);
+        if (!file) {
+            throw std::runtime_error("appendFile: cannot open file " + path);
+        }
+        file << content;
+        return Value::makeNull();
+    };
+    functions_["appendFile"] = appendImpl;
+    functions_["append"] = appendImpl;
+
+    functions_["fileExists"] = [](const std::vector<Value>& args) {
+        const std::string path = requireString(args, 0, "fileExists");
+        return Value(std::filesystem::exists(path));
     };
 }
 
@@ -367,6 +395,85 @@ void StandardLibrary::registerGameGraphics() {
     functions_["audioPlay"] = [](const std::vector<Value>& args) {
         (void)requireString(args, 0, "audioPlay");
         return Value::makeNull();
+    };
+}
+
+void StandardLibrary::registerNetworking() {
+    functions_["httpGet"] = [](const std::vector<Value>& args) {
+        const std::string url = requireString(args, 0, "httpGet");
+        const std::string command = "curl -fsSL \"" + url + "\" 2>/dev/null";
+        std::array<char, 256> buffer{};
+        std::string result;
+        FILE* pipe = popen(command.c_str(), "r");
+        if (!pipe) {
+            throw std::runtime_error("httpGet: failed to spawn curl process");
+        }
+        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
+            result += buffer.data();
+        }
+        const int rc = pclose(pipe);
+        if (rc != 0) {
+            throw std::runtime_error("httpGet: curl failed for " + url);
+        }
+        return Value(result);
+    };
+}
+
+void StandardLibrary::registerInteroperability() {
+    functions_["objectCreate"] = [](const std::vector<Value>&) {
+        return Value::makeObject(ObjectValue{});
+    };
+
+    functions_["objectSet"] = [](const std::vector<Value>& args) {
+        if (args.size() < 3) {
+            throw std::runtime_error("objectSet: expected object, key, value");
+        }
+        ObjectValue object = args[0].asObject();
+        const std::string key = args[1].asString();
+        object.fields[key] = std::make_shared<Value>(args[2]);
+        return Value::makeObject(object);
+    };
+
+    functions_["objectGet"] = [](const std::vector<Value>& args) {
+        if (args.size() < 2) {
+            throw std::runtime_error("objectGet: expected object and key");
+        }
+        const ObjectValue object = args[0].asObject();
+        const std::string key = args[1].asString();
+        const auto it = object.fields.find(key);
+        if (it == object.fields.end()) {
+            return Value::makeNull();
+        }
+        return *it->second;
+    };
+
+    functions_["classCreate"] = [](const std::vector<Value>& args) {
+        const std::string name = requireString(args, 0, "classCreate");
+        return Value::makeClass(name, ObjectValue{});
+    };
+
+    functions_["env"] = [](const std::vector<Value>& args) {
+        const std::string name = requireString(args, 0, "env");
+        const char* value = std::getenv(name.c_str());
+        if (!value) {
+            return Value::makeNull();
+        }
+        return Value(std::string(value));
+    };
+
+    functions_["exec"] = [](const std::vector<Value>& args) {
+        const std::string command = requireString(args, 0, "exec");
+        std::array<char, 256> buffer{};
+        std::string result;
+        FILE* pipe = popen(command.c_str(), "r");
+        if (!pipe) {
+            throw std::runtime_error("exec: failed to spawn command");
+        }
+        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
+            result += buffer.data();
+        }
+        pclose(pipe);
+        return Value(result);
     };
 }
 

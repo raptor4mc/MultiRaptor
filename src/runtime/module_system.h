@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "parser/parser.h"
@@ -16,6 +18,12 @@ class ModuleSystem {
     std::string loadUsePath(const std::string& relativePath, const std::string& baseDir) const;
 
     std::vector<std::string> collectDependencies(const parser::ParseResult& parseResult) const;
+
+    void clearCache();
+
+  private:
+    mutable std::unordered_map<std::string, std::string> cache_;
+    mutable std::unordered_set<std::string> loadStack_;
 };
 
 } // namespace magphos::runtime

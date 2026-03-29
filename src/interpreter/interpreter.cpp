@@ -2,6 +2,7 @@
 
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "semantic/analyzer.h"
 
 namespace magphos::interpreter {
 
@@ -17,7 +18,11 @@ std::string analyzeProgram(const std::string& source) {
     const auto result = parser.parse(tokens);
 
     if (result.errors.empty()) {
-        return "ok";
+        const auto semanticIssues = semantic::analyze(result.program);
+        if (semanticIssues.empty()) {
+            return "ok";
+        }
+        return semantic::renderIssues(semanticIssues);
     }
 
     return parser::renderErrors(result.errors, source);
