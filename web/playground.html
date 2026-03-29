@@ -13,8 +13,8 @@
       <p class="muted">A Chromebook-friendly coding workspace for writing, running, and saving MagPhos code</p>
     </div>
     <div class="actions">
-      <button id="newProjectBtn">New Project</button>
-      <button id="exportBtn">Export Project</button>
+      <button id="newProjectBtn" class="ui-btn">New Project</button>
+      <button id="exportBtn" class="ui-btn">Export Project</button>
       <label class="import-label" for="importInput">Import Project</label>
       <input id="importInput" type="file" accept="application/json" />
     </div>
@@ -46,13 +46,15 @@
     <section class="panel right-panel">
       <h2>Run & Output</h2>
       <div class="actions wrap">
-        <button id="runBtn">Run</button>
+        <button id="runBtn" class="ui-btn run-btn">Run</button>
       </div>
-      <div class="actions wrap">
-        <button id="consoleTabBtn" class="small">Console</button>
-        <button id="terminalTabBtn" class="small">Terminal</button>
+      <div class="actions wrap tab-row">
+        <button id="outputTabBtn" class="small tab-btn">Output</button>
+        <button id="consoleTabBtn" class="small tab-btn">Console</button>
+        <button id="terminalTabBtn" class="small tab-btn">Terminal</button>
       </div>
-      <h3 id="outputTitle">Console</h3>
+      <h3 id="outputTitle">Output</h3>
+      <pre id="programOutput"></pre>
       <pre id="consoleOutput"></pre>
       <section id="terminalOutput" class="terminal-shell" hidden>
         <pre id="terminalHistory" class="terminal-history"></pre>
