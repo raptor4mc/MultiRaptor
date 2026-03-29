@@ -7,70 +7,89 @@
   <link rel="stylesheet" href="playground.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>MagPhos Web Studio</h1>
-      <p class="muted">A Chromebook-friendly coding workspace for writing, running, and saving MagPhos code</p>
-    </div>
-    <div class="actions">
-      <button id="newProjectBtn">New Project</button>
-      <button id="exportBtn">Export Project</button>
-      <label class="import-label" for="importInput">Import Project</label>
-      <input id="importInput" type="file" accept="application/json" />
-    </div>
+  <header class="titlebar">
+    <div class="window-actions">⟵ ⟶</div>
+    <input class="workspace-name" value="MultiRaptor [GitHub]" aria-label="workspace" />
   </header>
 
-  <main class="studio-grid">
-    <aside class="panel files-panel">
-      <div class="panel-title-row">
-        <h2>Files</h2>
-        <button id="newFolderBtn" class="small">+ Folder</button>
-        <button id="newFileBtn" class="small">+ File</button>
-        <button id="deleteFolderBtn" class="small danger">Delete Folder</button>
-      </div>
-      <ul id="fileList" class="file-list"></ul>
-      <p class="muted tiny">Projects are auto-saved in your browser. Compiler runs through C++ WASM.</p>
+  <main class="ide-shell">
+    <aside class="activity-bar" aria-label="activity bar">
+      <button class="activity-btn active" data-panel="explorerPanel" title="Explorer">📄</button>
+      <button class="activity-btn" data-panel="searchPanel" title="Search">🔎</button>
+      <button class="activity-btn" data-panel="extensionsPanel" title="Extensions">🧩</button>
     </aside>
 
-    <section class="panel editor-panel">
-      <div class="panel-title-row">
-        <h2 id="activeFileLabel">Editor</h2>
-        <div class="actions">
-          <button id="renameFileBtn" class="small">Rename</button>
-          <button id="deleteFileBtn" class="small danger">Delete</button>
+    <aside class="sidebar">
+      <section id="explorerPanel" class="side-panel">
+        <div class="panel-title-row">
+          <h2>EXPLORER</h2>
+          <div class="actions">
+            <button id="newFolderBtn" class="small">+Folder</button>
+            <button id="newFileBtn" class="small">+File</button>
+          </div>
         </div>
-      </div>
-      <textarea id="source" spellcheck="false"></textarea>
-    </section>
+        <input id="fileTreeFilter" class="tree-filter" type="search" placeholder="Filter files in tree" />
+        <ul id="fileList" class="file-list"></ul>
+        <button id="deleteFolderBtn" class="small danger">Delete Selected Folder</button>
+      </section>
 
-    <section class="panel right-panel">
-      <h2>Run & Output</h2>
-      <div class="actions wrap">
-        <button id="runBtn">Run</button>
-      </div>
-      <div class="actions wrap">
-        <button id="consoleTabBtn" class="small">Console</button>
-        <button id="terminalTabBtn" class="small">Terminal</button>
-      </div>
-      <h3 id="outputTitle">Console</h3>
-      <pre id="consoleOutput"></pre>
-      <section id="terminalOutput" class="terminal-shell" hidden>
-        <pre id="terminalHistory" class="terminal-history"></pre>
-        <div class="terminal-input-row">
-          <span class="terminal-prompt" id="terminalPrompt">$</span>
-          <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" />
+      <section id="searchPanel" class="side-panel hidden">
+        <div class="panel-title-row"><h2>SEARCH</h2></div>
+        <input id="globalSearchInput" class="tree-filter" type="search" placeholder="Search in files (ex: Mine)" />
+        <ul id="searchResults" class="file-list"></ul>
+      </section>
+
+      <section id="extensionsPanel" class="side-panel hidden">
+        <div class="panel-title-row"><h2>EXTENSIONS</h2></div>
+        <p class="muted">No extensions installed yet.</p>
+      </section>
+    </aside>
+
+    <section class="main-area">
+      <section id="welcomePanel" class="welcome-panel">
+        <h1>MagPhos Studio</h1>
+        <p class="muted">Start empty, then import code or create new code.</p>
+        <div class="actions">
+          <button id="newProjectBtn">New Code</button>
+          <label class="import-label" for="importInput">Import Code</label>
         </div>
+      </section>
+
+      <section class="editor-wrap">
+        <div class="panel-title-row editor-head">
+          <h2 id="activeFileLabel">Editor</h2>
+          <div class="actions">
+            <button id="renameFileBtn" class="small">Rename</button>
+            <button id="deleteFileBtn" class="small danger">Delete</button>
+            <button id="exportBtn" class="small">Export</button>
+            <button id="runBtn">Run</button>
+          </div>
+        </div>
+        <textarea id="source" spellcheck="false"></textarea>
+      </section>
+
+      <section class="bottom-panel">
+        <div class="actions tabs">
+          <button id="consoleTabBtn" class="small">OUTPUT</button>
+          <button id="terminalTabBtn" class="small">TERMINAL</button>
+        </div>
+        <h3 id="outputTitle">Output</h3>
+        <pre id="consoleOutput"></pre>
+        <section id="terminalOutput" class="terminal-shell" hidden>
+          <pre id="terminalHistory" class="terminal-history"></pre>
+          <div class="terminal-input-row">
+            <span class="terminal-prompt" id="terminalPrompt">$</span>
+            <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" />
+          </div>
+        </section>
       </section>
     </section>
   </main>
 
-  <template id="defaultProgram">#! Welcome to MagPhos
-fn greet(name) {
-  print "Hi " + name
-}
+  <input id="importInput" type="file" accept="application/json" hidden />
 
-var student = "Chromebook Coder"
-greet(student)
+  <template id="defaultProgram">#! Welcome to MagPhos
+print "Hello"
 </template>
 
   <script src="playground.js"></script>
