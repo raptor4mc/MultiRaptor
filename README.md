@@ -140,7 +140,7 @@ If wasm artifacts are missing at runtime, the playground keeps Run disabled and 
 
 If you see `JavaScript loader failed to load (404)` in the playground, it means the generated loader files are not published at `web/magphos_wasm.js` and/or `web/magphos_wasm_singlefile.js`. Build with `./tools/scripts/build_web.sh` and publish (or commit) those generated files.
 
-For zero-maintenance hosting from `main`, this repo also includes `.github/workflows/sync-web-wasm-artifacts.yml`, which rebuilds `web/magphos_wasm.js`, `web/magphos_wasm_singlefile.js`, and `web/magphos_wasm.wasm.64` from the C++ sources and commits them automatically whenever compiler sources change.
+For zero-maintenance hosting from `main`, this repo also includes `.github/workflows/sync-web-wasm-artifacts.yml`, which rebuilds `web/magphos_wasm.js`, `web/magphos_wasm_singlefile.js`, and `web/magphos_wasm.wasm.64` from the C++ sources and commits them automatically whenever compiler sources change. The playground loader also probes `web/`, parent-folder, and site-root wasm/js paths to tolerate different static-host layouts.
 
 Then host the repo (or just the `web/` folder) on any static site and open:
 

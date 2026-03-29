@@ -61,11 +61,23 @@ async function loadWasmCompiler() {
   const attempts = [];
   const isFileProtocol = window.location.protocol === 'file:';
   const loaderCandidates = isFileProtocol
-    ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
-    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
-  const wasmCandidates = [null, './magphos_wasm.wasm.64', './magphos_wasm.wasm', './magphos.wasm.64', './magphos.wasm'];
-  const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
-  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
+    ? [
+      './magphos_wasm_singlefile.js', './magphos_wasm.js',
+      '../magphos_wasm_singlefile.js', '../magphos_wasm.js'
+    ]
+    : [
+      './magphos_wasm.js', './magphos_wasm_singlefile.js',
+      '../magphos_wasm.js', '../magphos_wasm_singlefile.js',
+      '/magphos_wasm.js', '/magphos_wasm_singlefile.js'
+    ];
+  const wasmCandidates = [
+    null,
+    './magphos_wasm.wasm.64', './magphos_wasm.wasm', './magphos.wasm.64', './magphos.wasm',
+    '../magphos_wasm.wasm.64', '../magphos_wasm.wasm', '../magphos.wasm.64', '../magphos.wasm',
+    '/magphos_wasm.wasm.64', '/magphos_wasm.wasm', '/magphos.wasm.64', '/magphos.wasm'
+  ];
+  const loaderUrls = [...new Set(loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href))];
+  const wasmUrls = [...new Set(wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null)))];
 
   for (const loaderUrl of loaderUrls) {
     const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
