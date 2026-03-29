@@ -435,6 +435,8 @@ function doRun() {
     if (analysis !== 'ok') {
       throw new Error(analysis);
     }
+    outputEl.textContent = 'No errors found. Program is valid.';
+    return 'ok';
   }
 
   const js = compileMagPhos(sourceEl.value);
