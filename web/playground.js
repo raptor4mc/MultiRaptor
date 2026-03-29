@@ -141,6 +141,13 @@ async function loadWasmCompiler() {
 }
 
 async function validateArtifactSize(url, minBytes, label) {
+  const parsedUrl = new URL(url, window.location.href);
+  if (parsedUrl.protocol === 'file:') {
+    // `fetch(file://...)` is blocked in many browsers. For direct file usage,
+    // skip size preflight and let script/module loading determine validity.
+    return;
+  }
+
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`${label} failed to load (${response.status}).`);
