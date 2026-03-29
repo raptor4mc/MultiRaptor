@@ -4,6 +4,7 @@
 3. When a feature/sub-priority is fully implemented, remove it from the active TODO list (or mark the whole priority completed and move on).
 4. Always work on the first `priority` that is not completed.
 5. Each `sub priority` must be implementation-oriented and directly testable.
+6. No bloat priorities: every priority/sub-priority must fix a real error or move the language/runtime/tooling forward.
 
 ---
 
@@ -72,12 +73,6 @@ Enforce consistent TODO structure and spelling (`priority` / `sub priority`).
 
 ## priority 4: language safety and predictability
 Status: 🔄 in progress.
-
-### sub priority 4.1
-Enforce declaration-before-assignment for all assignment forms.
-
-### sub priority 4.2
-Reject invalid control usage early (for example `return` outside functions).
 
 ### sub priority 4.3
 Keep semantic diagnostics short, actionable, and line-oriented.
@@ -247,3 +242,23 @@ Add golden-file tests for `--check/--deps/--tokens/--run/--module-graph --json`.
 
 ### sub priority 13.5
 Document the CLI JSON response contract in `docs/` with stability guarantees.
+
+---
+
+## priority 14: control-flow diagnostics hardening
+Status: 🔄 in progress.
+
+### sub priority 14.1
+Reject `return` outside function scope with stable diagnostic wording.
+
+### sub priority 14.2
+Add regression tests for invalid control flow in top-level and block scopes.
+
+### sub priority 14.3
+Normalize control-flow diagnostic prefixes for machine filtering.
+
+### sub priority 14.4
+Ensure CLI `--check --json` includes control-flow diagnostics in `errors[]`.
+
+### sub priority 14.5
+Document control-flow semantic rules in `docs/syntax.md`.

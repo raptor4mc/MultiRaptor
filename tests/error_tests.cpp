@@ -22,5 +22,8 @@ int main() {
     const std::string badAsk = magphos::interpreter::analyzeProgram("ask \"name?\" -> user\n");
     assert(badAsk.find("'ask' requires an existing variable: user") != std::string::npos);
 
+    const std::string badReturn = magphos::interpreter::analyzeProgram("return 42\n");
+    assert(badReturn.find("Invalid control flow: 'return' is only allowed inside functions") != std::string::npos);
+
     return 0;
 }

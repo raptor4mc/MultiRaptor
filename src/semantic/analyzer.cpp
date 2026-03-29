@@ -122,7 +122,7 @@ class Analyzer {
                 return;
             case ast::StmtKind::Return:
                 if (functionDepth_ <= 0) {
-                    issues_.push_back({"'return' is only allowed inside functions"});
+                    issues_.push_back({"Invalid control flow: 'return' is only allowed inside functions"});
                 }
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
