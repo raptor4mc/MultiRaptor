@@ -546,10 +546,9 @@ async function init() {
     runBtn.disabled = true;
     enableFallbackBtn.hidden = true;
     outputEl.textContent = [
-      'C++ WASM compiler is required for web compile/run and is not loaded.',
-      'Expected loader in repo: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js',
-      'Expected wasm in repo (if using modular loader): web/magphos_wasm.wasm',
-      'Build with Emscripten: ./tools/scripts/build_web.sh',
+      'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
+      'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.',
+      'Build with Emscripten: ./tools/scripts/build_web.sh.',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n');
   } else {
