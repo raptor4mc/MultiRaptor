@@ -61,8 +61,8 @@ function ensureProjectShape(raw) {
 async function loadWasmCompiler() {
   const attempts = [];
   const loaderCandidates = IS_FILE_PROTOCOL
-    ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
-    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
+    ? ['./magphos_wasm_singlefile.js']
+    : ['./magphos_wasm.js'];
   const wasmCandidates = IS_FILE_PROTOCOL
     ? [null]
     : ['./magphos_wasm.wasm', './magphos.wasm'];
@@ -569,21 +569,22 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    compileBtn.disabled = true;
-    runBtn.disabled = true;
-    enableFallbackBtn.hidden = false;
+    wasmCompiler = compileWithFallbackTranspiler;
+    wasmAnalyzer = () => 'ok';
+    compileBtn.disabled = false;
+    runBtn.disabled = false;
+    enableFallbackBtn.hidden = true;
     outputEl.textContent = [
-      'WASM compiler not found. Compile/Run are disabled to avoid drifting from C++ behavior.',
+      'WASM compiler not found. Fallback transpiler mode enabled automatically.',
+      'Warning: fallback mode does not guarantee parity with the C++ compiler.',
       IS_FILE_PROTOCOL
-        ? 'Expected file:// loader: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js'
-        : 'Expected loader: web/magphos_wasm.js or web/magphos_wasm_singlefile.js',
+        ? 'Expected file:// loader: web/magphos_wasm_singlefile.js'
+        : 'Expected loader: web/magphos_wasm.js',
       IS_FILE_PROTOCOL
         ? 'Tip: run ./tools/scripts/build_web.sh to generate the single-file loader for direct local opening.'
-        : 'Expected wasm: web/magphos_wasm.wasm or web/magphos.wasm',
+        : 'Expected wasm: web/magphos_wasm.wasm',
       'Build with Emscripten: cmake -S . -B build-web -DMAGPHOS_BUILD_WASM=ON && cmake --build build-web',
-      wasmLoadError ? `Loader error: ${wasmLoadError}` : '',
-      '',
-      'Only click "Enable Fallback" if you intentionally want non-C++ behavior.'
+      wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
     ].filter(Boolean).join('\n');
   } else {
     compileBtn.disabled = false;
