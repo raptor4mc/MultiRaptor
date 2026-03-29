@@ -50,6 +50,7 @@ set(MAGPHOS_CORE_SOURCES
   src/runtime/stdlib.cpp
   src/runtime/module_system.cpp
   src/runtime/engine.cpp
+  src/semantic/analyzer.cpp
   src/utils/error.cpp
   src/utils/file_utils.cpp
   src/utils/string_utils.cpp

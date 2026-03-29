@@ -22,6 +22,13 @@ fn add(a, b) {
 result = add(2, 3)
 ```
 
+Optional/default + variadic parameters:
+```mp
+fn greet(name = "friend", ...rest) {
+  return name
+}
+```
+
 ## Control-style statements currently parsed
 - `print <expr>`
 - `return <expr>`
@@ -29,6 +36,22 @@ result = add(2, 3)
 - `if <expr> { ... } else { ... }`
 - `while <expr> { ... }`
 - `for (<init>; <condition>; <increment>) { ... }`
+- `when <expr> { ... }`
+- `loop <countExpr> { ... }`
+- `repeat while <expr> { ... }`
+- `try { ... } catch { ... }`
+- `switch <expr> { case <expr> { ... } default { ... } }`
+- `match <expr> { case <expr> { ... } default { ... } }`
+- `namespace <name> { ... }`
+- `set <name> = <expr>`
+- `ask <promptExpr> -> <name>`
+- comments: `# ...` and `// ...`
+
+Safety notes:
+- `name = expr` and `set name = expr` require `name` to already exist.
+- `ask "..." -> name` requires `name` to already exist.
+- `return` is only valid inside `fn` blocks.
+- visibility markers `public`/`private` are accepted before declarations.
 
 ## Modules
 ```mp
@@ -47,6 +70,3 @@ use "utils.mp"
 Statements can end with:
 - newline
 - semicolon (`;`)
-
-
-> Note: `set`, `ask`, `when`, `loop`, `repeat while`, and comment syntax are not tokenized/parsed yet.
