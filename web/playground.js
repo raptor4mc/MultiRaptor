@@ -319,6 +319,7 @@ function ensureParentFolders(project, filePath) {
 }
 
 const sourceEl = document.getElementById('source');
+const programOutputEl = document.getElementById('programOutput');
 const consoleOutputEl = document.getElementById('consoleOutput');
 const terminalShellEl = document.getElementById('terminalOutput');
 const terminalHistoryEl = document.getElementById('terminalHistory');
@@ -328,12 +329,13 @@ const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
 const runBtn = document.getElementById('runBtn');
+const outputTabBtn = document.getElementById('outputTabBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
 const deleteFolderBtn = document.getElementById('deleteFolderBtn');
 runBtn.disabled = true;
 
-let outputMode = 'console';
+let outputMode = 'output';
 let terminalCwd = '';
 let terminalLines = [];
 let terminalHistoryIndex = -1;
@@ -342,20 +344,25 @@ const collapsedFolders = new Set();
 let selectedFolder = '';
 
 function setOutputMode(mode) {
-  outputMode = mode === 'terminal' ? 'terminal' : 'console';
+  const allowedModes = new Set(['output', 'console', 'terminal']);
+  outputMode = allowedModes.has(mode) ? mode : 'output';
+  const showOutput = outputMode === 'output';
   const showConsole = outputMode === 'console';
+  const showTerminal = outputMode === 'terminal';
+  programOutputEl.hidden = !showOutput;
   consoleOutputEl.hidden = !showConsole;
-  terminalShellEl.hidden = showConsole;
-  outputTitleEl.textContent = showConsole ? 'Console' : 'Terminal';
-  if (!showConsole) {
+  terminalShellEl.hidden = !showTerminal;
+  outputTitleEl.textContent = showOutput ? 'Output' : showConsole ? 'Console' : 'Terminal';
+  if (showTerminal) {
     refreshTerminalPrompt();
     terminalInputEl.focus();
   }
 }
 
-function setOutputs(message, terminalMessage = '') {
-  consoleOutputEl.textContent = message;
-  const payload = terminalMessage || message;
+function setOutputs({ output = '', console = '', terminal = '' } = {}) {
+  programOutputEl.textContent = output;
+  consoleOutputEl.textContent = console;
+  const payload = terminal || output || console;
   pushTerminalLine(payload);
 }
 
@@ -630,8 +637,11 @@ function doRun() {
       throw new Error(analysis);
     }
     setOutputs(
-      'No errors found. Program is valid.',
-      `${terminalPromptEl.textContent} mp analyze ${project.activeFile}\nNo errors found. Program is valid.`
+      {
+        output: 'No errors found. Program is valid.',
+        console: '',
+        terminal: `${terminalPromptEl.textContent} mp analyze ${project.activeFile}\nNo errors found. Program is valid.`
+      }
     );
     return 'ok';
   }
@@ -647,10 +657,11 @@ function doRun() {
   }
 
   const runOutput = logs.join('\n') || '(no output)';
-  setOutputs(
-    runOutput,
-    `$ mp run ${project.activeFile}\n${runOutput}`
-  );
+  setOutputs({
+    output: runOutput,
+    console: '',
+    terminal: `$ mp run ${project.activeFile}\n${runOutput}`
+  });
   return runOutput;
 }
 
@@ -659,14 +670,21 @@ sourceEl.addEventListener('input', () => {
 });
 
 runBtn.addEventListener('click', () => {
-  setOutputs('', '');
+  setOutputs({ output: '', console: '', terminal: '' });
   try {
     doRun();
+    setOutputMode('output');
   } catch (err) {
-    setOutputs(err.message, `$ mp run ${project.activeFile}\n${err.message}`);
+    setOutputs({
+      output: '',
+      console: err.message,
+      terminal: `$ mp run ${project.activeFile}\n${err.message}`
+    });
+    setOutputMode('console');
   }
 });
 
+outputTabBtn.addEventListener('click', () => setOutputMode('output'));
 consoleTabBtn.addEventListener('click', () => setOutputMode('console'));
 terminalTabBtn.addEventListener('click', () => setOutputMode('terminal'));
 terminalInputEl.addEventListener('keydown', (event) => {
@@ -746,8 +764,11 @@ deleteFolderBtn.addEventListener('click', () => {
   saveProject(project);
   renderFileList();
   setOutputs(
-    `Deleted folder ${folderToDelete}`,
-    `${terminalPromptEl.textContent} rm -r ${folderToDelete}\nDeleted folder ${folderToDelete}`
+    {
+      output: `Deleted folder ${folderToDelete}`,
+      console: '',
+      terminal: `${terminalPromptEl.textContent} rm -r ${folderToDelete}\nDeleted folder ${folderToDelete}`
+    }
   );
 });
 
@@ -807,7 +828,7 @@ document.getElementById('newProjectBtn').addEventListener('click', () => {
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
-  setOutputs('', '');
+  setOutputs({ output: '', console: '', terminal: '' });
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -838,9 +859,18 @@ document.getElementById('importInput').addEventListener('change', async (event) 
     saveProject(project);
     syncEditorFromFile();
     renderFileList();
-    setOutputs(`Imported ${file.name}`, `$ mp import ${file.name}\nImported.`);
+    setOutputs({
+      output: `Imported ${file.name}`,
+      console: '',
+      terminal: `$ mp import ${file.name}\nImported.`
+    });
   } catch (err) {
-    setOutputs(err.message, err.message);
+    setOutputs({
+      output: '',
+      console: err.message,
+      terminal: err.message
+    });
+    setOutputMode('console');
   } finally {
     event.target.value = '';
   }
@@ -866,12 +896,22 @@ async function init() {
     if (wasmLoadError && wasmLoadError.includes('404')) {
       lines.push('Detected 404 loading WASM JS loader. Publish/commit web/magphos_wasm.js and web/magphos_wasm_singlefile.js.');
     }
-    setOutputs(lines.filter(Boolean).join('\n'));
+    setOutputs({
+      output: '',
+      console: lines.filter(Boolean).join('\n'),
+      terminal: ''
+    });
+    setOutputMode('console');
   } else {
     runBtn.disabled = false;
-    setOutputs('C++ WASM compiler connected. Press Run to execute MagPhos code.');
+    setOutputs({
+      output: 'C++ WASM compiler connected. Press Run to execute MagPhos code.',
+      console: '',
+      terminal: ''
+    });
+    setOutputMode('output');
   }
 }
 
-setOutputMode('console');
+setOutputMode('output');
 init();
