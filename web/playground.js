@@ -321,6 +321,7 @@ const runBtn = document.getElementById('runBtn');
 const enableFallbackBtn = document.getElementById('enableFallbackBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
+runBtn.disabled = true;
 
 let outputMode = 'console';
 
@@ -396,7 +397,7 @@ function syncFileFromEditor() {
 function doRun() {
   syncFileFromEditor();
   if (!wasmCompiler) {
-    throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm_singlefile.js from C++ using ./tools/scripts/build_web.sh to keep web and native behavior in sync.');
+    throw new Error('Compiler is still initializing. Wait a moment, then press Run again.');
   }
   if (wasmAnalyzer) {
     const analysis = wasmAnalyzer(sourceEl.value);
