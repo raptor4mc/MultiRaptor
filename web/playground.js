@@ -631,37 +631,60 @@ function doRun() {
     const why = wasmLoadError ? `\nLoader error: ${wasmLoadError}` : '';
     throw new Error(`C++ WASM compiler is not loaded yet. Build/publish web WASM artifacts and refresh.${why}`);
   }
+  let analyzerLog = '';
   if (wasmAnalyzer) {
-    const analysis = wasmAnalyzer(sourceEl.value);
-    if (analysis !== 'ok') {
-      throw new Error(analysis);
-    }
-    setOutputs(
-      {
-        output: 'No errors found. Program is valid.',
-        console: '',
-        terminal: `${terminalPromptEl.textContent} mp analyze ${project.activeFile}\nNo errors found. Program is valid.`
+    const analysisRaw = String(wasmAnalyzer(sourceEl.value) ?? '').trim();
+    if (analysisRaw) {
+      if (analysisRaw === 'ok') {
+        analyzerLog = 'ok';
+      } else {
+        try {
+          const parsed = JSON.parse(analysisRaw);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.ok === false) {
+              throw new Error(parsed.error || parsed.message || analysisRaw);
+            }
+            analyzerLog = JSON.stringify(parsed);
+          } else {
+            analyzerLog = analysisRaw;
+          }
+        } catch (parseErr) {
+          if (parseErr instanceof SyntaxError) {
+            throw new Error(analysisRaw);
+          }
+          throw parseErr;
+        }
       }
-    );
-    return 'ok';
+    }
   }
 
   const js = compileMagPhos(sourceEl.value);
   const logs = [];
+  const errorLogs = [];
   const originalLog = console.log;
+  const originalError = console.error;
   console.log = (...args) => logs.push(args.join(' '));
+  console.error = (...args) => errorLogs.push(args.join(' '));
   try {
     new Function(js)();
   } finally {
     console.log = originalLog;
+    console.error = originalError;
   }
 
   const runOutput = logs.join('\n') || '(no output)';
+  const runtimeErrors = errorLogs.join('\n');
+  const terminalLines = [`$ mp run ${project.activeFile}`];
+  if (analyzerLog) terminalLines.push(analyzerLog);
+  terminalLines.push(runOutput);
   setOutputs({
     output: runOutput,
-    console: '',
-    terminal: `$ mp run ${project.activeFile}\n${runOutput}`
+    console: runtimeErrors,
+    terminal: terminalLines.join('\n')
   });
+  if (runtimeErrors) {
+    setOutputMode('console');
+  }
   return runOutput;
 }
 
@@ -673,7 +696,7 @@ runBtn.addEventListener('click', () => {
   setOutputs({ output: '', console: '', terminal: '' });
   try {
     doRun();
-    setOutputMode('output');
+    setOutputMode(consoleOutputEl.textContent ? 'console' : 'output');
   } catch (err) {
     setOutputs({
       output: '',
