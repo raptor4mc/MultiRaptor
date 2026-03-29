@@ -673,11 +673,68 @@ function buildFallbackPreviewHtml(runOutput = '', forceGameView = false) {
   return `<!doctype html><html><head><meta charset="utf-8" /><style>html, body { margin: 0; width: 100%; height: 100%; background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; }#hud { position: fixed; inset: 12px auto auto 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(100, 116, 139, 0.6); padding: 10px 12px; border-radius: 8px; }canvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at 40% 30%, #1d4ed8, #0f172a 58%); }</style></head><body><canvas id="screen"></canvas><div id="hud"${hudStyle}><strong>MagPhos Preview</strong><br />Add preview/index.html in your project to replace this.</div>${outputNote}<script>const canvas = document.getElementById('screen');const ctx = canvas.getContext('2d');let t = 0;function resize(){canvas.width = window.innerWidth;canvas.height = window.innerHeight;}function draw(){t += 0.02;ctx.clearRect(0, 0, canvas.width, canvas.height);ctx.fillStyle = '#22d3ee';const x = canvas.width * (0.5 + Math.cos(t) * 0.28);const y = canvas.height * (0.5 + Math.sin(t * 1.7) * 0.2);ctx.beginPath();ctx.arc(x, y, 28, 0, Math.PI * 2);ctx.fill();requestAnimationFrame(draw);}window.addEventListener('resize', resize);resize();draw();</script></body></html>`;
 }
 
+function convertMagphosMarkupToHtml(source) {
+  const raw = String(source || '');
+  if (!raw.trim()) return '';
+
+  const hasMagphosDocType = /^\s*<!DOCTYPE\s+MAGPHOS>\s*/i.test(raw);
+  const hasMagphosRoot = /<\s*magphos(?:\s[^>]*)?>/i.test(raw) && /<\/\s*magphos\s*>/i.test(raw);
+  if (!hasMagphosDocType || !hasMagphosRoot) {
+    return '';
+  }
+
+  return raw
+    .replace(/<!DOCTYPE\s+MAGPHOS>/i, '<!DOCTYPE html>')
+    .replace(/<\s*magphos(\s[^>]*)?>/i, '<html$1>')
+    .replace(/<\/\s*magphos\s*>/i, '</html>');
+}
+
+function convertCssxdToPreviewHtml(source) {
+  const raw = String(source || '');
+  const trimmed = raw.trimStart();
+  if (!trimmed) return '';
+
+  const cssxdStarts = [':root {', 'body {', '* {'];
+  const isCssxd = cssxdStarts.some((prefix) => trimmed.startsWith(prefix));
+  if (!isCssxd) {
+    return '';
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8" /><style>${raw}</style></head><body><main style="padding: 24px;"><h1>CSSXD Preview</h1><p>This preview is generated from CSSXD-in-Mp source.</p><button>Preview Button</button></main></body></html>`;
+}
+
 function findPreviewHtml() {
   const preferred = ['preview/index.html', 'game/index.html', 'index.html'];
   for (const path of preferred) {
     if (project.files[path]) return project.files[path];
   }
+
+  const preferredMagphos = ['preview/index.mp', 'game/index.mp', project.activeFile];
+  for (const path of preferredMagphos) {
+    if (!path || !project.files[path]) continue;
+    const converted = convertMagphosMarkupToHtml(project.files[path]);
+    if (converted) return converted;
+  }
+
+  const magphosEntry = Object.entries(project.files)
+    .find(([, content]) => Boolean(convertMagphosMarkupToHtml(content)));
+  if (magphosEntry) {
+    return convertMagphosMarkupToHtml(magphosEntry[1]);
+  }
+
+  const preferredCssxd = ['preview/style.mp', 'game/style.mp', project.activeFile];
+  for (const path of preferredCssxd) {
+    if (!path || !project.files[path]) continue;
+    const converted = convertCssxdToPreviewHtml(project.files[path]);
+    if (converted) return converted;
+  }
+
+  const cssxdEntry = Object.entries(project.files)
+    .find(([, content]) => Boolean(convertCssxdToPreviewHtml(content)));
+  if (cssxdEntry) {
+    return convertCssxdToPreviewHtml(cssxdEntry[1]);
+  }
+
   const htmlEntry = Object.entries(project.files)
     .find(([path]) => path.toLowerCase().endsWith('.html'));
   return htmlEntry ? htmlEntry[1] : '';
