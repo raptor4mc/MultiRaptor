@@ -152,6 +152,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/roadmap.md`
 - `docs/repl.md`
 - `docs/game_api.md`
+- `info/rules.txt` (consistency/simplicity/predictability/safety rules)
 
 ## Sample programs (new)
 
@@ -166,6 +167,14 @@ MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh
 - `mp.sh repl`
 
 Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
+
+Native CLI tool (`magphos_cli`) now supports:
+
+- `--version`
+- `--about`
+- `--check <program.mp>` (parse + semantic validation)
+- `--deps <program.mp>` (list `import` / `use` dependencies)
+- `--tokens <program.mp>` (token dump for debugging)
 
 ## Real runtime model (new)
 

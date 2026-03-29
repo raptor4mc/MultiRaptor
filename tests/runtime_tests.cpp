@@ -120,6 +120,18 @@ int main() {
         const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
+    stdlib.call("appendFile", {Value(path), Value(std::string(" world"))});
+    assert(stdlib.call("readFile", {Value(path)}).asString() == "hello world");
+    assert(stdlib.call("fileExists", {Value(path)}).asBoolean());
+
+    const auto obj0 = stdlib.call("objectCreate", {});
+    const auto obj1 = stdlib.call("objectSet", {obj0, Value(std::string("hp")), Value(100.0)});
+    assert(stdlib.call("objectGet", {obj1, Value(std::string("hp"))}).asNumber() == 100.0);
+    assert(stdlib.call("classCreate", {Value(std::string("Enemy"))}).asClass().name == "Enemy");
+    assert(stdlib.call("env", {Value(std::string("PATH"))}).type() == TypeKind::String);
+    assert(stdlib.call("exec", {Value(std::string("printf hi"))}).asString() == "hi");
+    stdlib.call("writeFile", {Value(std::string("/tmp/magphos_httpget.txt")), Value(std::string("network-ok"))});
+    assert(stdlib.call("httpGet", {Value(std::string("file:///tmp/magphos_httpget.txt"))}).asString().find("network-ok") != std::string::npos);
 
     magphos::runtime::ModuleSystem moduleSystem;
     const std::string modBase = "/tmp/magphos_modules";
@@ -132,6 +144,8 @@ int main() {
     assert(moduleSystem.resolveUsePath("utils.mp", modBase) == modBase + "/utils.mp");
     assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
     assert(moduleSystem.loadUsePath("utils.mp", modBase).find("print 3") != std::string::npos);
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos); // cache path
+    moduleSystem.clearCache();
 
     const std::string depSource = "import game.engine\nuse \"utils.mp\"\nprint 1\n";
     magphos::lexer::Lexer depLexer;
@@ -147,8 +161,16 @@ int main() {
 fn add(a, b) {
   return a + b
 }
-x = add(5, 7)
-flag = true and not false
+fn addBase(a, b = 5) {
+  return a + b
+}
+fn sumAll(...nums) {
+  return len(nums)
+}
+var x = add(5, 7)
+var y = addBase(10)
+var argc = sumAll(1, 2, 3, 4)
+var flag = true and not false
 if flag and x == 12 {
   x = x + 1
 } else {
@@ -157,7 +179,39 @@ if flag and x == 12 {
 while x < 20 {
   x = x + 2
 }
-sum = 0
+when x == 21 {
+  set x = x + 1
+}
+loop 2 {
+  set x = x + 1
+}
+repeat while x < 26 {
+  set x = x + 1
+}
+switch x {
+  case 26 {
+    set x = x + 1
+  }
+  default {
+    set x = 0
+  }
+}
+match y {
+  case 15 {
+    set y = y + 1
+  }
+  default {
+    set y = 0
+  }
+}
+try {
+  set missingVar = 1
+} catch {
+  set y = y + 1
+}
+var arr = [1, 2, 3]
+var arrLen = len(arr)
+var sum = 0
 for (var i = 0; i < 3; i = i + 1) {
   sum = sum + i
 }
@@ -169,15 +223,18 @@ for (var i = 0; i < 3; i = i + 1) {
 
     RuntimeEngine engine;
     engine.loadProgram(runtimeParse.program);
-    assert(engine.globals()->get("x").asNumber() == 21.0);
+    assert(engine.globals()->get("x").asNumber() == 27.0);
+    assert(engine.globals()->get("y").asNumber() == 17.0);
+    assert(engine.globals()->get("argc").asNumber() == 4.0);
     assert(engine.globals()->get("flag").asBoolean());
     assert(engine.globals()->get("sum").asNumber() == 3.0);
+    assert(engine.globals()->get("arrLen").asNumber() == 3.0);
 
     const std::string aritySource = R"(
 fn add(a, b) {
   return a + b
 }
-x = add(1)
+var x = add(1)
 )";
     const auto arityParse = runtimeParser.parse(runtimeLexer.tokenize(aritySource));
     bool arityRaised = false;
@@ -188,6 +245,15 @@ x = add(1)
         arityRaised = ex.code() == RuntimeErrorCode::ArityError;
     }
     assert(arityRaised);
+
+    const std::string semanticBad = magphos::interpreter::analyzeProgram("print unknownVar\n");
+    assert(semanticBad.find("Semantic error: Undefined identifier: unknownVar") != std::string::npos);
+    const std::string duplicateDecl = magphos::interpreter::analyzeProgram("var x = 1\nvar x = 2\n");
+    assert(duplicateDecl.find("Duplicate declaration in same scope") != std::string::npos);
+    const std::string badReturn = magphos::interpreter::analyzeProgram("return 1\n");
+    assert(badReturn.find("'return' is only allowed inside functions") != std::string::npos);
+    const std::string badSet = magphos::interpreter::analyzeProgram("set y = 1\n");
+    assert(badSet.find("'set' requires an existing variable") != std::string::npos);
 
     return 0;
 }
