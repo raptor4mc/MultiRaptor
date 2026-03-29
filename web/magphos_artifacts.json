@@ -1,0 +1,6 @@
+{
+  "loaders": [
+    "./magphos_wasm_singlefile.js"
+  ],
+  "wasm": []
+}

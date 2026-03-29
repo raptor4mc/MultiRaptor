@@ -24,6 +24,22 @@ function normalizeFilePath(path) {
   return trim(path).replace(/\\/g, '/').replace(/^\/+/, '');
 }
 
+function isFallbackLoaderModule(moduleRef) {
+  return !!(moduleRef && moduleRef.__magphosFallback === true);
+}
+
+async function loadArtifactManifest() {
+  const manifestUrl = new URL('./magphos_artifacts.json', SCRIPT_BASE_URL).href;
+  try {
+    const response = await fetch(manifestUrl, { cache: 'no-store' });
+    if (!response.ok) return null;
+    const manifest = await response.json();
+    return manifest && typeof manifest === 'object' ? manifest : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 function ensureProjectShape(raw) {
   const safe = raw && typeof raw === 'object' ? raw : {};
   const rawFiles = safe.files && typeof safe.files === 'object' ? safe.files : {};
@@ -59,8 +75,13 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const loaderCandidates = ['./magphos_wasm_singlefile.js', './magphos_wasm.js'];
-  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
+  const manifest = await loadArtifactManifest();
+  const loaderCandidates = Array.isArray(manifest?.loaders) && manifest.loaders.length
+    ? manifest.loaders
+    : ['./magphos_wasm_singlefile.js', './magphos_wasm.js'];
+  const wasmCandidates = Array.isArray(manifest?.wasm) && manifest.wasm.length
+    ? [null, ...manifest.wasm]
+    : [null, './magphos_wasm.wasm', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
 
@@ -76,6 +97,9 @@ async function loadWasmCompiler() {
     if (isSingleFileLoader) {
       try {
         const classicModule = await loadClassicScriptModule(loaderUrl, null);
+        if (isFallbackLoaderModule(classicModule)) {
+          throw new Error('Single-file loader is fallback-only and does not contain compiled C++ WASM.');
+        }
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
         }
@@ -109,6 +133,9 @@ async function loadWasmCompiler() {
               return new URL(path, loaderUrl).href;
             }
           });
+          if (isFallbackLoaderModule(wasmModule)) {
+            throw new Error('Module factory resolved a fallback loader, not compiled C++ WASM.');
+          }
           if (typeof wasmModule.compileMagPhos !== 'function') {
             throw new Error('WASM module loaded, but compileMagPhos export is missing.');
           }
@@ -121,6 +148,9 @@ async function loadWasmCompiler() {
         }
 
         const classicModule = await loadClassicScriptModule(loaderUrl, wasmUrl);
+        if (isFallbackLoaderModule(classicModule)) {
+          throw new Error('Classic loader is fallback-only and does not contain compiled C++ WASM.');
+        }
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
         }

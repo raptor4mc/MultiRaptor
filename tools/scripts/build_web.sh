@@ -56,7 +56,20 @@ if [[ ! -s web/magphos_wasm_singlefile.js ]]; then
   exit 1
 fi
 
+cat > web/magphos_artifacts.json <<'EOF'
+{
+  "loaders": [
+    "./magphos_wasm_singlefile.js",
+    "./magphos_wasm.js"
+  ],
+  "wasm": [
+    "./magphos_wasm.wasm"
+  ]
+}
+EOF
+
 echo "Web artifacts ready:"
 echo "  - web/magphos_wasm.js ($(wc -c < web/magphos_wasm.js) bytes)"
 echo "  - web/magphos_wasm.wasm ($(wc -c < web/magphos_wasm.wasm) bytes)"
 echo "  - web/magphos_wasm_singlefile.js ($(wc -c < web/magphos_wasm_singlefile.js) bytes)"
+echo "  - web/magphos_artifacts.json ($(wc -c < web/magphos_artifacts.json) bytes)"
