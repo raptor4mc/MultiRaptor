@@ -133,6 +133,13 @@ If needed, you can tune those size gates with:
 - `MAGPHOS_USE_DOCKER_FALLBACK` (`1` by default)
 - `MAGPHOS_DOCKER_EMSDK_IMAGE` (defaults to `emscripten/emsdk:$MAGPHOS_EMSDK_VERSION`)
 
+The script now hard-fails if generated JS still contains the fallback loader banner, if `web/magphos_wasm.wasm` is not a real wasm binary (magic bytes `00 61 73 6d`), or if artifacts are suspiciously small (`magphos_wasm.js` < 50 KB, `magphos_wasm.wasm` < 100 KB, `magphos_wasm_singlefile.js` < 200 KB). This catches placeholder/base64-text artifacts before publish.
+
+If needed, you can tune those size gates with:
+- `MAGPHOS_MIN_WASM_JS_BYTES`
+- `MAGPHOS_MIN_WASM_BYTES`
+- `MAGPHOS_MIN_SINGLEFILE_JS_BYTES`
+
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
 Important: do **not** keep placeholder 1-byte wasm/js files in the repo. If the generated web artifacts are missing, rebuild them with `./tools/scripts/build_web.sh` before publishing.
