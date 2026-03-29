@@ -68,7 +68,7 @@
 - `channelCreate()`, `channelSend(channel, value)`, `channelRecv(channel)`
 
 ## Notes
-Implemented in `src/runtime/stdlib.cpp` and surfaced via `runtime::StandardLibrary`.
+Implemented in `src/runtime/stdlib/stdlib.cpp` and surfaced via `runtime::StandardLibrary`.
 
 
 ## Game/Graphics (preview)

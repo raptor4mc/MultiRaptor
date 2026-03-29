@@ -1,5 +1,5 @@
 #include "magphos_compiler.h"
-#include "interpreter/interpreter.h"
+#include "runtime/interpreter/interpreter.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/bind.h>

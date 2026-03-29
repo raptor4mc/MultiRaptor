@@ -1,9 +1,9 @@
 #include <cassert>
 #include <string>
 
-#include "ast/nodes.h"
-#include "lexer/lexer.h"
-#include "parser/parser.h"
+#include "compiler/ast/nodes.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
 
 int main() {
     const std::string source = R"(

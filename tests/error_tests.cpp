@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 
-#include "interpreter/interpreter.h"
+#include "runtime/interpreter/interpreter.h"
 
 int main() {
     const std::string missingExpr = magphos::interpreter::analyzeProgram("x =\n");

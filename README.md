@@ -54,7 +54,7 @@ Compiler output:
 #### One-file build (no CMake)
 
 ```bash
-g++ -std=c++17 -Iinclude -Isrc -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp src/ast/nodes.cpp src/interpreter/interpreter.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/runtime/enviroment.cpp src/runtime/value.cpp src/utils/error.cpp src/utils/string_utils.cpp src/main.cpp
+g++ -std=c++17 -Iinclude -Isrc -O2 -o MagPhos_compiler src/MagPhos_compiler.cpp src/compiler/ast/nodes.cpp src/runtime/interpreter/interpreter.cpp src/compiler/lexer/lexer.cpp src/compiler/parser/parser.cpp src/runtime/engine/environment.cpp src/runtime/engine/value.cpp src/utils/error.cpp src/utils/string_utils.cpp src/main.cpp
 ```
 
 ### 3) Compile and run your `.mp` code
@@ -169,6 +169,14 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/game_api.md`
 - `info/rules.txt` (consistency/simplicity/predictability/safety rules)
 
+## Project layout
+
+- `src/compiler/` — compiler front-end pipeline (`ast`, `lexer`, `parser`, `semantic`).
+- `src/runtime/` — runtime domains (`interpreter`, `engine`, `stdlib`).
+- `src/platform/` — platform-specific launchers/adapters (including VSCode launcher).
+- `contrib/` — community modules, optional tools, and experimental non-core assets.
+- `design/` — proposals, rejected ideas, future syntax notes, and bytecode evolution planning.
+
 ## Sample programs (new)
 
 Official preview-ready sample snippets are in `samples/` (9 files, each with purpose, code, and expected output for GitHub review pages).
@@ -246,7 +254,7 @@ MagPhos now exposes a native standard library surface:
 - **Arrays**: `push`, `pop`, `map`, `filter`
 - **File I/O (native)**: `readFile`, `writeFile`
 
-Implementation is in `src/runtime/stdlib.h` and `src/runtime/stdlib.cpp`.
+Implementation is in `src/runtime/stdlib/stdlib.h` and `src/runtime/stdlib/stdlib.cpp`.
 
 ## Runtime type system (new)
 
@@ -264,14 +272,14 @@ MagPhos runtime now exposes explicit value categories:
 - `struct`
 - `enum`
 
-These are represented in `src/runtime/value.h` via `TypeKind` and `Value`, and stored in `Environment` as typed values instead of plain strings.
+These are represented in `src/runtime/engine/value.h` via `TypeKind` and `Value`, and stored in `Environment` as typed values instead of plain strings.
 
 ## Parser architecture (new)
 
 MagPhos now includes a real front-end pipeline:
 
-- **Tokenizer (`src/lexer`)**: converts source text into typed tokens with line/column tracking.
-- **Parser (`src/parser`)**: builds an AST from tokens (functions, blocks, assignments, print/return, and expression statements).
+- **Tokenizer (`src/compiler/lexer`)**: converts source text into typed tokens with line/column tracking.
+- **Parser (`src/compiler/parser`)**: builds an AST from tokens (functions, blocks, assignments, print/return, and expression statements).
 - **Expression grammar** with precedence:
   - unary (`-x`)
   - multiplicative (`*`, `/`)
