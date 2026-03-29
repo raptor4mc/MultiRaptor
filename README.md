@@ -122,6 +122,16 @@ Or use the helper script:
 
 `build_web.sh` will auto-bootstrap Emscripten into `.tools/emsdk` if `emcmake` is missing, then build and verify `web/magphos_wasm.js` + `web/magphos_wasm.wasm`.
 It also generates `web/magphos_wasm_singlefile.js` so `web/playground.html` can run when opened directly from disk (`file://`) without a separate wasm fetch.
+If GitHub clone/install for emsdk fails, the script now falls back to Docker (`emscripten/emsdk:<version>`) when available, so you can still build real browser artifacts without local Emscripten setup.
+
+The script now hard-fails if generated JS still contains the fallback loader banner, if `web/magphos_wasm.wasm` is not a real wasm binary (magic bytes `00 61 73 6d`), or if artifacts are suspiciously small (`magphos_wasm.js` < 50 KB, `magphos_wasm.wasm` < 100 KB, `magphos_wasm_singlefile.js` < 200 KB). This catches placeholder/base64-text artifacts before publish.
+
+If needed, you can tune those size gates with:
+- `MAGPHOS_MIN_WASM_JS_BYTES`
+- `MAGPHOS_MIN_WASM_BYTES`
+- `MAGPHOS_MIN_SINGLEFILE_JS_BYTES`
+- `MAGPHOS_USE_DOCKER_FALLBACK` (`1` by default)
+- `MAGPHOS_DOCKER_EMSDK_IMAGE` (defaults to `emscripten/emsdk:$MAGPHOS_EMSDK_VERSION`)
 
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
