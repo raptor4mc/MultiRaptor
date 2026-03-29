@@ -1,15 +1,15 @@
 :root {
-  --bg: #1e1e1e;
-  --bg-soft: #252526;
-  --panel: #2d2d30;
+  --bg: #1b1b1b;
+  --bg-soft: #202123;
+  --panel: #252526;
   --card: #1e1e1e;
-  --line: #3c3c3c;
-  --line-soft: #2a2a2a;
-  --text: #d4d4d4;
-  --text-muted: #9da0a6;
-  --accent: #0e639c;
-  --accent-hover: #1177bb;
-  --accent-soft: #094771;
+  --line: #313235;
+  --line-soft: #2a2b2e;
+  --text: #cccccc;
+  --text-muted: #8b949e;
+  --accent: #007acc;
+  --accent-hover: #1991e6;
+  --accent-soft: #04395e;
   --danger: #c74e39;
   --danger-hover: #d35f4b;
 }
@@ -21,6 +21,9 @@ body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 h1, h2, h3 {
@@ -36,18 +39,37 @@ h3 {
 }
 
 .topbar {
-  border-bottom: 1px solid var(--line);
-  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+  padding: 0.45rem 0.8rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: #181818;
+  background: #181a1c;
 }
 
 .topbar h1 {
-  font-size: 1.1rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #b7b7b7;
+}
+
+.brand-wrap {
+  min-width: 215px;
+}
+
+.command-center {
+  flex: 1;
+  max-width: 540px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #1f1f1f;
+  color: #c3c3c3;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.8rem;
+  text-align: left;
 }
 
 .actions {
@@ -60,10 +82,11 @@ h3 {
 
 .studio-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(320px, 1fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(230px, 280px) minmax(420px, 1fr) minmax(320px, 420px);
   gap: 0;
   padding: 0;
-  min-height: calc(100vh - 89px);
+  min-height: calc(100vh - 86px);
+  flex: 1;
 }
 
 .panel {
@@ -88,13 +111,21 @@ h3 {
   margin-bottom: 0.6rem;
 }
 
+.panel-title-row h2,
+.right-panel > h2 {
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #9fa4ad;
+}
+
 textarea,
 pre {
   width: 100%;
   border-radius: 4px;
   border: 1px solid var(--line);
   background: var(--card);
-  color: #d4d4d4;
+  color: #dcdcdc;
   padding: 12px;
   font-family: "Consolas", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.9rem;
@@ -105,6 +136,7 @@ textarea {
   resize: none;
   min-height: 280px;
   line-height: 1.45;
+  tab-size: 2;
 }
 
 pre {
@@ -166,6 +198,7 @@ pre {
   background: var(--card);
   overflow: auto;
   min-height: 200px;
+  font-size: 0.92rem;
 }
 
 .file-list li {
@@ -219,7 +252,7 @@ pre {
   text-align: left;
   border: none;
   background: transparent;
-  color: var(--text);
+  color: #cdd6df;
   padding: 0.6rem 0.75rem;
   cursor: pointer;
 }
@@ -233,11 +266,11 @@ pre {
 button,
 .import-label {
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   padding: 0.42rem 0.75rem;
   font-weight: 600;
-  background: #3c3c3c;
-  color: #d4d4d4;
+  background: #2f3033;
+  color: #c8c8c8;
   cursor: pointer;
   font-size: 0.82rem;
   transition: background 120ms ease, border-color 120ms ease;
@@ -245,15 +278,28 @@ button,
 
 button:hover,
 .import-label:hover {
-  background: #4b4b4b;
+  background: #3a3b3f;
 }
 
 .ui-btn {
-  background: var(--accent);
+  background: #2a2d2e;
+  border-color: #3b3d40;
   color: #fff;
 }
 
 .ui-btn:hover {
+  background: #34373a;
+}
+
+.topbar .ui-btn,
+.topbar .import-label {
+  background: var(--accent);
+  border-color: #0a5e9a;
+  color: #fff;
+}
+
+.topbar .ui-btn:hover,
+.topbar .import-label:hover {
   background: var(--accent-hover);
 }
 
@@ -262,7 +308,7 @@ button:hover,
 }
 
 .tab-row {
-  background: #212224;
+  background: #1f2023;
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 0.25rem;
@@ -288,7 +334,24 @@ button.danger:hover { background: var(--danger-hover); }
 #importInput { display: none; }
 
 .muted { color: var(--text-muted); margin: 0.25rem 0 0 0; }
-.tiny { font-size: 0.78rem; margin-top: 0.6rem; }
+.tiny { font-size: 0.74rem; margin-top: 0.6rem; }
+
+.status-bar {
+  height: 22px;
+  background: #007acc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.status-bar span:first-child {
+  margin-right: auto;
+}
 
 @media (max-width: 1040px) {
   .studio-grid {
