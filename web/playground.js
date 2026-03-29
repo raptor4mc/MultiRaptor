@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'magphos-web-studio-v2';
 
 let wasmCompiler = null;
+let wasmAnalyzer = null;
 let wasmLoadError = null;
 const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
 
@@ -86,6 +87,9 @@ async function loadWasmCompiler() {
           throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
         }
         wasmCompiler = classicModule.compileMagPhos;
+        wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
+          ? classicModule.analyzeMagPhos
+          : null;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -116,6 +120,9 @@ async function loadWasmCompiler() {
             throw new Error('WASM module loaded, but compileMagPhos export is missing.');
           }
           wasmCompiler = wasmModule.compileMagPhos;
+          wasmAnalyzer = typeof wasmModule.analyzeMagPhos === 'function'
+            ? wasmModule.analyzeMagPhos
+            : null;
           wasmLoadError = null;
           return;
         }
@@ -125,6 +132,9 @@ async function loadWasmCompiler() {
           throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
         }
         wasmCompiler = classicModule.compileMagPhos;
+        wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
+          ? classicModule.analyzeMagPhos
+          : null;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -390,6 +400,12 @@ function doCompile() {
   if (!wasmCompiler) {
     throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm.js + web/magphos_wasm.wasm from the C++ code to keep web and native compiler behavior in sync.');
   }
+  if (wasmAnalyzer) {
+    const analysis = wasmAnalyzer(sourceEl.value);
+    if (analysis !== 'ok') {
+      throw new Error(analysis);
+    }
+  }
   const js = compileMagPhos(sourceEl.value);
   compiledEl.textContent = js;
   return js;
@@ -573,6 +589,7 @@ async function init() {
     compileBtn.disabled = false;
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
+    outputEl.textContent = 'C++ WASM compiler connected. Web compile is linked to native parser/semantic/compiler pipeline.';
   }
 
   compileBtn.click();
@@ -580,6 +597,7 @@ async function init() {
 
 enableFallbackBtn.addEventListener('click', () => {
   wasmCompiler = compileWithFallbackTranspiler;
+  wasmAnalyzer = () => 'ok';
   compileBtn.disabled = false;
   runBtn.disabled = false;
   enableFallbackBtn.hidden = true;
