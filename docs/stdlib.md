@@ -27,6 +27,21 @@
 ## File I/O (native)
 - `readFile(path)`
 - `writeFile(path, content)`
+- `appendFile(path, content)`
+- `fileExists(path)`
+
+## Objects / classes (interop-friendly)
+- `objectCreate()`
+- `objectSet(object, key, value)` (returns updated object)
+- `objectGet(object, key)` (returns value or `null`)
+- `classCreate(name)` (returns class descriptor value)
+
+## Networking
+- `httpGet(url)` (requires `curl` availability in runtime environment)
+
+## Interoperability
+- `env(name)` (read OS environment variable)
+- `exec(command)` (execute shell command and capture stdout)
 
 ## Notes
 Implemented in `src/runtime/stdlib.cpp` and surfaced via `runtime::StandardLibrary`.

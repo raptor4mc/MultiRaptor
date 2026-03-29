@@ -1,6 +1,7 @@
 #include "runtime/engine.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace magphos::runtime {
 
@@ -45,6 +46,13 @@ Value RuntimeEngine::evaluateExpression(const ast::Expr& expr) {
             }
             return callFunctionByName(callee.value, args);
         }
+        case ast::ExprKind::ArrayLiteral: {
+            ArrayValue array;
+            for (const auto& child : expr.children) {
+                array.elements.push_back(std::make_shared<Value>(evaluateExpression(*child)));
+            }
+            return Value::makeArray(array);
+        }
     }
 
     throw RuntimeError(RuntimeErrorCode::RuntimeFailure, "Unknown expression kind.");
@@ -75,11 +83,7 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Assignment missing expression.");
             }
             const Value value = evaluateExpression(*statement.expression);
-            try {
-                current_->assign(statement.name, value);
-            } catch (const RuntimeError&) {
-                current_->define(statement.name, value);
-            }
+            current_->assign(statement.name, value);
             return;
         }
         case ast::StmtKind::Expression:
@@ -142,6 +146,87 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             current_ = previous;
             return;
         }
+        case ast::StmtKind::Set: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Set statement missing expression.");
+            }
+            const Value value = evaluateExpression(*statement.expression);
+            current_->assign(statement.name, value);
+            return;
+        }
+        case ast::StmtKind::Ask: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Ask statement missing prompt expression.");
+            }
+            const Value prompt = evaluateExpression(*statement.expression);
+            std::cout << stdlib_.call("toString", {prompt}).asString();
+            std::string input;
+            std::getline(std::cin, input);
+            current_->assign(statement.name, Value(input));
+            return;
+        }
+        case ast::StmtKind::When: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "When statement missing condition.");
+            }
+            if (isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Loop: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Loop statement missing count expression.");
+            }
+            const Value countValue = evaluateExpression(*statement.expression);
+            if (countValue.type() != TypeKind::Number) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Loop count must evaluate to a number.");
+            }
+            const long long count = static_cast<long long>(countValue.asNumber());
+            for (long long i = 0; i < count; ++i) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::RepeatWhile: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Repeat while statement missing condition.");
+            }
+            do {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } while (isTruthy(evaluateExpression(*statement.condition)));
+            return;
+        }
+        case ast::StmtKind::TryCatch: {
+            try {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } catch (const RuntimeError&) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Switch:
+        case ast::StmtKind::Match: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Switch/match statement missing condition.");
+            }
+            const Value key = evaluateExpression(*statement.condition);
+            for (std::size_t i = 0; i < statement.caseConditions.size(); ++i) {
+                const Value caseValue = evaluateExpression(*statement.caseConditions[i]);
+                if (valuesEqual(key, caseValue)) {
+                    executeBlock(statement.caseBodies[i], std::make_shared<Environment>(current_));
+                    return;
+                }
+            }
+            if (!statement.elseBody.empty()) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Namespace: {
+            executeBlock(statement.body, std::make_shared<Environment>(current_));
+            return;
+        }
     }
 }
 
@@ -161,7 +246,15 @@ void RuntimeEngine::executeBlock(const std::vector<ast::Statement>& statements, 
 
 Value RuntimeEngine::callFunctionByName(const std::string& name, const std::vector<Value>& args) {
     if (stdlib_.has(name)) {
-        return stdlib_.call(name, args);
+        try {
+            return stdlib_.call(name, args);
+        } catch (const RuntimeError&) {
+            throw;
+        } catch (const std::exception& ex) {
+            throw RuntimeError(RuntimeErrorCode::RuntimeFailure,
+                               "Builtin '" + name + "' failed: " + ex.what(),
+                               "Check argument types/count and external system availability.");
+        }
     }
 
     const auto it = userFunctions_.find(name);
@@ -172,16 +265,40 @@ Value RuntimeEngine::callFunctionByName(const std::string& name, const std::vect
     }
 
     const ast::Statement& function = *it->second;
-    if (function.params.size() != args.size()) {
+    std::size_t requiredParams = 0;
+    for (std::size_t i = 0; i < function.params.size(); ++i) {
+        if (i >= function.paramDefaults.size() || !function.paramDefaults[i]) {
+            ++requiredParams;
+        }
+    }
+
+    if (args.size() < requiredParams || (function.variadicParam.empty() && args.size() > function.params.size())) {
         throw RuntimeError(RuntimeErrorCode::ArityError,
-                           "Function '" + name + "' expects " + std::to_string(function.params.size()) +
-                               " arguments but got " + std::to_string(args.size()) + ".",
-                           "Pass the exact number of arguments required by the function signature.");
+                           "Function '" + name + "' expects at least " + std::to_string(requiredParams) +
+                               " arguments" + (function.variadicParam.empty() ? "" : " (variadic enabled)") +
+                               " but got " + std::to_string(args.size()) + ".",
+                           "Pass required arguments and use optional/default parameters correctly.");
     }
 
     auto callScope = std::make_shared<Environment>(globals_);
-    for (std::size_t i = 0; i < args.size(); ++i) {
-        callScope->define(function.params[i], args[i]);
+    for (std::size_t i = 0; i < function.params.size(); ++i) {
+        if (i < args.size()) {
+            callScope->define(function.params[i], args[i]);
+        } else if (i < function.paramDefaults.size() && function.paramDefaults[i]) {
+            const auto prev = current_;
+            current_ = callScope;
+            const Value defaultValue = evaluateExpression(*function.paramDefaults[i]);
+            current_ = prev;
+            callScope->define(function.params[i], defaultValue);
+        }
+    }
+
+    if (!function.variadicParam.empty()) {
+        ArrayValue vargs;
+        for (std::size_t i = function.params.size(); i < args.size(); ++i) {
+            vargs.elements.push_back(std::make_shared<Value>(args[i]));
+        }
+        callScope->define(function.variadicParam, Value::makeArray(vargs));
     }
 
     try {
