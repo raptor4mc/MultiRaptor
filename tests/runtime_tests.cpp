@@ -161,7 +161,15 @@ int main() {
 fn add(a, b) {
   return a + b
 }
+fn addBase(a, b = 5) {
+  return a + b
+}
+fn sumAll(...nums) {
+  return len(nums)
+}
 var x = add(5, 7)
+var y = addBase(10)
+var argc = sumAll(1, 2, 3, 4)
 var flag = true and not false
 if flag and x == 12 {
   x = x + 1
@@ -180,6 +188,27 @@ loop 2 {
 repeat while x < 26 {
   set x = x + 1
 }
+switch x {
+  case 26 {
+    set x = x + 1
+  }
+  default {
+    set x = 0
+  }
+}
+match y {
+  case 15 {
+    set y = y + 1
+  }
+  default {
+    set y = 0
+  }
+}
+try {
+  set missingVar = 1
+} catch {
+  set y = y + 1
+}
 var arr = [1, 2, 3]
 var arrLen = len(arr)
 var sum = 0
@@ -194,7 +223,9 @@ for (var i = 0; i < 3; i = i + 1) {
 
     RuntimeEngine engine;
     engine.loadProgram(runtimeParse.program);
-    assert(engine.globals()->get("x").asNumber() == 26.0);
+    assert(engine.globals()->get("x").asNumber() == 27.0);
+    assert(engine.globals()->get("y").asNumber() == 17.0);
+    assert(engine.globals()->get("argc").asNumber() == 4.0);
     assert(engine.globals()->get("flag").asBoolean());
     assert(engine.globals()->get("sum").asNumber() == 3.0);
     assert(engine.globals()->get("arrLen").asNumber() == 3.0);

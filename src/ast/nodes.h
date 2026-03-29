@@ -37,6 +37,10 @@ enum class StmtKind {
     When,
     Loop,
     RepeatWhile,
+    TryCatch,
+    Switch,
+    Match,
+    Namespace,
 };
 
 struct Expr {
@@ -49,12 +53,16 @@ struct Statement {
     StmtKind kind;
     std::string name;
     std::vector<std::string> params;
+    std::vector<std::unique_ptr<Expr>> paramDefaults;
+    std::string variadicParam;
     std::unique_ptr<Expr> expression;
     std::unique_ptr<Expr> condition;
     std::unique_ptr<Statement> initializer;
     std::unique_ptr<Statement> increment;
     std::vector<Statement> body;
     std::vector<Statement> elseBody;
+    std::vector<std::unique_ptr<Expr>> caseConditions;
+    std::vector<std::vector<Statement>> caseBodies;
 };
 
 struct Program {

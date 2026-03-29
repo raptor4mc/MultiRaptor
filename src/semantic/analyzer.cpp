@@ -76,6 +76,14 @@ class Analyzer {
                 for (const auto& param : statement.params) {
                     declare(param);
                 }
+                if (!statement.variadicParam.empty()) {
+                    declare(statement.variadicParam);
+                }
+                for (const auto& defaultExpr : statement.paramDefaults) {
+                    if (defaultExpr) {
+                        analyzeExpr(*defaultExpr);
+                    }
+                }
                 for (const auto& inner : statement.body) {
                     analyzeStatement(inner);
                 }
@@ -156,6 +164,30 @@ class Analyzer {
                     analyzeExpr(*statement.expression);
                 }
                 analyzeBlock(statement.body);
+                return;
+            case ast::StmtKind::TryCatch:
+                analyzeBlock(statement.body);
+                analyzeBlock(statement.elseBody);
+                return;
+            case ast::StmtKind::Namespace:
+                analyzeBlock(statement.body);
+                return;
+            case ast::StmtKind::Switch:
+            case ast::StmtKind::Match:
+                if (statement.condition) {
+                    analyzeExpr(*statement.condition);
+                }
+                for (const auto& caseExpr : statement.caseConditions) {
+                    if (caseExpr) {
+                        analyzeExpr(*caseExpr);
+                    }
+                }
+                for (const auto& caseBody : statement.caseBodies) {
+                    analyzeBlock(caseBody);
+                }
+                if (!statement.elseBody.empty()) {
+                    analyzeBlock(statement.elseBody);
+                }
                 return;
             case ast::StmtKind::For:
                 pushScope();

@@ -197,6 +197,36 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             } while (isTruthy(evaluateExpression(*statement.condition)));
             return;
         }
+        case ast::StmtKind::TryCatch: {
+            try {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } catch (const RuntimeError&) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Switch:
+        case ast::StmtKind::Match: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Switch/match statement missing condition.");
+            }
+            const Value key = evaluateExpression(*statement.condition);
+            for (std::size_t i = 0; i < statement.caseConditions.size(); ++i) {
+                const Value caseValue = evaluateExpression(*statement.caseConditions[i]);
+                if (valuesEqual(key, caseValue)) {
+                    executeBlock(statement.caseBodies[i], std::make_shared<Environment>(current_));
+                    return;
+                }
+            }
+            if (!statement.elseBody.empty()) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Namespace: {
+            executeBlock(statement.body, std::make_shared<Environment>(current_));
+            return;
+        }
     }
 }
 
@@ -235,16 +265,40 @@ Value RuntimeEngine::callFunctionByName(const std::string& name, const std::vect
     }
 
     const ast::Statement& function = *it->second;
-    if (function.params.size() != args.size()) {
+    std::size_t requiredParams = 0;
+    for (std::size_t i = 0; i < function.params.size(); ++i) {
+        if (i >= function.paramDefaults.size() || !function.paramDefaults[i]) {
+            ++requiredParams;
+        }
+    }
+
+    if (args.size() < requiredParams || (function.variadicParam.empty() && args.size() > function.params.size())) {
         throw RuntimeError(RuntimeErrorCode::ArityError,
-                           "Function '" + name + "' expects " + std::to_string(function.params.size()) +
-                               " arguments but got " + std::to_string(args.size()) + ".",
-                           "Pass the exact number of arguments required by the function signature.");
+                           "Function '" + name + "' expects at least " + std::to_string(requiredParams) +
+                               " arguments" + (function.variadicParam.empty() ? "" : " (variadic enabled)") +
+                               " but got " + std::to_string(args.size()) + ".",
+                           "Pass required arguments and use optional/default parameters correctly.");
     }
 
     auto callScope = std::make_shared<Environment>(globals_);
-    for (std::size_t i = 0; i < args.size(); ++i) {
-        callScope->define(function.params[i], args[i]);
+    for (std::size_t i = 0; i < function.params.size(); ++i) {
+        if (i < args.size()) {
+            callScope->define(function.params[i], args[i]);
+        } else if (i < function.paramDefaults.size() && function.paramDefaults[i]) {
+            const auto prev = current_;
+            current_ = callScope;
+            const Value defaultValue = evaluateExpression(*function.paramDefaults[i]);
+            current_ = prev;
+            callScope->define(function.params[i], defaultValue);
+        }
+    }
+
+    if (!function.variadicParam.empty()) {
+        ArrayValue vargs;
+        for (std::size_t i = function.params.size(); i < args.size(); ++i) {
+            vargs.elements.push_back(std::make_shared<Value>(args[i]));
+        }
+        callScope->define(function.variadicParam, Value::makeArray(vargs));
     }
 
     try {
