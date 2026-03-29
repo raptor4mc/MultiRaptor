@@ -689,6 +689,20 @@ function convertMagphosMarkupToHtml(source) {
     .replace(/<\/\s*magphos\s*>/i, '</html>');
 }
 
+function convertCssxdToPreviewHtml(source) {
+  const raw = String(source || '');
+  const trimmed = raw.trimStart();
+  if (!trimmed) return '';
+
+  const cssxdStarts = [':root {', 'body {', '* {'];
+  const isCssxd = cssxdStarts.some((prefix) => trimmed.startsWith(prefix));
+  if (!isCssxd) {
+    return '';
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8" /><style>${raw}</style></head><body><main style="padding: 24px;"><h1>CSSXD Preview</h1><p>This preview is generated from CSSXD-in-Mp source.</p><button>Preview Button</button></main></body></html>`;
+}
+
 function findPreviewHtml() {
   const preferred = ['preview/index.html', 'game/index.html', 'index.html'];
   for (const path of preferred) {
@@ -706,6 +720,19 @@ function findPreviewHtml() {
     .find(([, content]) => Boolean(convertMagphosMarkupToHtml(content)));
   if (magphosEntry) {
     return convertMagphosMarkupToHtml(magphosEntry[1]);
+  }
+
+  const preferredCssxd = ['preview/style.mp', 'game/style.mp', project.activeFile];
+  for (const path of preferredCssxd) {
+    if (!path || !project.files[path]) continue;
+    const converted = convertCssxdToPreviewHtml(project.files[path]);
+    if (converted) return converted;
+  }
+
+  const cssxdEntry = Object.entries(project.files)
+    .find(([, content]) => Boolean(convertCssxdToPreviewHtml(content)));
+  if (cssxdEntry) {
+    return convertCssxdToPreviewHtml(cssxdEntry[1]);
   }
 
   const htmlEntry = Object.entries(project.files)
