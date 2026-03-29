@@ -1,0 +1,50 @@
+name: Sync Web WASM Artifacts
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "CMakeLists.txt"
+      - "tools/scripts/build_web.sh"
+      - ".github/workflows/sync-web-wasm-artifacts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.72
+
+      - name: Build web artifacts
+        run: ./tools/scripts/build_web.sh build-web
+
+      - name: Ensure .wasm.64 naming
+        run: |
+          test -f web/magphos_wasm.wasm.64
+          rm -f web/magphos_wasm.wasm
+
+      - name: Commit updated artifacts
+        run: |
+          if git diff --quiet -- web/magphos_wasm.js web/magphos_wasm_singlefile.js web/magphos_wasm.wasm.64; then
+            echo "No artifact changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/magphos_wasm.js web/magphos_wasm_singlefile.js web/magphos_wasm.wasm.64
+          git commit -m "chore(web): sync generated WASM artifacts"
+          git push
