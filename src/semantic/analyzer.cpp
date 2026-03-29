@@ -56,6 +56,12 @@ class Analyzer {
         return false;
     }
 
+    void requireDefinedForMutation(const std::string& name, const std::string& source) {
+        if (!isDefined(name)) {
+            issues_.push_back({source + " requires an existing variable: " + name});
+        }
+    }
+
     void analyzeBlock(const std::vector<ast::Statement>& statements) {
         pushScope();
         for (const auto& statement : statements) {
@@ -97,9 +103,7 @@ class Analyzer {
                 declare(statement.name);
                 return;
             case ast::StmtKind::Assignment:
-                if (!isDefined(statement.name)) {
-                    issues_.push_back({"Undefined variable assignment: " + statement.name});
-                }
+                requireDefinedForMutation(statement.name, "Assignment");
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }
@@ -108,17 +112,13 @@ class Analyzer {
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }
-                if (!isDefined(statement.name)) {
-                    issues_.push_back({"'set' requires an existing variable: " + statement.name});
-                }
+                requireDefinedForMutation(statement.name, "'set'");
                 return;
             case ast::StmtKind::Ask:
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }
-                if (!isDefined(statement.name)) {
-                    issues_.push_back({"'ask' target must already exist: " + statement.name});
-                }
+                requireDefinedForMutation(statement.name, "'ask'");
                 return;
             case ast::StmtKind::Return:
                 if (functionDepth_ <= 0) {

@@ -13,5 +13,14 @@ int main() {
     assert(badUse.find("Expected quoted path after 'use'") != std::string::npos);
     assert(badUse.find("use \"utils.mp\"") != std::string::npos);
 
+    const std::string badAssign = magphos::interpreter::analyzeProgram("score = 10\n");
+    assert(badAssign.find("Assignment requires an existing variable: score") != std::string::npos);
+
+    const std::string badSet = magphos::interpreter::analyzeProgram("set score = 10\n");
+    assert(badSet.find("'set' requires an existing variable: score") != std::string::npos);
+
+    const std::string badAsk = magphos::interpreter::analyzeProgram("ask \"name?\" -> user\n");
+    assert(badAsk.find("'ask' requires an existing variable: user") != std::string::npos);
+
     return 0;
 }

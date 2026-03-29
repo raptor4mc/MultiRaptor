@@ -1,3 +1,12 @@
+## TODO rules (read first)
+1. Keep this rules section at the top of the file.
+2. For every newly implemented feature, add one new `priority` section with exactly five `sub priority` items.
+3. When a feature/sub-priority is fully implemented, remove it from the active TODO list (or mark the whole priority completed and move on).
+4. Always work on the first `priority` that is not completed.
+5. Each `sub priority` must be implementation-oriented and directly testable.
+
+---
+
 ## priority 1: folder-aware project management in Web Studio
 Status: ✅ completed in current milestone.
 
@@ -121,26 +130,6 @@ Add semantic checks and tests for arity/default/variadic combinations.
 
 ---
 
-## priority 7: CLI and developer workflow quality
-Status: 🔄 in progress.
-
-### sub priority 7.1
-Add machine-readable CLI output mode (JSON) for automation.
-
-### sub priority 7.2
-Add `--format-errors` option to normalize parse/semantic/runtime diagnostics.
-
-### sub priority 7.3
-Add `--run` workflow command for parse+check+execute in one step.
-
-### sub priority 7.4
-Add `--module-graph` command to print dependency graph edges.
-
-### sub priority 7.5
-Add CLI integration tests for exit codes and failure-path consistency.
-
----
-
 ## priority 8: nested tree navigation quality (added after completing 1.1)
 Status: 🔄 in progress.
 
@@ -238,3 +227,23 @@ Add export option for minified vs pretty JSON.
 
 ### sub priority 12.5
 Add schema validation tests for backward compatibility.
+
+---
+
+## priority 13: CLI JSON contract stabilization (added after CLI feature rollout)
+Status: 🔄 in progress.
+
+### sub priority 13.1
+Add deterministic ordering guarantees for JSON arrays (`deps`, `tokens`, `moduleGraph`) where applicable.
+
+### sub priority 13.2
+Add explicit JSON schema version key to every CLI JSON response.
+
+### sub priority 13.3
+Add `stderr` field support in JSON responses for runtime failures.
+
+### sub priority 13.4
+Add golden-file tests for `--check/--deps/--tokens/--run/--module-graph --json`.
+
+### sub priority 13.5
+Document the CLI JSON response contract in `docs/` with stability guarantees.
