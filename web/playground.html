@@ -26,6 +26,7 @@
         <h2>Files</h2>
         <button id="newFolderBtn" class="small">+ Folder</button>
         <button id="newFileBtn" class="small">+ File</button>
+        <button id="deleteFolderBtn" class="small danger">Delete Folder</button>
       </div>
       <ul id="fileList" class="file-list"></ul>
       <p class="muted tiny">Projects are auto-saved in your browser. Compiler runs through C++ WASM.</p>
@@ -54,7 +55,13 @@
       </div>
       <h3 id="outputTitle">Console</h3>
       <pre id="consoleOutput"></pre>
-      <pre id="terminalOutput" hidden></pre>
+      <section id="terminalOutput" class="terminal-shell" hidden>
+        <pre id="terminalHistory" class="terminal-history"></pre>
+        <div class="terminal-input-row">
+          <span class="terminal-prompt" id="terminalPrompt">$</span>
+          <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" />
+        </div>
+      </section>
     </section>
   </main>
 
