@@ -59,17 +59,12 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const isFileProtocol = window.location.protocol === 'file:';
-  const loaderCandidates = isFileProtocol
-    ? [
-      './magphos_wasm_singlefile.js', './magphos_wasm.js',
-      '../magphos_wasm_singlefile.js', '../magphos_wasm.js'
-    ]
-    : [
-      './magphos_wasm.js', './magphos_wasm_singlefile.js',
-      '../magphos_wasm.js', '../magphos_wasm_singlefile.js',
-      '/magphos_wasm.js', '/magphos_wasm_singlefile.js'
-    ];
+  const loaderCandidates = [
+    './magphos_wasm.js', './magphos_wasm_singlefile.js',
+    '../magphos_wasm.js', '../magphos_wasm_singlefile.js',
+    '/magphos_wasm.js', '/magphos_wasm_singlefile.js',
+    '/web/magphos_wasm.js', '/web/magphos_wasm_singlefile.js'
+  ];
   const wasmCandidates = [
     null,
     './magphos_wasm.wasm.64', './magphos_wasm.wasm', './magphos.wasm.64', './magphos.wasm',
