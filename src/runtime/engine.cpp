@@ -228,7 +228,15 @@ void RuntimeEngine::executeBlock(const std::vector<ast::Statement>& statements, 
 
 Value RuntimeEngine::callFunctionByName(const std::string& name, const std::vector<Value>& args) {
     if (stdlib_.has(name)) {
-        return stdlib_.call(name, args);
+        try {
+            return stdlib_.call(name, args);
+        } catch (const RuntimeError&) {
+            throw;
+        } catch (const std::exception& ex) {
+            throw RuntimeError(RuntimeErrorCode::RuntimeFailure,
+                               "Builtin '" + name + "' failed: " + ex.what(),
+                               "Check argument types/count and external system availability.");
+        }
     }
 
     const auto it = userFunctions_.find(name);

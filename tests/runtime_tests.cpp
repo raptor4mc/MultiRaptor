@@ -120,6 +120,18 @@ int main() {
         const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
+    stdlib.call("appendFile", {Value(path), Value(std::string(" world"))});
+    assert(stdlib.call("readFile", {Value(path)}).asString() == "hello world");
+    assert(stdlib.call("fileExists", {Value(path)}).asBoolean());
+
+    const auto obj0 = stdlib.call("objectCreate", {});
+    const auto obj1 = stdlib.call("objectSet", {obj0, Value(std::string("hp")), Value(100.0)});
+    assert(stdlib.call("objectGet", {obj1, Value(std::string("hp"))}).asNumber() == 100.0);
+    assert(stdlib.call("classCreate", {Value(std::string("Enemy"))}).asClass().name == "Enemy");
+    assert(stdlib.call("env", {Value(std::string("PATH"))}).type() == TypeKind::String);
+    assert(stdlib.call("exec", {Value(std::string("printf hi"))}).asString() == "hi");
+    stdlib.call("writeFile", {Value(std::string("/tmp/magphos_httpget.txt")), Value(std::string("network-ok"))});
+    assert(stdlib.call("httpGet", {Value(std::string("file:///tmp/magphos_httpget.txt"))}).asString().find("network-ok") != std::string::npos);
 
     magphos::runtime::ModuleSystem moduleSystem;
     const std::string modBase = "/tmp/magphos_modules";
@@ -132,6 +144,8 @@ int main() {
     assert(moduleSystem.resolveUsePath("utils.mp", modBase) == modBase + "/utils.mp");
     assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
     assert(moduleSystem.loadUsePath("utils.mp", modBase).find("print 3") != std::string::npos);
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos); // cache path
+    moduleSystem.clearCache();
 
     const std::string depSource = "import game.engine\nuse \"utils.mp\"\nprint 1\n";
     magphos::lexer::Lexer depLexer;

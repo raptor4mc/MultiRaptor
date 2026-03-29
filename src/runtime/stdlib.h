@@ -28,6 +28,8 @@ class StandardLibrary {
     void registerArrays();
     void registerFileIO();
     void registerGameGraphics();
+    void registerNetworking();
+    void registerInteroperability();
 };
 
 } // namespace magphos::runtime

@@ -17,7 +17,7 @@ class Analyzer {
   public:
     Analyzer() {
         pushScope();
-        for (const auto* name : {"len", "type", "toString", "random", "time", "sin", "cos", "sqrt", "abs", "split", "replace", "substring", "push", "pop", "map", "filter", "readFile", "writeFile", "canvasCreate", "inputIsKeyDown", "timerNowMs", "spriteLoad", "spriteDraw", "audioPlay"}) {
+        for (const auto* name : {"len", "type", "toString", "random", "time", "sin", "cos", "sqrt", "abs", "split", "replace", "substring", "push", "pop", "map", "filter", "readFile", "writeFile", "appendFile", "fileExists", "canvasCreate", "inputIsKeyDown", "timerNowMs", "spriteLoad", "spriteDraw", "audioPlay", "httpGet", "objectCreate", "objectSet", "objectGet", "classCreate", "env", "exec"}) {
             scopes_.back().symbols.insert(name);
         }
     }

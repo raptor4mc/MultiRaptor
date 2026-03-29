@@ -27,6 +27,10 @@ g++ -std=c++17 -Iinclude -Isrc tests/parser_tests.cpp src/lexer/lexer.cpp src/pa
 g++ -std=c++17 -Iinclude -Isrc tests/runtime_tests.cpp "${COMMON_SRCS[@]}" -o /tmp/magphos_tests/runtime_tests
 /tmp/magphos_tests/runtime_tests
 
+g++ -std=c++17 -Iinclude -Isrc src/tools/magphos_cli.cpp "${COMMON_SRCS[@]}" -o /tmp/magphos_tests/magphos_cli
+g++ -std=c++17 -Iinclude -Isrc tests/cli_tests.cpp -o /tmp/magphos_tests/cli_tests
+/tmp/magphos_tests/cli_tests
+
 g++ -std=c++17 -Iinclude -Isrc tests/error_tests.cpp src/interpreter/interpreter.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/ast/nodes.cpp src/semantic/analyzer.cpp src/utils/string_utils.cpp -o /tmp/magphos_tests/error_tests
 /tmp/magphos_tests/error_tests
 
