@@ -115,7 +115,7 @@ endif()
 option(MAGPHOS_BUILD_VSCODE "Build unified VSCode launcher" ON)
 
 if(MAGPHOS_BUILD_VSCODE)
-  add_executable(magphos_vscode platform/vscode/main.cpp)
+  add_executable(magphos_vscode src/platform/vscode/main.cpp)
   target_include_directories(magphos_vscode PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
