@@ -45,12 +45,16 @@
     <section class="panel right-panel">
       <h2>Run & Output</h2>
       <div class="actions wrap">
-        <button id="compileBtn">Check</button>
-        <button id="runBtn">Build JS</button>
+        <button id="runBtn">Run</button>
         <button id="enableFallbackBtn" class="small" hidden>Enable Fallback</button>
       </div>
-      <h3>Diagnostics</h3>
-      <pre id="output"></pre>
+      <div class="actions wrap">
+        <button id="consoleTabBtn" class="small">Console</button>
+        <button id="terminalTabBtn" class="small">Terminal</button>
+      </div>
+      <h3 id="outputTitle">Console</h3>
+      <pre id="consoleOutput"></pre>
+      <pre id="terminalOutput" hidden></pre>
     </section>
   </main>
 

@@ -312,12 +312,30 @@ function ensureParentFolders(project, filePath) {
 }
 
 const sourceEl = document.getElementById('source');
-const outputEl = document.getElementById('output');
+const consoleOutputEl = document.getElementById('consoleOutput');
+const terminalOutputEl = document.getElementById('terminalOutput');
+const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
-const compileBtn = document.getElementById('compileBtn');
 const runBtn = document.getElementById('runBtn');
 const enableFallbackBtn = document.getElementById('enableFallbackBtn');
+const consoleTabBtn = document.getElementById('consoleTabBtn');
+const terminalTabBtn = document.getElementById('terminalTabBtn');
+
+let outputMode = 'console';
+
+function setOutputMode(mode) {
+  outputMode = mode === 'terminal' ? 'terminal' : 'console';
+  const showConsole = outputMode === 'console';
+  consoleOutputEl.hidden = !showConsole;
+  terminalOutputEl.hidden = showConsole;
+  outputTitleEl.textContent = showConsole ? 'Console' : 'Terminal';
+}
+
+function setOutputs(message, terminalMessage = '') {
+  consoleOutputEl.textContent = message;
+  terminalOutputEl.textContent = terminalMessage || message;
+}
 
 let project = loadProject();
 
@@ -375,7 +393,7 @@ function syncFileFromEditor() {
   saveProject(project);
 }
 
-function doCompile() {
+function doRun() {
   syncFileFromEditor();
   if (!wasmCompiler) {
     throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm_singlefile.js from C++ using ./tools/scripts/build_web.sh to keep web and native behavior in sync.');
@@ -388,33 +406,40 @@ function doCompile() {
     outputEl.textContent = 'No errors found. Program is valid.';
     return 'ok';
   }
-  compileMagPhos(sourceEl.value);
-  outputEl.textContent = 'No errors found. Program is valid.';
-  return 'ok';
+
+  const js = compileMagPhos(sourceEl.value);
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (...args) => logs.push(args.join(' '));
+  try {
+    new Function(js)();
+  } finally {
+    console.log = originalLog;
+  }
+
+  const runOutput = logs.join('\n') || '(no output)';
+  setOutputs(
+    runOutput,
+    `$ mp run ${project.activeFile}\n${runOutput}`
+  );
+  return runOutput;
 }
 
 sourceEl.addEventListener('input', () => {
   syncFileFromEditor();
 });
 
-compileBtn.addEventListener('click', () => {
-  outputEl.textContent = '';
+runBtn.addEventListener('click', () => {
+  setOutputs('', '');
   try {
-    doCompile();
+    doRun();
   } catch (err) {
-    outputEl.textContent = err.message;
+    setOutputs(err.message, `$ mp run ${project.activeFile}\n${err.message}`);
   }
 });
 
-runBtn.addEventListener('click', () => {
-  outputEl.textContent = '';
-  try {
-    doCompile();
-    outputEl.textContent += '\nWeb IDE mode: JS output is hidden.';
-  } catch (err) {
-    outputEl.textContent = err.message;
-  }
-});
+consoleTabBtn.addEventListener('click', () => setOutputMode('console'));
+terminalTabBtn.addEventListener('click', () => setOutputMode('terminal'));
 
 document.getElementById('newFolderBtn').addEventListener('click', () => {
   const raw = prompt('New folder path (example: src/utils)');
@@ -489,7 +514,7 @@ document.getElementById('newProjectBtn').addEventListener('click', () => {
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
-  outputEl.textContent = '';
+  setOutputs('', '');
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -519,9 +544,9 @@ document.getElementById('importInput').addEventListener('change', async (event) 
     saveProject(project);
     syncEditorFromFile();
     renderFileList();
-    outputEl.textContent = `Imported ${file.name}`;
+    setOutputs(`Imported ${file.name}`, `$ mp import ${file.name}\nImported.`);
   } catch (err) {
-    outputEl.textContent = err.message;
+    setOutputs(err.message, err.message);
   } finally {
     event.target.value = '';
   }
@@ -534,26 +559,34 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    compileBtn.disabled = true;
-    runBtn.disabled = true;
+    wasmCompiler = compileWithFallbackTranspiler;
+    wasmAnalyzer = () => 'ok';
+    runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
-    outputEl.textContent = [
+    setOutputs([
       'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
       'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.',
       'Build with Emscripten: ./tools/scripts/build_web.sh.',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
-    ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n'));
   } else {
-    compileBtn.disabled = false;
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
-    outputEl.textContent = 'C++ WASM compiler connected. Web compile is linked to native parser/semantic/compiler pipeline.';
-    compileBtn.click();
+    setOutputs('C++ WASM compiler connected. Press Run to execute MagPhos code.');
   }
 }
 
 enableFallbackBtn.addEventListener('click', () => {
-  outputEl.textContent = 'Fallback transpiler is disabled. Build C++ WASM artifacts with ./tools/scripts/build_web.sh.';
+  wasmCompiler = compileWithFallbackTranspiler;
+  wasmAnalyzer = () => 'ok';
+  runBtn.disabled = false;
+  enableFallbackBtn.hidden = true;
+  setOutputs([
+    'Fallback transpiler mode enabled manually.',
+    'Warning: this does not guarantee parity with the C++ compiler.',
+    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
+  ].join('\n'));
 });
 
+setOutputMode('console');
 init();
