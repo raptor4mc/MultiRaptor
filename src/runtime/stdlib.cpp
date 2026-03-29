@@ -310,7 +310,7 @@ void StandardLibrary::registerArrays() {
 }
 
 void StandardLibrary::registerFileIO() {
-    functions_["readFile"] = [](const std::vector<Value>& args) {
+    const auto readImpl = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "readFile");
         std::ifstream file(path);
         if (!file) {
@@ -321,8 +321,10 @@ void StandardLibrary::registerFileIO() {
         out << file.rdbuf();
         return Value(out.str());
     };
+    functions_["readFile"] = readImpl;
+    functions_["read"] = readImpl;
 
-    functions_["writeFile"] = [](const std::vector<Value>& args) {
+    const auto writeImpl = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "writeFile");
         const std::string content = requireString(args, 1, "writeFile");
 
@@ -333,8 +335,10 @@ void StandardLibrary::registerFileIO() {
         file << content;
         return Value::makeNull();
     };
+    functions_["writeFile"] = writeImpl;
+    functions_["write"] = writeImpl;
 
-    functions_["appendFile"] = [](const std::vector<Value>& args) {
+    const auto appendImpl = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "appendFile");
         const std::string content = requireString(args, 1, "appendFile");
         std::ofstream file(path, std::ios::app);
@@ -344,6 +348,8 @@ void StandardLibrary::registerFileIO() {
         file << content;
         return Value::makeNull();
     };
+    functions_["appendFile"] = appendImpl;
+    functions_["append"] = appendImpl;
 
     functions_["fileExists"] = [](const std::vector<Value>& args) {
         const std::string path = requireString(args, 0, "fileExists");

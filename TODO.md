@@ -16,6 +16,9 @@ Render folders distinctly from files in the sidebar (icon + muted style).
 ### sub priority 1.5
 Preserve folder metadata in import/export/localStorage restore.
 
+Completion note:
+- Implemented all sub priorities 1.1–1.5 in `web/playground.js` + `web/playground.css`.
+
 ---
 
 ## priority 2: C++-first compiler pipeline for web
@@ -135,3 +138,103 @@ Add `--module-graph` command to print dependency graph edges.
 
 ### sub priority 7.5
 Add CLI integration tests for exit codes and failure-path consistency.
+
+---
+
+## priority 8: nested tree navigation quality (added after completing 1.1)
+Status: 🔄 in progress.
+
+### sub priority 8.1
+Add collapsible folder nodes in sidebar tree.
+
+### sub priority 8.2
+Persist folder expand/collapse state in localStorage.
+
+### sub priority 8.3
+Highlight active file ancestry folders.
+
+### sub priority 8.4
+Auto-scroll sidebar to active file on switch.
+
+### sub priority 8.5
+Add keyboard navigation for tree (up/down/left/right).
+
+---
+
+## priority 9: path validation hardening (added after completing 1.2)
+Status: 🔄 in progress.
+
+### sub priority 9.1
+Reject illegal path segments (`..`, empty segments, control chars).
+
+### sub priority 9.2
+Normalize duplicate separators (`foo//bar` -> `foo/bar`).
+
+### sub priority 9.3
+Reject reserved names and invalid file extensions where needed.
+
+### sub priority 9.4
+Surface inline validation errors instead of alerts.
+
+### sub priority 9.5
+Add path normalization test fixtures for import/export roundtrip.
+
+---
+
+## priority 10: folder lifecycle management (added after completing 1.3)
+Status: 🔄 in progress.
+
+### sub priority 10.1
+Add folder rename with automatic child path updates.
+
+### sub priority 10.2
+Add folder delete with safe confirmation and file impact preview.
+
+### sub priority 10.3
+Prune empty auto-created folders when files move/delete.
+
+### sub priority 10.4
+Support drag-and-drop move for files/folders.
+
+### sub priority 10.5
+Add undo support for move/rename/delete operations.
+
+---
+
+## priority 11: sidebar clarity and accessibility (added after completing 1.4)
+Status: 🔄 in progress.
+
+### sub priority 11.1
+Improve visual distinction for folder vs file states (open/closed/current).
+
+### sub priority 11.2
+Add ARIA labels/roles for folder tree elements.
+
+### sub priority 11.3
+Ensure sufficient color contrast for muted folder styling.
+
+### sub priority 11.4
+Add empty-folder placeholder text for discoverability.
+
+### sub priority 11.5
+Add screen-reader announcements for create/rename/delete actions.
+
+---
+
+## priority 12: project metadata schema stability (added after completing 1.5)
+Status: 🔄 in progress.
+
+### sub priority 12.1
+Version project JSON schema and add migrators per version.
+
+### sub priority 12.2
+Include optional folder metadata (`createdAt`, `tags`, `notes`) safely.
+
+### sub priority 12.3
+Add import warning for unknown metadata keys.
+
+### sub priority 12.4
+Add export option for minified vs pretty JSON.
+
+### sub priority 12.5
+Add schema validation tests for backward compatibility.

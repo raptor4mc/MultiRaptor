@@ -29,6 +29,7 @@
 - `writeFile(path, content)`
 - `appendFile(path, content)`
 - `fileExists(path)`
+- simple aliases: `read(path)`, `write(path, content)`, `append(path, content)`
 
 ## Objects / classes (interop-friendly)
 - `objectCreate()`

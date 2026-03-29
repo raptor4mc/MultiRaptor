@@ -123,6 +123,9 @@ int main() {
     stdlib.call("appendFile", {Value(path), Value(std::string(" world"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello world");
     assert(stdlib.call("fileExists", {Value(path)}).asBoolean());
+    stdlib.call("write", {Value(path), Value(std::string("a"))});
+    stdlib.call("append", {Value(path), Value(std::string("b"))});
+    assert(stdlib.call("read", {Value(path)}).asString() == "ab");
 
     const auto obj0 = stdlib.call("objectCreate", {});
     const auto obj1 = stdlib.call("objectSet", {obj0, Value(std::string("hp")), Value(100.0)});

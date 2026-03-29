@@ -10,6 +10,7 @@ MagPhos Language Rules (Consistency + Simplicity + Predictability + Safety)
 - Use `var` and `const` for declarations.
 - Keep syntax straightforward: explicit blocks `{ ... }`, explicit loop forms.
 - Prefer readable names and short expressions.
+- Prefer short builtins when available (for example `read/write/append`).
 
 3) Predictability
 - No implicit variable creation from assignment.
