@@ -1,8 +1,10 @@
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "interpreter/interpreter.h"
@@ -99,7 +101,7 @@ struct CliResponse {
     std::vector<std::string> errors;
     std::vector<std::string> deps;
     std::vector<magphos::lexer::Token> tokens;
-    std::vector<std::pair<std::string, std::string>> moduleEdges;
+    std::vector<std::tuple<std::string, std::string, std::string>> moduleEdges;
     std::string stdoutText;
     std::string runtimeErrorCode;
 };
@@ -145,9 +147,9 @@ void emitResponse(const CliResponse& response, bool jsonMode, ErrorFormat errorF
         for (std::size_t i = 0; i < response.moduleEdges.size(); ++i) {
             if (i) std::cout << ",";
             std::cout << "{"
-                      << "\"from\":\"" << jsonEscape(response.moduleEdges[i].first) << "\","
-                      << "\"to\":\"" << jsonEscape(response.moduleEdges[i].second) << "\","
-                      << "\"type\":\"import\""
+                      << "\"from\":\"" << jsonEscape(std::get<0>(response.moduleEdges[i])) << "\","
+                      << "\"to\":\"" << jsonEscape(std::get<1>(response.moduleEdges[i])) << "\","
+                      << "\"type\":\"" << jsonEscape(std::get<2>(response.moduleEdges[i])) << "\""
                       << "}";
         }
         std::cout << "]";
@@ -170,7 +172,7 @@ void emitResponse(const CliResponse& response, bool jsonMode, ErrorFormat errorF
         }
         if (!response.moduleEdges.empty()) {
             for (const auto& edge : response.moduleEdges) {
-                std::cout << edge.first << " -> " << edge.second << "\n";
+                std::cout << std::get<0>(edge) << " -[" << std::get<2>(edge) << "]-> " << std::get<1>(edge) << "\n";
             }
         }
         return;
@@ -236,6 +238,19 @@ int main(int argc, char** argv) {
     }
 
     const std::string cmd = positional[0];
+    if (cmd == "--help") {
+        std::cout << "MagPhos CLI\n";
+        std::cout << "Usage:\n";
+        std::cout << "  magphos_cli --help\n";
+        std::cout << "  magphos_cli --version\n";
+        std::cout << "  magphos_cli --about\n";
+        std::cout << "  magphos_cli --check <program.mp>\n";
+        std::cout << "  magphos_cli --run <program.mp>\n";
+        std::cout << "  magphos_cli --deps <program.mp> [baseDir]\n";
+        std::cout << "  magphos_cli --module-graph <program.mp> [baseDir]\n";
+        std::cout << "  magphos_cli --tokens <program.mp>\n";
+        return 0;
+    }
     if (cmd == "--version") {
         std::cout << "MagPhos CLI v0.1.0\n";
         return 0;
@@ -365,16 +380,27 @@ int main(int argc, char** argv) {
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }
+        const std::string baseDir = positional.size() >= 3
+            ? positional[2]
+            : std::filesystem::path(positional[1]).parent_path().string();
         magphos::runtime::ModuleSystem modules;
-        const auto deps = modules.collectDependencies(parsed);
         response.ok = true;
         response.message = "ok";
-        if (cmd == "--module-graph") {
-            for (const auto& dep : deps) {
-                response.moduleEdges.push_back({positional[1], dep});
+        for (const auto& statement : parsed.program.statements) {
+            if (statement.kind != magphos::ast::StmtKind::Import && statement.kind != magphos::ast::StmtKind::Use) {
+                continue;
             }
-        } else {
-            response.deps = deps;
+
+            const bool isImport = statement.kind == magphos::ast::StmtKind::Import;
+            const std::string depPath = isImport
+                ? modules.resolveModulePath(statement.name, baseDir)
+                : modules.resolveUsePath(statement.name, baseDir);
+
+            if (cmd == "--module-graph") {
+                response.moduleEdges.push_back({positional[1], depPath, isImport ? "import" : "use"});
+            } else {
+                response.deps.push_back(depPath);
+            }
         }
         emitResponse(response, jsonMode, errorFormat);
         return 0;
@@ -385,6 +411,7 @@ int main(int argc, char** argv) {
     response.code = 2;
     response.message = "Unknown command: " + cmd;
     response.errors.push_back(response.message);
+    response.errors.push_back("Run --help to see available commands.");
     emitResponse(response, jsonMode, errorFormat);
     return 2;
 }
