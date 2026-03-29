@@ -1,8 +1,13 @@
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <memory>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <string>
+#include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "interpreter/interpreter.h"
@@ -89,12 +94,17 @@ int main() {
     assert(std::abs(stdlib.call("cos", {Value(0.0)}).asNumber() - 1.0) < 1e-9);
     assert(stdlib.call("sqrt", {Value(9.0)}).asNumber() == 3.0);
     assert(stdlib.call("abs", {Value(-5.0)}).asNumber() == 5.0);
+    assert(stdlib.call("pow", {Value(2.0), Value(3.0)}).asNumber() == 8.0);
+    assert(stdlib.call("round", {Value(2.6)}).asNumber() == 3.0);
 
     const auto splitResult = stdlib.call("split", {Value(std::string("a,b,c")), Value(std::string(","))});
     assert(splitResult.type() == TypeKind::Array);
     assert(splitResult.asArray().elements.size() == 3);
     assert(stdlib.call("replace", {Value(std::string("aa")), Value(std::string("a")), Value(std::string("b"))}).asString() == "bb");
     assert(stdlib.call("substring", {Value(std::string("magphos")), Value(3.0), Value(3.0)}).asString() == "pho");
+    assert(stdlib.call("join", {splitResult, Value(std::string("-"))}).asString() == "a-b-c");
+    assert(stdlib.call("regexMatch", {Value(std::string("abc123")), Value(std::string("[a-z]+\\d+"))}).asBoolean());
+    assert(stdlib.call("regexReplace", {Value(std::string("abc123")), Value(std::string("\\d+")), Value(std::string("X"))}).asString() == "abcX");
 
     const auto pushed = stdlib.call("push", {arrayValue, Value(3.0)});
     assert(pushed.asArray().elements.size() == 3);
@@ -120,6 +130,61 @@ int main() {
         const std::string path = "/tmp/magphos_stdlib_test.txt";
     stdlib.call("writeFile", {Value(path), Value(std::string("hello"))});
     assert(stdlib.call("readFile", {Value(path)}).asString() == "hello");
+    stdlib.call("appendFile", {Value(path), Value(std::string(" world"))});
+    assert(stdlib.call("readFile", {Value(path)}).asString() == "hello world");
+    assert(stdlib.call("fileExists", {Value(path)}).asBoolean());
+    stdlib.call("write", {Value(path), Value(std::string("a"))});
+    stdlib.call("append", {Value(path), Value(std::string("b"))});
+    assert(stdlib.call("read", {Value(path)}).asString() == "ab");
+
+    const auto obj0 = stdlib.call("objectCreate", {});
+    const auto obj1 = stdlib.call("objectSet", {obj0, Value(std::string("hp")), Value(100.0)});
+    assert(stdlib.call("objectGet", {obj1, Value(std::string("hp"))}).asNumber() == 100.0);
+    assert(stdlib.call("classCreate", {Value(std::string("Enemy"))}).asClass().name == "Enemy");
+    assert(stdlib.call("env", {Value(std::string("PATH"))}).type() == TypeKind::String);
+    assert(stdlib.call("exec", {Value(std::string("printf hi"))}).asString() == "hi");
+    stdlib.call("writeFile", {Value(std::string("/tmp/magphos_httpget.txt")), Value(std::string("network-ok"))});
+    assert(stdlib.call("httpGet", {Value(std::string("file:///tmp/magphos_httpget.txt"))}).asString().find("network-ok") != std::string::npos);
+
+    const auto threadHandle = stdlib.call("threadSpawn", {Value(1.0), Value(std::string("done"))});
+    assert(stdlib.call("threadAwait", {threadHandle}).asString() == "done");
+    const auto mutexHandle = stdlib.call("mutexCreate", {});
+    assert(stdlib.call("mutexLock", {mutexHandle}).isNull());
+    assert(stdlib.call("mutexUnlock", {mutexHandle}).isNull());
+    const auto semHandle = stdlib.call("semaphoreCreate", {Value(1.0)});
+    assert(stdlib.call("semaphoreAcquire", {semHandle}).isNull());
+    assert(stdlib.call("semaphoreRelease", {semHandle}).isNull());
+    const auto channelHandle = stdlib.call("channelCreate", {});
+    assert(stdlib.call("channelSend", {channelHandle, Value(std::string("msg"))}).isNull());
+    assert(stdlib.call("channelRecv", {channelHandle}).asString() == "msg");
+
+    const int testPort = 40555;
+    std::thread server([&]() {
+        int srv = ::socket(AF_INET, SOCK_STREAM, 0);
+        assert(srv >= 0);
+        int opt = 1;
+        setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(static_cast<uint16_t>(testPort));
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        assert(bind(srv, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0);
+        assert(listen(srv, 1) == 0);
+        int client = accept(srv, nullptr, nullptr);
+        assert(client >= 0);
+        char buf[16] = {0};
+        const auto n = recv(client, buf, sizeof(buf), 0);
+        assert(n > 0);
+        send(client, "pong", 4, 0);
+        close(client);
+        close(srv);
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    const auto socketHandle = stdlib.call("tcpConnect", {Value(std::string("127.0.0.1")), Value(static_cast<double>(testPort))});
+    assert(stdlib.call("socketSend", {socketHandle, Value(std::string("ping"))}).asNumber() >= 4.0);
+    assert(stdlib.call("socketRecv", {socketHandle, Value(16.0)}).asString() == "pong");
+    assert(stdlib.call("socketClose", {socketHandle}).isNull());
+    server.join();
 
     magphos::runtime::ModuleSystem moduleSystem;
     const std::string modBase = "/tmp/magphos_modules";
@@ -132,6 +197,8 @@ int main() {
     assert(moduleSystem.resolveUsePath("utils.mp", modBase) == modBase + "/utils.mp");
     assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
     assert(moduleSystem.loadUsePath("utils.mp", modBase).find("print 3") != std::string::npos);
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos); // cache path
+    moduleSystem.clearCache();
 
     const std::string depSource = "import game.engine\nuse \"utils.mp\"\nprint 1\n";
     magphos::lexer::Lexer depLexer;
@@ -147,8 +214,16 @@ int main() {
 fn add(a, b) {
   return a + b
 }
-x = add(5, 7)
-flag = true and not false
+fn addBase(a, b = 5) {
+  return a + b
+}
+fn sumAll(...nums) {
+  return len(nums)
+}
+var x = add(5, 7)
+var y = addBase(10)
+var argc = sumAll(1, 2, 3, 4)
+var flag = true and not false
 if flag and x == 12 {
   x = x + 1
 } else {
@@ -157,7 +232,39 @@ if flag and x == 12 {
 while x < 20 {
   x = x + 2
 }
-sum = 0
+when x == 21 {
+  set x = x + 1
+}
+loop 2 {
+  set x = x + 1
+}
+repeat while x < 26 {
+  set x = x + 1
+}
+switch x {
+  case 26 {
+    set x = x + 1
+  }
+  default {
+    set x = 0
+  }
+}
+match y {
+  case 15 {
+    set y = y + 1
+  }
+  default {
+    set y = 0
+  }
+}
+try {
+  set missingVar = 1
+} catch {
+  set y = y + 1
+}
+var arr = [1, 2, 3]
+var arrLen = len(arr)
+var sum = 0
 for (var i = 0; i < 3; i = i + 1) {
   sum = sum + i
 }
@@ -169,15 +276,18 @@ for (var i = 0; i < 3; i = i + 1) {
 
     RuntimeEngine engine;
     engine.loadProgram(runtimeParse.program);
-    assert(engine.globals()->get("x").asNumber() == 21.0);
+    assert(engine.globals()->get("x").asNumber() == 27.0);
+    assert(engine.globals()->get("y").asNumber() == 17.0);
+    assert(engine.globals()->get("argc").asNumber() == 4.0);
     assert(engine.globals()->get("flag").asBoolean());
     assert(engine.globals()->get("sum").asNumber() == 3.0);
+    assert(engine.globals()->get("arrLen").asNumber() == 3.0);
 
     const std::string aritySource = R"(
 fn add(a, b) {
   return a + b
 }
-x = add(1)
+var x = add(1)
 )";
     const auto arityParse = runtimeParser.parse(runtimeLexer.tokenize(aritySource));
     bool arityRaised = false;
@@ -188,6 +298,15 @@ x = add(1)
         arityRaised = ex.code() == RuntimeErrorCode::ArityError;
     }
     assert(arityRaised);
+
+    const std::string semanticBad = magphos::interpreter::analyzeProgram("print unknownVar\n");
+    assert(semanticBad.find("Semantic error: Undefined identifier: unknownVar") != std::string::npos);
+    const std::string duplicateDecl = magphos::interpreter::analyzeProgram("var x = 1\nvar x = 2\n");
+    assert(duplicateDecl.find("Duplicate declaration in same scope") != std::string::npos);
+    const std::string badReturn = magphos::interpreter::analyzeProgram("return 1\n");
+    assert(badReturn.find("'return' is only allowed inside functions") != std::string::npos);
+    const std::string badSet = magphos::interpreter::analyzeProgram("set y = 1\n");
+    assert(badSet.find("'set' requires an existing variable") != std::string::npos);
 
     return 0;
 }

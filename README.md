@@ -105,6 +105,7 @@ Web Studio includes a Chromebook-friendly coding workspace with:
 - in-browser Compile + Run output panes powered by the C++ compiler via WASM
 
 To run the web compiler path, build with Emscripten (`-DMAGPHOS_BUILD_WASM=ON`). The WASM target now emits `magphos_wasm.js/.wasm` directly into `web/` so browser and downloadable flows share the same compiler artifacts.
+The web bindings now expose both `compileMagPhos` and `analyzeMagPhos`, so the playground uses the C++ parser/semantic/compiler pipeline before running output.
 
 Recommended isolated web build (keeps normal Linux/macOS/Windows download workflow untouched):
 
@@ -152,6 +153,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/roadmap.md`
 - `docs/repl.md`
 - `docs/game_api.md`
+- `info/rules.txt` (consistency/simplicity/predictability/safety rules)
 
 ## Sample programs (new)
 
@@ -166,6 +168,14 @@ MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh
 - `mp.sh repl`
 
 Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
+
+Native CLI tool (`magphos_cli`) now supports:
+
+- `--version`
+- `--about`
+- `--check <program.mp>` (parse + semantic validation)
+- `--deps <program.mp>` (list `import` / `use` dependencies)
+- `--tokens <program.mp>` (token dump for debugging)
 
 ## Real runtime model (new)
 
