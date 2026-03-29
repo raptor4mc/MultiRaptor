@@ -352,6 +352,9 @@ function setOutputMode(mode) {
   programOutputEl.hidden = !showOutput;
   consoleOutputEl.hidden = !showConsole;
   terminalShellEl.hidden = !showTerminal;
+  outputTabBtn.classList.toggle('active', showOutput);
+  consoleTabBtn.classList.toggle('active', showConsole);
+  terminalTabBtn.classList.toggle('active', showTerminal);
   outputTitleEl.textContent = showOutput ? 'Output' : showConsole ? 'Console' : 'Terminal';
   if (showTerminal) {
     refreshTerminalPrompt();
