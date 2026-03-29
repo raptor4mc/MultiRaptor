@@ -312,7 +312,6 @@ function ensureParentFolders(project, filePath) {
 }
 
 const sourceEl = document.getElementById('source');
-const compiledEl = document.getElementById('compiled');
 const outputEl = document.getElementById('output');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
@@ -386,10 +385,12 @@ function doCompile() {
     if (analysis !== 'ok') {
       throw new Error(analysis);
     }
+    outputEl.textContent = 'No errors found. Program is valid.';
+    return 'ok';
   }
-  const js = compileMagPhos(sourceEl.value);
-  compiledEl.textContent = js;
-  return js;
+  compileMagPhos(sourceEl.value);
+  outputEl.textContent = 'No errors found. Program is valid.';
+  return 'ok';
 }
 
 sourceEl.addEventListener('input', () => {
@@ -408,16 +409,8 @@ compileBtn.addEventListener('click', () => {
 runBtn.addEventListener('click', () => {
   outputEl.textContent = '';
   try {
-    const js = doCompile();
-    const logs = [];
-    const originalLog = console.log;
-    console.log = (...args) => logs.push(args.join(' '));
-    try {
-      new Function(js)();
-    } finally {
-      console.log = originalLog;
-    }
-    outputEl.textContent = logs.join('\n') || '(no output)';
+    doCompile();
+    outputEl.textContent += '\nWeb IDE mode: JS output is hidden.';
   } catch (err) {
     outputEl.textContent = err.message;
   }
@@ -496,7 +489,6 @@ document.getElementById('newProjectBtn').addEventListener('click', () => {
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
-  compiledEl.textContent = '';
   outputEl.textContent = '';
 });
 
