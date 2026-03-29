@@ -26,14 +26,34 @@ function normalizeFilePath(path) {
 
 function ensureProjectShape(raw) {
   const safe = raw && typeof raw === 'object' ? raw : {};
-  const files = safe.files && typeof safe.files === 'object' ? safe.files : {};
+  const rawFiles = safe.files && typeof safe.files === 'object' ? safe.files : {};
+  const files = {};
+  Object.entries(rawFiles).forEach(([filePath, content]) => {
+    const normalized = normalizeFilePath(filePath);
+    if (!normalized) return;
+    files[normalized] = typeof content === 'string' ? content : String(content ?? '');
+  });
   const folders = Array.isArray(safe.folders) ? safe.folders : [];
+
+  const normalizedFolderMeta = [];
+  const seenFolders = new Set();
+  folders.forEach((entry) => {
+    const path = normalizeFolderPath(
+      typeof entry === 'string' ? entry : (entry && entry.path) || ''
+    );
+    if (!path || seenFolders.has(path)) return;
+    seenFolders.add(path);
+    normalizedFolderMeta.push({
+      path,
+      createdAt: (entry && typeof entry === 'object' && entry.createdAt) || new Date().toISOString()
+    });
+  });
 
   return {
     projectName: safe.projectName || 'chromebook-studio',
     activeFile: safe.activeFile || Object.keys(files)[0] || 'main.mp',
     files,
-    folders: [...new Set(folders.map(normalizeFolderPath).filter(Boolean))]
+    folders: normalizedFolderMeta
   };
 }
 
@@ -254,7 +274,10 @@ function createDefaultProject() {
   return {
     projectName: 'chromebook-studio',
     activeFile: 'main.mp',
-    folders: ['src', 'notes'],
+    folders: [
+      { path: 'src', createdAt: new Date().toISOString() },
+      { path: 'notes', createdAt: new Date().toISOString() }
+    ],
     files: {
       'main.mp': template,
       'notes/tips.mp': '# Put extra snippets here'
@@ -267,6 +290,7 @@ function loadProject() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultProject();
     const parsed = ensureProjectShape(JSON.parse(raw));
+    Object.keys(parsed.files).forEach((filePath) => ensureParentFolders(parsed, filePath));
     if (!Object.keys(parsed.files).length) return createDefaultProject();
     return parsed;
   } catch (_) {
@@ -282,15 +306,17 @@ function ensureParentFolders(project, filePath) {
   const parts = filePath.split('/');
   if (parts.length <= 1) return;
   const created = [];
+  const existing = new Set(project.folders.map((f) => f.path));
   for (let i = 1; i < parts.length; i += 1) {
     const folder = parts.slice(0, i).join('/');
-    if (!project.folders.includes(folder)) {
-      project.folders.push(folder);
+    if (!existing.has(folder)) {
+      project.folders.push({ path: folder, createdAt: new Date().toISOString() });
+      existing.add(folder);
       created.push(folder);
     }
   }
   if (created.length) {
-    project.folders.sort((a, b) => a.localeCompare(b));
+    project.folders.sort((a, b) => a.path.localeCompare(b.path));
   }
 }
 
@@ -315,12 +341,16 @@ function renderFileList() {
   ensureActiveFile();
   fileListEl.innerHTML = '';
 
-  const folderNames = [...project.folders].sort((a, b) => a.localeCompare(b));
+  const folderNames = project.folders
+    .map((folder) => folder.path)
+    .sort((a, b) => a.localeCompare(b));
   const fileNames = Object.keys(project.files).sort((a, b) => a.localeCompare(b));
 
   folderNames.forEach((folderName) => {
     const li = document.createElement('li');
-    li.className = 'folder-item';
+    const depth = folderName.split('/').length - 1;
+    li.className = 'folder-item tree-item';
+    li.style.paddingLeft = `${12 + depth * 16}px`;
     li.textContent = `📁 ${folderName}`;
     fileListEl.appendChild(li);
   });
@@ -328,7 +358,9 @@ function renderFileList() {
   fileNames.forEach((fileName) => {
     const li = document.createElement('li');
     const btn = document.createElement('button');
-    btn.className = 'file-btn';
+    const depth = fileName.split('/').length - 1;
+    btn.className = 'file-btn tree-item';
+    btn.style.paddingLeft = `${12 + depth * 16}px`;
     if (fileName === project.activeFile) btn.classList.add('active');
     btn.textContent = `📄 ${fileName}`;
     btn.addEventListener('click', () => {
@@ -399,13 +431,15 @@ document.getElementById('newFolderBtn').addEventListener('click', () => {
   if (!raw) return;
   const folder = normalizeFolderPath(raw);
   if (!folder) return;
-  if (project.folders.includes(folder)) {
+  if (project.folders.some((f) => f.path === folder)) {
     alert('Folder already exists.');
     return;
   }
   ensureParentFolders(project, `${folder}/placeholder.mp`);
-  if (!project.folders.includes(folder)) project.folders.push(folder);
-  project.folders.sort((a, b) => a.localeCompare(b));
+  if (!project.folders.some((f) => f.path === folder)) {
+    project.folders.push({ path: folder, createdAt: new Date().toISOString() });
+  }
+  project.folders.sort((a, b) => a.path.localeCompare(b.path));
   saveProject(project);
   renderFileList();
 });
