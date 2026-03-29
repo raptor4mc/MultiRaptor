@@ -325,6 +325,8 @@ const terminalShellEl = document.getElementById('terminalOutput');
 const terminalHistoryEl = document.getElementById('terminalHistory');
 const terminalInputEl = document.getElementById('terminalInput');
 const terminalPromptEl = document.getElementById('terminalPrompt');
+const previewShellEl = document.getElementById('previewOutput');
+const previewFrameEl = document.getElementById('previewFrame');
 const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
@@ -332,6 +334,8 @@ const runBtn = document.getElementById('runBtn');
 const outputTabBtn = document.getElementById('outputTabBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
+const previewTabBtn = document.getElementById('previewTabBtn');
+const refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
 const deleteFolderBtn = document.getElementById('deleteFolderBtn');
 runBtn.disabled = true;
 
@@ -344,18 +348,27 @@ const collapsedFolders = new Set();
 let selectedFolder = '';
 
 function setOutputMode(mode) {
-  const allowedModes = new Set(['output', 'console', 'terminal']);
+  const allowedModes = new Set(['output', 'console', 'terminal', 'preview']);
   outputMode = allowedModes.has(mode) ? mode : 'output';
   const showOutput = outputMode === 'output';
   const showConsole = outputMode === 'console';
   const showTerminal = outputMode === 'terminal';
+  const showPreview = outputMode === 'preview';
   programOutputEl.hidden = !showOutput;
   consoleOutputEl.hidden = !showConsole;
   terminalShellEl.hidden = !showTerminal;
+  previewShellEl.hidden = !showPreview;
   outputTabBtn.classList.toggle('active', showOutput);
   consoleTabBtn.classList.toggle('active', showConsole);
   terminalTabBtn.classList.toggle('active', showTerminal);
-  outputTitleEl.textContent = showOutput ? 'Output' : showConsole ? 'Console' : 'Terminal';
+  previewTabBtn.classList.toggle('active', showPreview);
+  outputTitleEl.textContent = showOutput
+    ? 'Output'
+    : showConsole
+      ? 'Console'
+      : showTerminal
+        ? 'Terminal'
+        : 'Preview';
   if (showTerminal) {
     refreshTerminalPrompt();
     terminalInputEl.focus();
@@ -538,7 +551,7 @@ function runTerminalCommand(rawCommand) {
   const cmd = name.toLowerCase();
 
   if (cmd === 'help') {
-    pushTerminalLine('Commands: help, clear, pwd, ls [path], tree, cd <path>, cat <file>, open <file>, run [file].');
+    pushTerminalLine('Commands: help, clear, pwd, ls [path], tree, cd <path>, cat <file>, open <file>, run [file], preview.');
     return;
   }
   if (cmd === 'clear') {
@@ -624,8 +637,49 @@ function runTerminalCommand(rawCommand) {
     }
     return;
   }
+  if (cmd === 'preview') {
+    renderPreview(project.files[project.activeFile] || sourceEl.value || '', { forceGameView: true });
+    setOutputMode('preview');
+    pushTerminalLine('Preview refreshed.');
+    return;
+  }
 
   pushTerminalLine(`Unknown command: ${name}. Type "help".`);
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+function findPreviewHtml() {
+  const preferred = ['preview/index.html', 'game/index.html', 'index.html'];
+  for (const path of preferred) {
+    if (project.files[path]) return project.files[path];
+  }
+  const htmlEntry = Object.entries(project.files)
+    .find(([path]) => path.toLowerCase().endsWith('.html'));
+  return htmlEntry ? htmlEntry[1] : '';
+}
+
+function renderPreview(runOutput = '', options = {}) {
+  const previewHtml = findPreviewHtml();
+  if (previewHtml) {
+    previewFrameEl.srcdoc = previewHtml;
+    return;
+  }
+  const template = document.getElementById('defaultPreviewHtml').innerHTML;
+  const outputNote = String(runOutput || '').trim()
+    ? `<div style="position:fixed;left:12px;bottom:12px;max-width:60ch;background:rgba(15,23,42,0.85);border:1px solid rgba(100,116,139,0.6);padding:10px 12px;border-radius:8px;color:#e2e8f0;font-family:system-ui,sans-serif"><strong>Program output</strong><pre style="margin:6px 0 0;white-space:pre-wrap">${escapeHtml(runOutput)}</pre></div>`
+    : '';
+  const splash = options.forceGameView
+    ? '<div id="hud" style="left:auto;right:12px">Tip: add preview/index.html for your own 2D/3D game scene.</div>'
+    : '';
+  previewFrameEl.srcdoc = template.includes('</body>')
+    ? template.replace('</body>', `${outputNote}${splash}</body>`)
+    : `${template}${outputNote}${splash}`;
 }
 
 function doRun() {
@@ -685,6 +739,7 @@ function doRun() {
     console: runtimeErrors,
     terminal: terminalLines.join('\n')
   });
+  renderPreview(runOutput);
   if (runtimeErrors) {
     setOutputMode('console');
   }
@@ -713,6 +768,14 @@ runBtn.addEventListener('click', () => {
 outputTabBtn.addEventListener('click', () => setOutputMode('output'));
 consoleTabBtn.addEventListener('click', () => setOutputMode('console'));
 terminalTabBtn.addEventListener('click', () => setOutputMode('terminal'));
+previewTabBtn.addEventListener('click', () => {
+  renderPreview(project.files[project.activeFile] || sourceEl.value || '');
+  setOutputMode('preview');
+});
+refreshPreviewBtn.addEventListener('click', () => {
+  renderPreview(project.files[project.activeFile] || sourceEl.value || '', { forceGameView: true });
+  setOutputMode('preview');
+});
 terminalInputEl.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowUp') {
     if (!terminalCommandHistory.length) return;
@@ -855,6 +918,7 @@ document.getElementById('newProjectBtn').addEventListener('click', () => {
   syncEditorFromFile();
   renderFileList();
   setOutputs({ output: '', console: '', terminal: '' });
+  renderPreview('');
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -935,6 +999,7 @@ async function init() {
       console: '',
       terminal: ''
     });
+    renderPreview('');
     setOutputMode('output');
   }
 }
