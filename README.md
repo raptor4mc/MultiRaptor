@@ -133,16 +133,9 @@ If needed, you can tune those size gates with:
 - `MAGPHOS_USE_DOCKER_FALLBACK` (`1` by default)
 - `MAGPHOS_DOCKER_EMSDK_IMAGE` (defaults to `emscripten/emsdk:$MAGPHOS_EMSDK_VERSION`)
 
-The script now hard-fails if generated JS still contains the fallback loader banner, if `web/magphos_wasm.wasm` is not a real wasm binary (magic bytes `00 61 73 6d`), or if artifacts are suspiciously small (`magphos_wasm.js` < 50 KB, `magphos_wasm.wasm` < 100 KB, `magphos_wasm_singlefile.js` < 200 KB). This catches placeholder/base64-text artifacts before publish.
-
-If needed, you can tune those size gates with:
-- `MAGPHOS_MIN_WASM_JS_BYTES`
-- `MAGPHOS_MIN_WASM_BYTES`
-- `MAGPHOS_MIN_SINGLEFILE_JS_BYTES`
-
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
-Important: do **not** keep placeholder 1-byte wasm/js files in the repo. If the generated web artifacts are missing, rebuild them with `./tools/scripts/build_web.sh` before publishing.
+Important: generated `web/magphos_wasm*.js/.wasm` artifacts are intentionally not tracked in git anymore. Build them locally with `./tools/scripts/build_web.sh` before running web playground from your checkout, or rely on the GitHub Pages workflow build outputs.
 If wasm artifacts are missing at runtime, the playground now falls back to a minimal JS transpiler mode so editing/testing is still possible (but behavior is not identical to the real C++ compiler).
 
 Then host the repo (or just the `web/` folder) on any static site and open:
@@ -153,7 +146,7 @@ Then host the repo (or just the `web/` folder) on any static site and open:
 
 This gives the same C++ compiler pipeline in-browser (compiled to WASM) while keeping native download builds separate in `build/`.
 
-For GitHub Pages (or any static hosting), commit/publish both generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), and it can boot both modern Emscripten module output and classic global-`Module` output from `magphos_wasm.js`.
+For GitHub Pages (or any static hosting), publish the generated files in `web/` (`magphos_wasm.js` and the wasm binary). The playground accepts either `magphos_wasm.wasm` (default) or `magphos.wasm` (if you renamed it), and it can boot both modern Emscripten module output and classic global-`Module` output from `magphos_wasm.js`.
 
 If you host with **GitHub Pages**, enable **Settings → Pages → Build and deployment → Source = GitHub Actions**. This repo includes `.github/workflows/deploy-web-playground.yml` to build `web/magphos_wasm.js/.wasm` on each push to `main` and deploy them so `https://<user>.github.io/<repo>/web/playground.html` works without manual commits of generated artifacts.
 
