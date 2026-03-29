@@ -25,4 +25,7 @@ class RuntimeError : public std::runtime_error {
     std::string hint_;
 };
 
+std::string runtimeErrorCodeName(RuntimeErrorCode code);
+std::string renderRuntimeError(const RuntimeError& error);
+
 } // namespace magphos::runtime
