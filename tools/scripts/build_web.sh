@@ -6,6 +6,10 @@ EMSDK_DIR="${MAGPHOS_EMSDK_DIR:-.tools/emsdk}"
 
 BUILD_DIR="${1:-build-web}"
 
+MIN_JS_BYTES="${MAGPHOS_MIN_WASM_JS_BYTES:-51200}"
+MIN_WASM_BYTES="${MAGPHOS_MIN_WASM_BYTES:-102400}"
+MIN_SINGLEFILE_JS_BYTES="${MAGPHOS_MIN_SINGLEFILE_JS_BYTES:-204800}"
+
 ensure_emscripten() {
   if command -v emcmake >/dev/null 2>&1; then
     return 0
@@ -69,6 +73,18 @@ assert_wasm_binary_header() {
   fi
 }
 
+assert_min_bytes() {
+  local path="$1"
+  local minimum="$2"
+  local size
+  size=$(wc -c < "${path}")
+  if (( size < minimum )); then
+    echo "Error: ${path} is unexpectedly small (${size} bytes, expected at least ${minimum})."
+    echo "Hint: this usually means a fallback/placeholder artifact was generated or checked in."
+    exit 1
+  fi
+}
+
 require_nonempty_file web/magphos_wasm.js
 require_nonempty_file web/magphos_wasm.wasm
 require_nonempty_file web/magphos_wasm_singlefile.js
@@ -76,8 +92,11 @@ require_nonempty_file web/magphos_wasm_singlefile.js
 assert_not_fallback_loader web/magphos_wasm.js
 assert_not_fallback_loader web/magphos_wasm_singlefile.js
 assert_wasm_binary_header web/magphos_wasm.wasm
+assert_min_bytes web/magphos_wasm.js "${MIN_JS_BYTES}"
+assert_min_bytes web/magphos_wasm.wasm "${MIN_WASM_BYTES}"
+assert_min_bytes web/magphos_wasm_singlefile.js "${MIN_SINGLEFILE_JS_BYTES}"
 
-echo "Web artifacts ready:"
+echo "Web artifacts ready (strict validation passed):"
 echo "  - web/magphos_wasm.js ($(wc -c < web/magphos_wasm.js) bytes)"
 echo "  - web/magphos_wasm.wasm ($(wc -c < web/magphos_wasm.wasm) bytes)"
 echo "  - web/magphos_wasm_singlefile.js ($(wc -c < web/magphos_wasm_singlefile.js) bytes)"
