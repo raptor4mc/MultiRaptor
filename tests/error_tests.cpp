@@ -25,5 +25,10 @@ int main() {
     const std::string badReturn = magphos::interpreter::analyzeProgram("return 42\n");
     assert(badReturn.find("Invalid control flow: 'return' is only allowed inside functions") != std::string::npos);
 
+    const std::string multipleIssues = magphos::interpreter::analyzeProgram("score = 10\nset level = 3\n");
+    assert(multipleIssues.find("Semantic error: Assignment requires an existing variable: score") != std::string::npos);
+    assert(multipleIssues.find("Semantic error: 'set' requires an existing variable: level") != std::string::npos);
+    assert(multipleIssues.find("\nSemantic error: ") != std::string::npos);
+
     return 0;
 }

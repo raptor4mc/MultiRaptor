@@ -223,6 +223,27 @@ class Analyzer {
     }
 };
 
+std::string normalizeIssueMessage(const std::string& raw) {
+    std::string compact;
+    compact.reserve(raw.size());
+    bool previousWasSpace = false;
+    for (const char c : raw) {
+        const bool isSpace = (c == ' ' || c == '\n' || c == '\r' || c == '\t');
+        if (isSpace) {
+            if (!previousWasSpace) {
+                compact.push_back(' ');
+                previousWasSpace = true;
+            }
+            continue;
+        }
+        compact.push_back(c);
+        previousWasSpace = false;
+    }
+    while (!compact.empty() && compact.front() == ' ') compact.erase(compact.begin());
+    while (!compact.empty() && compact.back() == ' ') compact.pop_back();
+    return compact;
+}
+
 } // namespace
 
 std::vector<SemanticIssue> analyze(const ast::Program& program) {
@@ -240,7 +261,7 @@ std::string renderIssues(const std::vector<SemanticIssue>& issues) {
         if (i > 0) {
             out << '\n';
         }
-        out << "Semantic error: " << issues[i].message;
+        out << "Semantic error: " << normalizeIssueMessage(issues[i].message);
     }
     return out.str();
 }

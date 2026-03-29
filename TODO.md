@@ -5,6 +5,8 @@
 4. Always work on the first `priority` that is not completed.
 5. Each `sub priority` must be implementation-oriented and directly testable.
 6. No bloat priorities: every priority/sub-priority must fix a real error or move the language/runtime/tooling forward.
+7. If a `sub priority` is completed, remove it from active list and add one new `priority` with five concrete `sub priority` items.
+8. If a full `priority` is completed, add five new non-overlapping priorities (merge near-duplicates).
 
 ---
 
@@ -73,9 +75,6 @@ Enforce consistent TODO structure and spelling (`priority` / `sub priority`).
 
 ## priority 4: language safety and predictability
 Status: 🔄 in progress.
-
-### sub priority 4.3
-Keep semantic diagnostics short, actionable, and line-oriented.
 
 ### sub priority 4.4
 Guarantee runtime errors map to stable error codes/messages.
@@ -262,3 +261,23 @@ Ensure CLI `--check --json` includes control-flow diagnostics in `errors[]`.
 
 ### sub priority 14.5
 Document control-flow semantic rules in `docs/syntax.md`.
+
+---
+
+## priority 15: semantic diagnostic contract stabilization
+Status: 🔄 in progress.
+
+### sub priority 15.1
+Guarantee semantic diagnostics render as one-line entries (no embedded newlines per issue).
+
+### sub priority 15.2
+Add deterministic ordering for semantic issues emitted from a single file.
+
+### sub priority 15.3
+Add machine-stable semantic error code prefixes (`SEM###`) for CLI/IDE filtering.
+
+### sub priority 15.4
+Expose semantic issue count in CLI JSON responses for `--check`.
+
+### sub priority 15.5
+Document semantic diagnostic format and compatibility policy in `docs/error_guide.md`.
