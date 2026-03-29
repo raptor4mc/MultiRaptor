@@ -1,8 +1,13 @@
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <memory>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <string>
+#include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "interpreter/interpreter.h"
@@ -89,12 +94,17 @@ int main() {
     assert(std::abs(stdlib.call("cos", {Value(0.0)}).asNumber() - 1.0) < 1e-9);
     assert(stdlib.call("sqrt", {Value(9.0)}).asNumber() == 3.0);
     assert(stdlib.call("abs", {Value(-5.0)}).asNumber() == 5.0);
+    assert(stdlib.call("pow", {Value(2.0), Value(3.0)}).asNumber() == 8.0);
+    assert(stdlib.call("round", {Value(2.6)}).asNumber() == 3.0);
 
     const auto splitResult = stdlib.call("split", {Value(std::string("a,b,c")), Value(std::string(","))});
     assert(splitResult.type() == TypeKind::Array);
     assert(splitResult.asArray().elements.size() == 3);
     assert(stdlib.call("replace", {Value(std::string("aa")), Value(std::string("a")), Value(std::string("b"))}).asString() == "bb");
     assert(stdlib.call("substring", {Value(std::string("magphos")), Value(3.0), Value(3.0)}).asString() == "pho");
+    assert(stdlib.call("join", {splitResult, Value(std::string("-"))}).asString() == "a-b-c");
+    assert(stdlib.call("regexMatch", {Value(std::string("abc123")), Value(std::string("[a-z]+\\d+"))}).asBoolean());
+    assert(stdlib.call("regexReplace", {Value(std::string("abc123")), Value(std::string("\\d+")), Value(std::string("X"))}).asString() == "abcX");
 
     const auto pushed = stdlib.call("push", {arrayValue, Value(3.0)});
     assert(pushed.asArray().elements.size() == 3);
@@ -135,6 +145,46 @@ int main() {
     assert(stdlib.call("exec", {Value(std::string("printf hi"))}).asString() == "hi");
     stdlib.call("writeFile", {Value(std::string("/tmp/magphos_httpget.txt")), Value(std::string("network-ok"))});
     assert(stdlib.call("httpGet", {Value(std::string("file:///tmp/magphos_httpget.txt"))}).asString().find("network-ok") != std::string::npos);
+
+    const auto threadHandle = stdlib.call("threadSpawn", {Value(1.0), Value(std::string("done"))});
+    assert(stdlib.call("threadAwait", {threadHandle}).asString() == "done");
+    const auto mutexHandle = stdlib.call("mutexCreate", {});
+    assert(stdlib.call("mutexLock", {mutexHandle}).isNull());
+    assert(stdlib.call("mutexUnlock", {mutexHandle}).isNull());
+    const auto semHandle = stdlib.call("semaphoreCreate", {Value(1.0)});
+    assert(stdlib.call("semaphoreAcquire", {semHandle}).isNull());
+    assert(stdlib.call("semaphoreRelease", {semHandle}).isNull());
+    const auto channelHandle = stdlib.call("channelCreate", {});
+    assert(stdlib.call("channelSend", {channelHandle, Value(std::string("msg"))}).isNull());
+    assert(stdlib.call("channelRecv", {channelHandle}).asString() == "msg");
+
+    const int testPort = 40555;
+    std::thread server([&]() {
+        int srv = ::socket(AF_INET, SOCK_STREAM, 0);
+        assert(srv >= 0);
+        int opt = 1;
+        setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(static_cast<uint16_t>(testPort));
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        assert(bind(srv, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0);
+        assert(listen(srv, 1) == 0);
+        int client = accept(srv, nullptr, nullptr);
+        assert(client >= 0);
+        char buf[16] = {0};
+        const auto n = recv(client, buf, sizeof(buf), 0);
+        assert(n > 0);
+        send(client, "pong", 4, 0);
+        close(client);
+        close(srv);
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    const auto socketHandle = stdlib.call("tcpConnect", {Value(std::string("127.0.0.1")), Value(static_cast<double>(testPort))});
+    assert(stdlib.call("socketSend", {socketHandle, Value(std::string("ping"))}).asNumber() >= 4.0);
+    assert(stdlib.call("socketRecv", {socketHandle, Value(16.0)}).asString() == "pong");
+    assert(stdlib.call("socketClose", {socketHandle}).isNull());
+    server.join();
 
     magphos::runtime::ModuleSystem moduleSystem;
     const std::string modBase = "/tmp/magphos_modules";

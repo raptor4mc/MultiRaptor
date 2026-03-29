@@ -12,11 +12,23 @@
 - `cos(number)`
 - `sqrt(number)`
 - `abs(number)`
+- `tan(number)`
+- `asin(number)`
+- `acos(number)`
+- `atan(number)`
+- `log(number)` (base-10)
+- `ln(number)` (natural log)
+- `exp(number)`
+- `pow(base, exponent)`
+- `floor(number)`, `ceil(number)`, `round(number)`
 
 ## Strings
 - `split(string, delimiter)`
 - `replace(string, from, to)`
 - `substring(string, start, length?)`
+- `join(arrayOfStrings, delimiter)`
+- `regexMatch(string, pattern)`
+- `regexReplace(string, pattern, replacement)`
 
 ## Arrays
 - `push(array, value)`
@@ -39,10 +51,21 @@
 
 ## Networking
 - `httpGet(url)` (requires `curl` availability in runtime environment)
+- `tcpConnect(ipv4Host, port)`
+- `socketSend(socket, data)`
+- `socketRecv(socket, maxBytes)`
+- `socketClose(socket)`
 
 ## Interoperability
 - `env(name)` (read OS environment variable)
 - `exec(command)` (execute shell command and capture stdout)
+
+## Concurrency & threading
+- `threadSpawn(delayMs, value?)`
+- `threadAwait(threadHandle)` (async/await-style wait primitive)
+- `mutexCreate()`, `mutexLock(mutex)`, `mutexUnlock(mutex)`
+- `semaphoreCreate(initialCount)`, `semaphoreAcquire(sem)`, `semaphoreRelease(sem)`
+- `channelCreate()`, `channelSend(channel, value)`, `channelRecv(channel)`
 
 ## Notes
 Implemented in `src/runtime/stdlib.cpp` and surfaced via `runtime::StandardLibrary`.

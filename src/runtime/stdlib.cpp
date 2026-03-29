@@ -3,18 +3,76 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <condition_variable>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <future>
+#include <mutex>
+#include <optional>
+#include <queue>
+#include <regex>
 #include <random>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
+#include <unordered_map>
+
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 namespace magphos::runtime {
 
 namespace {
+
+struct SemaphoreState {
+    std::mutex mu;
+    std::condition_variable cv;
+    int count = 0;
+};
+
+struct ChannelState {
+    std::mutex mu;
+    std::condition_variable cv;
+    std::queue<Value> queue;
+};
+
+std::mutex gConcurrencyMu;
+int gNextHandle = 1;
+std::unordered_map<int, std::future<Value>> gTasks;
+std::unordered_map<int, std::shared_ptr<std::mutex>> gMutexes;
+std::unordered_map<int, std::shared_ptr<SemaphoreState>> gSemaphores;
+std::unordered_map<int, std::shared_ptr<ChannelState>> gChannels;
+std::unordered_map<int, int> gSockets;
+
+int allocateHandle() {
+    std::lock_guard<std::mutex> lock(gConcurrencyMu);
+    return gNextHandle++;
+}
+
+ObjectValue makeHandleObject(const std::string& kind, int id) {
+    ObjectValue object;
+    object.fields["kind"] = std::make_shared<Value>(Value(kind));
+    object.fields["id"] = std::make_shared<Value>(Value(static_cast<double>(id)));
+    return object;
+}
+
+int requireHandleId(const Value& value, const std::string& expectedKind, const std::string& fn) {
+    const ObjectValue object = value.asObject();
+    const auto kindIt = object.fields.find("kind");
+    const auto idIt = object.fields.find("id");
+    if (kindIt == object.fields.end() || idIt == object.fields.end()) {
+        throw std::runtime_error(fn + ": malformed handle object");
+    }
+    if (kindIt->second->asString() != expectedKind) {
+        throw std::runtime_error(fn + ": expected handle kind '" + expectedKind + "'");
+    }
+    return static_cast<int>(idIt->second->asNumber());
+}
 
 double requireNumber(const std::vector<Value>& args, std::size_t index, const std::string& fn) {
     if (index >= args.size()) {
@@ -101,12 +159,16 @@ std::string valueToString(const Value& value) {
 StandardLibrary::StandardLibrary() {
     registerCore();
     registerMath();
+    registerAdvancedMath();
     registerStrings();
+    registerStringExtras();
     registerArrays();
     registerFileIO();
     registerGameGraphics();
     registerNetworking();
     registerInteroperability();
+    registerConcurrency();
+    registerSockets();
 }
 
 bool StandardLibrary::has(const std::string& name) const {
@@ -186,6 +248,22 @@ void StandardLibrary::registerMath() {
     functions_["abs"] = [](const std::vector<Value>& args) { return Value(std::abs(requireNumber(args, 0, "abs"))); };
 }
 
+void StandardLibrary::registerAdvancedMath() {
+    functions_["tan"] = [](const std::vector<Value>& args) { return Value(std::tan(requireNumber(args, 0, "tan"))); };
+    functions_["asin"] = [](const std::vector<Value>& args) { return Value(std::asin(requireNumber(args, 0, "asin"))); };
+    functions_["acos"] = [](const std::vector<Value>& args) { return Value(std::acos(requireNumber(args, 0, "acos"))); };
+    functions_["atan"] = [](const std::vector<Value>& args) { return Value(std::atan(requireNumber(args, 0, "atan"))); };
+    functions_["log"] = [](const std::vector<Value>& args) { return Value(std::log10(requireNumber(args, 0, "log"))); };
+    functions_["ln"] = [](const std::vector<Value>& args) { return Value(std::log(requireNumber(args, 0, "ln"))); };
+    functions_["exp"] = [](const std::vector<Value>& args) { return Value(std::exp(requireNumber(args, 0, "exp"))); };
+    functions_["pow"] = [](const std::vector<Value>& args) {
+        return Value(std::pow(requireNumber(args, 0, "pow"), requireNumber(args, 1, "pow")));
+    };
+    functions_["floor"] = [](const std::vector<Value>& args) { return Value(std::floor(requireNumber(args, 0, "floor"))); };
+    functions_["ceil"] = [](const std::vector<Value>& args) { return Value(std::ceil(requireNumber(args, 0, "ceil"))); };
+    functions_["round"] = [](const std::vector<Value>& args) { return Value(std::round(requireNumber(args, 0, "round"))); };
+}
+
 void StandardLibrary::registerStrings() {
     functions_["split"] = [](const std::vector<Value>& args) {
         const std::string input = requireString(args, 0, "split");
@@ -240,6 +318,32 @@ void StandardLibrary::registerStrings() {
         const int boundedStart = std::max(0, std::min(start, static_cast<int>(input.size())));
         const int boundedLength = std::max(0, std::min(length, static_cast<int>(input.size()) - boundedStart));
         return Value(input.substr(static_cast<std::size_t>(boundedStart), static_cast<std::size_t>(boundedLength)));
+    };
+}
+
+void StandardLibrary::registerStringExtras() {
+    functions_["join"] = [](const std::vector<Value>& args) {
+        ArrayValue array = requireArray(args, 0, "join");
+        const std::string delimiter = requireString(args, 1, "join");
+        std::ostringstream out;
+        for (std::size_t i = 0; i < array.elements.size(); ++i) {
+            if (i > 0) out << delimiter;
+            out << array.elements[i]->asString();
+        }
+        return Value(out.str());
+    };
+
+    functions_["regexMatch"] = [](const std::vector<Value>& args) {
+        const std::string input = requireString(args, 0, "regexMatch");
+        const std::string pattern = requireString(args, 1, "regexMatch");
+        return Value(std::regex_search(input, std::regex(pattern)));
+    };
+
+    functions_["regexReplace"] = [](const std::vector<Value>& args) {
+        const std::string input = requireString(args, 0, "regexReplace");
+        const std::string pattern = requireString(args, 1, "regexReplace");
+        const std::string replacement = requireString(args, 2, "regexReplace");
+        return Value(std::regex_replace(input, std::regex(pattern), replacement));
     };
 }
 
@@ -416,6 +520,211 @@ void StandardLibrary::registerNetworking() {
             throw std::runtime_error("httpGet: curl failed for " + url);
         }
         return Value(result);
+    };
+}
+
+void StandardLibrary::registerConcurrency() {
+    functions_["threadSpawn"] = [](const std::vector<Value>& args) {
+        const double delayMs = requireNumber(args, 0, "threadSpawn");
+        const Value value = args.size() >= 2 ? args[1] : Value::makeNull();
+        const int handle = allocateHandle();
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            gTasks[handle] = std::async(std::launch::async, [delayMs, value]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(delayMs)));
+                return value;
+            });
+        }
+        return Value::makeObject(makeHandleObject("thread", handle));
+    };
+
+    functions_["threadAwait"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "thread", "threadAwait");
+        std::future<Value> task;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            auto it = gTasks.find(handle);
+            if (it == gTasks.end()) {
+                throw std::runtime_error("threadAwait: unknown thread handle");
+            }
+            task = std::move(it->second);
+            gTasks.erase(it);
+        }
+        return task.get();
+    };
+
+    functions_["mutexCreate"] = [](const std::vector<Value>&) {
+        const int handle = allocateHandle();
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            gMutexes[handle] = std::make_shared<std::mutex>();
+        }
+        return Value::makeObject(makeHandleObject("mutex", handle));
+    };
+
+    functions_["mutexLock"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "mutex", "mutexLock");
+        std::lock_guard<std::mutex> lock(gConcurrencyMu);
+        auto it = gMutexes.find(handle);
+        if (it == gMutexes.end()) throw std::runtime_error("mutexLock: unknown mutex");
+        it->second->lock();
+        return Value::makeNull();
+    };
+
+    functions_["mutexUnlock"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "mutex", "mutexUnlock");
+        std::lock_guard<std::mutex> lock(gConcurrencyMu);
+        auto it = gMutexes.find(handle);
+        if (it == gMutexes.end()) throw std::runtime_error("mutexUnlock: unknown mutex");
+        it->second->unlock();
+        return Value::makeNull();
+    };
+
+    functions_["semaphoreCreate"] = [](const std::vector<Value>& args) {
+        const int initial = static_cast<int>(requireNumber(args, 0, "semaphoreCreate"));
+        const int handle = allocateHandle();
+        auto sem = std::make_shared<SemaphoreState>();
+        sem->count = initial;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            gSemaphores[handle] = sem;
+        }
+        return Value::makeObject(makeHandleObject("semaphore", handle));
+    };
+
+    functions_["semaphoreAcquire"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "semaphore", "semaphoreAcquire");
+        std::shared_ptr<SemaphoreState> sem;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            sem = gSemaphores.at(handle);
+        }
+        std::unique_lock<std::mutex> lk(sem->mu);
+        sem->cv.wait(lk, [&]() { return sem->count > 0; });
+        sem->count -= 1;
+        return Value::makeNull();
+    };
+
+    functions_["semaphoreRelease"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "semaphore", "semaphoreRelease");
+        std::shared_ptr<SemaphoreState> sem;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            sem = gSemaphores.at(handle);
+        }
+        {
+            std::lock_guard<std::mutex> lk(sem->mu);
+            sem->count += 1;
+        }
+        sem->cv.notify_one();
+        return Value::makeNull();
+    };
+
+    functions_["channelCreate"] = [](const std::vector<Value>&) {
+        const int handle = allocateHandle();
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            gChannels[handle] = std::make_shared<ChannelState>();
+        }
+        return Value::makeObject(makeHandleObject("channel", handle));
+    };
+
+    functions_["channelSend"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "channel", "channelSend");
+        std::shared_ptr<ChannelState> channel;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            channel = gChannels.at(handle);
+        }
+        {
+            std::lock_guard<std::mutex> lk(channel->mu);
+            channel->queue.push(args.at(1));
+        }
+        channel->cv.notify_one();
+        return Value::makeNull();
+    };
+
+    functions_["channelRecv"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "channel", "channelRecv");
+        std::shared_ptr<ChannelState> channel;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            channel = gChannels.at(handle);
+        }
+        std::unique_lock<std::mutex> lk(channel->mu);
+        channel->cv.wait(lk, [&]() { return !channel->queue.empty(); });
+        Value value = channel->queue.front();
+        channel->queue.pop();
+        return value;
+    };
+}
+
+void StandardLibrary::registerSockets() {
+    functions_["tcpConnect"] = [](const std::vector<Value>& args) {
+        const std::string host = requireString(args, 0, "tcpConnect");
+        const int port = static_cast<int>(requireNumber(args, 1, "tcpConnect"));
+        int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) throw std::runtime_error("tcpConnect: socket creation failed");
+
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(static_cast<uint16_t>(port));
+        if (inet_pton(AF_INET, host.c_str(), &addr.sin_addr) <= 0) {
+            ::close(fd);
+            throw std::runtime_error("tcpConnect: invalid IPv4 host");
+        }
+        if (::connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+            ::close(fd);
+            throw std::runtime_error("tcpConnect: connect failed");
+        }
+
+        const int handle = allocateHandle();
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            gSockets[handle] = fd;
+        }
+        return Value::makeObject(makeHandleObject("socket", handle));
+    };
+
+    functions_["socketSend"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "socket", "socketSend");
+        const std::string data = requireString(args, 1, "socketSend");
+        int fd = -1;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            fd = gSockets.at(handle);
+        }
+        const auto sent = ::send(fd, data.data(), data.size(), 0);
+        return Value(static_cast<double>(sent));
+    };
+
+    functions_["socketRecv"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "socket", "socketRecv");
+        const int maxBytes = static_cast<int>(requireNumber(args, 1, "socketRecv"));
+        int fd = -1;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            fd = gSockets.at(handle);
+        }
+        std::string buffer(static_cast<std::size_t>(maxBytes), '\0');
+        const auto n = ::recv(fd, buffer.data(), buffer.size(), 0);
+        if (n <= 0) return Value(std::string(""));
+        buffer.resize(static_cast<std::size_t>(n));
+        return Value(buffer);
+    };
+
+    functions_["socketClose"] = [](const std::vector<Value>& args) {
+        const int handle = requireHandleId(args.at(0), "socket", "socketClose");
+        int fd = -1;
+        {
+            std::lock_guard<std::mutex> lock(gConcurrencyMu);
+            auto it = gSockets.find(handle);
+            if (it == gSockets.end()) return Value::makeNull();
+            fd = it->second;
+            gSockets.erase(it);
+        }
+        ::close(fd);
+        return Value::makeNull();
     };
 }
 

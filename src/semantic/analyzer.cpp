@@ -17,7 +17,7 @@ class Analyzer {
   public:
     Analyzer() {
         pushScope();
-        for (const auto* name : {"len", "type", "toString", "random", "time", "sin", "cos", "sqrt", "abs", "split", "replace", "substring", "push", "pop", "map", "filter", "readFile", "writeFile", "appendFile", "read", "write", "append", "fileExists", "canvasCreate", "inputIsKeyDown", "timerNowMs", "spriteLoad", "spriteDraw", "audioPlay", "httpGet", "objectCreate", "objectSet", "objectGet", "classCreate", "env", "exec"}) {
+        for (const auto* name : {"len", "type", "toString", "random", "time", "sin", "cos", "sqrt", "abs", "tan", "asin", "acos", "atan", "log", "ln", "exp", "pow", "floor", "ceil", "round", "split", "replace", "substring", "join", "regexMatch", "regexReplace", "push", "pop", "map", "filter", "readFile", "writeFile", "appendFile", "read", "write", "append", "fileExists", "canvasCreate", "inputIsKeyDown", "timerNowMs", "spriteLoad", "spriteDraw", "audioPlay", "httpGet", "objectCreate", "objectSet", "objectGet", "classCreate", "env", "exec", "threadSpawn", "threadAwait", "mutexCreate", "mutexLock", "mutexUnlock", "semaphoreCreate", "semaphoreAcquire", "semaphoreRelease", "channelCreate", "channelSend", "channelRecv", "tcpConnect", "socketSend", "socketRecv", "socketClose"}) {
             scopes_.back().symbols.insert(name);
         }
     }

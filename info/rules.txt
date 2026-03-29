@@ -22,6 +22,7 @@ MagPhos Language Rules (Consistency + Simplicity + Predictability + Safety)
 - Semantic errors (undefined names, invalid return location, duplicate declarations)
   stop execution before runtime.
 - Runtime builtins surface structured errors with actionable hints.
+- For concurrent flows, use `mutex*`, `semaphore*`, and channel APIs to avoid races.
 
 5) Extendability guidelines
 - Add one capability at a time.
