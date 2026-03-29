@@ -1,5 +1,6 @@
 #include "magphos_compiler.h"
 #include "runtime/interpreter/interpreter.h"
+#include "web/htmlxd_preview.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/bind.h>
@@ -17,11 +18,16 @@ std::string analyze_for_web(const std::string& source) {
     return magphos::interpreter::analyzeProgram(source);
 }
 
+std::string render_preview_shell_for_web(const std::string& runOutput, bool forceGameView) {
+    return magphos::web::renderPreviewShellHtml(runOutput, forceGameView);
+}
+
 } // namespace
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_BINDINGS(magphos_wasm_api) {
     emscripten::function("compileMagPhos", &compile_for_web);
     emscripten::function("analyzeMagPhos", &analyze_for_web);
+    emscripten::function("renderPreviewShell", &render_preview_shell_for_web);
 }
 #endif
