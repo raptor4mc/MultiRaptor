@@ -888,7 +888,10 @@ async function init() {
       'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
       'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.64 (or .wasm).',
       'Build with Emscripten: ./tools/scripts/build_web.sh.',
-      wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
+      wasmLoadError ? `Loader error: ${wasmLoadError}` : '',
+      wasmLoadError && wasmLoadError.includes('404')
+        ? 'Detected 404 while loading WASM JS loader. Publish/commit web/magphos_wasm.js and web/magphos_wasm_singlefile.js.'
+        : ''
     ].filter(Boolean).join('\n'));
   } else {
     runBtn.disabled = false;
