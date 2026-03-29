@@ -16,6 +16,7 @@ enum class ExprKind {
     Binary,
     Grouping,
     Call,
+    ArrayLiteral,
 };
 
 enum class StmtKind {
@@ -31,6 +32,11 @@ enum class StmtKind {
     For,
     Import,
     Use,
+    Set,
+    Ask,
+    When,
+    Loop,
+    RepeatWhile,
 };
 
 struct Expr {

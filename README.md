@@ -167,6 +167,14 @@ MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh
 
 Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
 
+Native CLI tool (`magphos_cli`) now supports:
+
+- `--version`
+- `--about`
+- `--check <program.mp>` (parse + semantic validation)
+- `--deps <program.mp>` (list `import` / `use` dependencies)
+- `--tokens <program.mp>` (token dump for debugging)
+
 ## Real runtime model (new)
 
 MagPhos now has language-owned runtime behavior rather than relying on JS semantics:
