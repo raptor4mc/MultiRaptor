@@ -260,6 +260,37 @@ function compileMagPhos(source) {
   return wasmCompiler(source);
 }
 
+function compileWithFallbackTranspiler(source) {
+  const lines = source.split('\n');
+  const out = [
+    '// Fallback compiler mode (WASM unavailable).',
+    '// Behavior may differ from native MagPhos compiler.'
+  ];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    if (line.startsWith('fn ')) {
+      out.push(rawLine.replace(/\bfn\b/, 'function'));
+      continue;
+    }
+
+    if (line.startsWith('print ')) {
+      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
+      continue;
+    }
+
+    out.push(rawLine);
+  }
+
+  return out.join('\n');
+}
+
+const fallbackCompiler = typeof compileWithFallbackTranspiler === 'function'
+  ? compileWithFallbackTranspiler
+  : (source) => String(source ?? '');
+
 function createDefaultProject() {
   const template = document.getElementById('defaultProgram').content.textContent;
   return {
@@ -560,7 +591,7 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    wasmCompiler = compileWithFallbackTranspiler;
+    wasmCompiler = fallbackCompiler;
     wasmAnalyzer = () => 'ok';
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
@@ -578,7 +609,7 @@ async function init() {
 }
 
 enableFallbackBtn.addEventListener('click', () => {
-  wasmCompiler = compileWithFallbackTranspiler;
+  wasmCompiler = fallbackCompiler;
   wasmAnalyzer = () => 'ok';
   runBtn.disabled = false;
   enableFallbackBtn.hidden = true;
