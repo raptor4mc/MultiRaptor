@@ -83,11 +83,7 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Assignment missing expression.");
             }
             const Value value = evaluateExpression(*statement.expression);
-            try {
-                current_->assign(statement.name, value);
-            } catch (const RuntimeError&) {
-                current_->define(statement.name, value);
-            }
+            current_->assign(statement.name, value);
             return;
         }
         case ast::StmtKind::Expression:
@@ -155,11 +151,7 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Set statement missing expression.");
             }
             const Value value = evaluateExpression(*statement.expression);
-            try {
-                current_->assign(statement.name, value);
-            } catch (const RuntimeError&) {
-                current_->define(statement.name, value);
-            }
+            current_->assign(statement.name, value);
             return;
         }
         case ast::StmtKind::Ask: {
@@ -170,11 +162,7 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             std::cout << stdlib_.call("toString", {prompt}).asString();
             std::string input;
             std::getline(std::cin, input);
-            try {
-                current_->assign(statement.name, Value(input));
-            } catch (const RuntimeError&) {
-                current_->define(statement.name, Value(input));
-            }
+            current_->assign(statement.name, Value(input));
             return;
         }
         case ast::StmtKind::When: {

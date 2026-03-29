@@ -36,6 +36,11 @@ result = add(2, 3)
 - `ask <promptExpr> -> <name>`
 - comments: `# ...` and `// ...`
 
+Safety notes:
+- `name = expr` and `set name = expr` require `name` to already exist.
+- `ask "..." -> name` requires `name` to already exist.
+- `return` is only valid inside `fn` blocks.
+
 ## Modules
 ```mp
 import math

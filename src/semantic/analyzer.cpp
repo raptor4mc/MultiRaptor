@@ -32,12 +32,17 @@ class Analyzer {
   private:
     std::vector<Scope> scopes_;
     std::vector<SemanticIssue> issues_;
+    int functionDepth_ = 0;
 
     void pushScope() { scopes_.push_back(Scope{}); }
     void popScope() { scopes_.pop_back(); }
 
     void declare(const std::string& name) {
         if (!name.empty()) {
+            if (scopes_.back().symbols.find(name) != scopes_.back().symbols.end()) {
+                issues_.push_back({"Duplicate declaration in same scope: " + name});
+                return;
+            }
             scopes_.back().symbols.insert(name);
         }
     }
@@ -67,12 +72,14 @@ class Analyzer {
             case ast::StmtKind::Function:
                 declare(statement.name);
                 pushScope();
+                ++functionDepth_;
                 for (const auto& param : statement.params) {
                     declare(param);
                 }
                 for (const auto& inner : statement.body) {
                     analyzeStatement(inner);
                 }
+                --functionDepth_;
                 popScope();
                 return;
             case ast::StmtKind::Variable:
@@ -94,7 +101,7 @@ class Analyzer {
                     analyzeExpr(*statement.expression);
                 }
                 if (!isDefined(statement.name)) {
-                    declare(statement.name);
+                    issues_.push_back({"'set' requires an existing variable: " + statement.name});
                 }
                 return;
             case ast::StmtKind::Ask:
@@ -102,12 +109,19 @@ class Analyzer {
                     analyzeExpr(*statement.expression);
                 }
                 if (!isDefined(statement.name)) {
-                    declare(statement.name);
+                    issues_.push_back({"'ask' target must already exist: " + statement.name});
+                }
+                return;
+            case ast::StmtKind::Return:
+                if (functionDepth_ <= 0) {
+                    issues_.push_back({"'return' is only allowed inside functions"});
+                }
+                if (statement.expression) {
+                    analyzeExpr(*statement.expression);
                 }
                 return;
             case ast::StmtKind::Expression:
             case ast::StmtKind::Print:
-            case ast::StmtKind::Return:
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }

@@ -161,8 +161,8 @@ int main() {
 fn add(a, b) {
   return a + b
 }
-x = add(5, 7)
-flag = true and not false
+var x = add(5, 7)
+var flag = true and not false
 if flag and x == 12 {
   x = x + 1
 } else {
@@ -180,9 +180,9 @@ loop 2 {
 repeat while x < 26 {
   set x = x + 1
 }
-arr = [1, 2, 3]
-arrLen = len(arr)
-sum = 0
+var arr = [1, 2, 3]
+var arrLen = len(arr)
+var sum = 0
 for (var i = 0; i < 3; i = i + 1) {
   sum = sum + i
 }
@@ -203,7 +203,7 @@ for (var i = 0; i < 3; i = i + 1) {
 fn add(a, b) {
   return a + b
 }
-x = add(1)
+var x = add(1)
 )";
     const auto arityParse = runtimeParser.parse(runtimeLexer.tokenize(aritySource));
     bool arityRaised = false;
@@ -217,6 +217,12 @@ x = add(1)
 
     const std::string semanticBad = magphos::interpreter::analyzeProgram("print unknownVar\n");
     assert(semanticBad.find("Semantic error: Undefined identifier: unknownVar") != std::string::npos);
+    const std::string duplicateDecl = magphos::interpreter::analyzeProgram("var x = 1\nvar x = 2\n");
+    assert(duplicateDecl.find("Duplicate declaration in same scope") != std::string::npos);
+    const std::string badReturn = magphos::interpreter::analyzeProgram("return 1\n");
+    assert(badReturn.find("'return' is only allowed inside functions") != std::string::npos);
+    const std::string badSet = magphos::interpreter::analyzeProgram("set y = 1\n");
+    assert(badSet.find("'set' requires an existing variable") != std::string::npos);
 
     return 0;
 }

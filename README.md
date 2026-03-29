@@ -152,6 +152,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/roadmap.md`
 - `docs/repl.md`
 - `docs/game_api.md`
+- `info/rules.txt` (consistency/simplicity/predictability/safety rules)
 
 ## Sample programs (new)
 
