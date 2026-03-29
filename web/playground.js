@@ -59,7 +59,10 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const loaderCandidates = ['./magphos_wasm_singlefile.js', './magphos_wasm.js'];
+  const isFileProtocol = window.location.protocol === 'file:';
+  const loaderCandidates = isFileProtocol
+    ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
+    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
   const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
@@ -255,33 +258,6 @@ function compileMagPhos(source) {
     throw new Error(`WASM compiler is not available${why}. Build with MAGPHOS_BUILD_WASM using Emscripten.`);
   }
   return wasmCompiler(source);
-}
-
-function compileWithFallbackTranspiler(source) {
-  const lines = source.split('\n');
-  const out = [
-    '// Fallback compiler mode (WASM unavailable).',
-    '// Behavior may differ from native MagPhos compiler.'
-  ];
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    if (line.startsWith('fn ')) {
-      out.push(rawLine.replace(/\bfn\b/, 'function'));
-      continue;
-    }
-
-    if (line.startsWith('print ')) {
-      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
-      continue;
-    }
-
-    out.push(rawLine);
-  }
-
-  return out.join('\n');
 }
 
 function createDefaultProject() {
