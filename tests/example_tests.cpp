@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "lexer/lexer.h"
-#include "parser/parser.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
 
 namespace {
 std::string readFile(const std::string& path) {

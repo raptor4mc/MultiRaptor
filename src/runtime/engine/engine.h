@@ -5,10 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ast/nodes.h"
-#include "runtime/environment.h"
-#include "runtime/stdlib.h"
-#include "runtime/value.h"
+#include "compiler/ast/nodes.h"
+#include "runtime/engine/environment.h"
+#include "runtime/stdlib/stdlib.h"
+#include "runtime/engine/value.h"
 
 namespace magphos::runtime {
 

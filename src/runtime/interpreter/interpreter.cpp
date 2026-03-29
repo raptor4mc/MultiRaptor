@@ -1,8 +1,8 @@
-#include "interpreter/interpreter.h"
+#include "runtime/interpreter/interpreter.h"
 
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "semantic/analyzer.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
+#include "compiler/semantic/analyzer.h"
 
 namespace magphos::interpreter {
 

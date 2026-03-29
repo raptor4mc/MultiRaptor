@@ -4,11 +4,11 @@
 #include <stdexcept>
 #include <string>
 
-#include "lexer/lexer.h"
+#include "compiler/lexer/lexer.h"
 #include "multiraptor.h"
-#include "parser/parser.h"
-#include "runtime/engine.h"
-#include "runtime/errors.h"
+#include "compiler/parser/parser.h"
+#include "runtime/engine/engine.h"
+#include "runtime/engine/errors.h"
 #include "utils/error.h"
 
 namespace {

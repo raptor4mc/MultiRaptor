@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "lexer/lexer.h"
+#include "compiler/lexer/lexer.h"
 
 int main() {
     magphos::lexer::Lexer lexer;

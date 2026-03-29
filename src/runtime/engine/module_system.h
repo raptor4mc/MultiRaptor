@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "parser/parser.h"
+#include "compiler/parser/parser.h"
 
 namespace magphos::runtime {
 

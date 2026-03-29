@@ -1,4 +1,4 @@
-#include "ast/nodes.h"
+#include "compiler/ast/nodes.h"
 
 namespace magphos::ast {
 

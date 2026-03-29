@@ -40,17 +40,17 @@ configure_file(
 )
 
 set(MAGPHOS_CORE_SOURCES
-  src/ast/nodes.cpp
-  src/interpreter/interpreter.cpp
-  src/lexer/lexer.cpp
-  src/parser/parser.cpp
-  src/runtime/environment.cpp
-  src/runtime/errors.cpp
-  src/runtime/value.cpp
-  src/runtime/stdlib.cpp
-  src/runtime/module_system.cpp
-  src/runtime/engine.cpp
-  src/semantic/analyzer.cpp
+  src/compiler/ast/nodes.cpp
+  src/runtime/interpreter/interpreter.cpp
+  src/compiler/lexer/lexer.cpp
+  src/compiler/parser/parser.cpp
+  src/runtime/engine/environment.cpp
+  src/runtime/engine/errors.cpp
+  src/runtime/engine/value.cpp
+  src/runtime/stdlib/stdlib.cpp
+  src/runtime/engine/module_system.cpp
+  src/runtime/engine/engine.cpp
+  src/compiler/semantic/analyzer.cpp
   src/utils/error.cpp
   src/utils/file_utils.cpp
   src/utils/string_utils.cpp

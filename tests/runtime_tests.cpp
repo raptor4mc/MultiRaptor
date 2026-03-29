@@ -10,15 +10,15 @@
 #include <unistd.h>
 #include <vector>
 
-#include "interpreter/interpreter.h"
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "runtime/engine.h"
-#include "runtime/environment.h"
-#include "runtime/errors.h"
-#include "runtime/module_system.h"
-#include "runtime/stdlib.h"
-#include "runtime/value.h"
+#include "runtime/interpreter/interpreter.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
+#include "runtime/engine/engine.h"
+#include "runtime/engine/environment.h"
+#include "runtime/engine/errors.h"
+#include "runtime/engine/module_system.h"
+#include "runtime/stdlib/stdlib.h"
+#include "runtime/engine/value.h"
 
 int main() {
     const std::string ok = magphos::interpreter::analyzeProgram("print (1 + 2) * 3\n");
