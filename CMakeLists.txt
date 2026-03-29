@@ -51,6 +51,8 @@ set(MAGPHOS_CORE_SOURCES
   src/runtime/engine/module_system.cpp
   src/runtime/engine/engine.cpp
   src/compiler/semantic/analyzer.cpp
+  src/htmlxd/dom.cpp
+  src/web/htmlxd_preview.cpp
   src/utils/error.cpp
   src/utils/file_utils.cpp
   src/utils/string_utils.cpp
@@ -115,7 +117,7 @@ endif()
 option(MAGPHOS_BUILD_VSCODE "Build unified VSCode launcher" ON)
 
 if(MAGPHOS_BUILD_VSCODE)
-  add_executable(magphos_vscode platform/vscode/main.cpp)
+  add_executable(magphos_vscode src/platform/vscode/main.cpp)
   target_include_directories(magphos_vscode PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -2,6 +2,7 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 
 let wasmCompiler = null;
 let wasmAnalyzer = null;
+let wasmPreviewRenderer = null;
 let wasmLoadError = null;
 const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
@@ -94,6 +95,9 @@ async function loadWasmCompiler() {
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
           : null;
+        wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
+          ? classicModule.renderPreviewShell
+          : null;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -128,6 +132,9 @@ async function loadWasmCompiler() {
           wasmAnalyzer = typeof wasmModule.analyzeMagPhos === 'function'
             ? wasmModule.analyzeMagPhos
             : null;
+          wasmPreviewRenderer = typeof wasmModule.renderPreviewShell === 'function'
+            ? wasmModule.renderPreviewShell
+            : null;
           wasmLoadError = null;
           return;
         }
@@ -140,6 +147,9 @@ async function loadWasmCompiler() {
         wasmCompiler = classicModule.compileMagPhos;
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
+          : null;
+        wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
+          ? classicModule.renderPreviewShell
           : null;
         wasmLoadError = null;
         return;
@@ -654,6 +664,15 @@ function escapeHtml(text) {
     .replaceAll('>', '&gt;');
 }
 
+
+function buildFallbackPreviewHtml(runOutput = '', forceGameView = false) {
+  const outputNote = String(runOutput || '').trim()
+    ? `<div style="position:fixed;left:12px;bottom:12px;max-width:60ch;background:rgba(15,23,42,0.85);border:1px solid rgba(100,116,139,0.6);padding:10px 12px;border-radius:8px;color:#e2e8f0;font-family:system-ui,sans-serif"><strong>Program output</strong><pre style="margin:6px 0 0;white-space:pre-wrap">${escapeHtml(runOutput)}</pre></div>`
+    : '';
+  const hudStyle = forceGameView ? ' style="left:auto;right:12px"' : '';
+  return `<!doctype html><html><head><meta charset="utf-8" /><style>html, body { margin: 0; width: 100%; height: 100%; background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; }#hud { position: fixed; inset: 12px auto auto 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(100, 116, 139, 0.6); padding: 10px 12px; border-radius: 8px; }canvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at 40% 30%, #1d4ed8, #0f172a 58%); }</style></head><body><canvas id="screen"></canvas><div id="hud"${hudStyle}><strong>MagPhos Preview</strong><br />Add preview/index.html in your project to replace this.</div>${outputNote}<script>const canvas = document.getElementById('screen');const ctx = canvas.getContext('2d');let t = 0;function resize(){canvas.width = window.innerWidth;canvas.height = window.innerHeight;}function draw(){t += 0.02;ctx.clearRect(0, 0, canvas.width, canvas.height);ctx.fillStyle = '#22d3ee';const x = canvas.width * (0.5 + Math.cos(t) * 0.28);const y = canvas.height * (0.5 + Math.sin(t * 1.7) * 0.2);ctx.beginPath();ctx.arc(x, y, 28, 0, Math.PI * 2);ctx.fill();requestAnimationFrame(draw);}window.addEventListener('resize', resize);resize();draw();</script></body></html>`;
+}
+
 function findPreviewHtml() {
   const preferred = ['preview/index.html', 'game/index.html', 'index.html'];
   for (const path of preferred) {
@@ -670,16 +689,11 @@ function renderPreview(runOutput = '', options = {}) {
     previewFrameEl.srcdoc = previewHtml;
     return;
   }
-  const template = document.getElementById('defaultPreviewHtml').innerHTML;
-  const outputNote = String(runOutput || '').trim()
-    ? `<div style="position:fixed;left:12px;bottom:12px;max-width:60ch;background:rgba(15,23,42,0.85);border:1px solid rgba(100,116,139,0.6);padding:10px 12px;border-radius:8px;color:#e2e8f0;font-family:system-ui,sans-serif"><strong>Program output</strong><pre style="margin:6px 0 0;white-space:pre-wrap">${escapeHtml(runOutput)}</pre></div>`
-    : '';
-  const splash = options.forceGameView
-    ? '<div id="hud" style="left:auto;right:12px">Tip: add preview/index.html for your own 2D/3D game scene.</div>'
-    : '';
-  previewFrameEl.srcdoc = template.includes('</body>')
-    ? template.replace('</body>', `${outputNote}${splash}</body>`)
-    : `${template}${outputNote}${splash}`;
+  if (wasmPreviewRenderer) {
+    previewFrameEl.srcdoc = wasmPreviewRenderer(String(runOutput || ''), Boolean(options.forceGameView));
+    return;
+  }
+  previewFrameEl.srcdoc = buildFallbackPreviewHtml(runOutput, Boolean(options.forceGameView));
 }
 
 function doRun() {

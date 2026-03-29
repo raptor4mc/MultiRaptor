@@ -26,6 +26,15 @@ Replace `<owner>/<repo>` with your real GitHub path.
 - Web studio playground: `web/playground.html`
 - Example MagPhos program: `main.mp`
 
+## Project layout
+
+- `src/compiler/`: language frontend (AST, lexer, parser, semantic analysis)
+- `src/runtime/`: runtime engine, interpreter, stdlib
+- `src/platform/`: platform-specific adapters and launchers (including VSCode)
+- `src/htmlxd/`: MagPhos-owned HTML abstraction utilities used by Web Studio preview generation
+- `contrib/`: community modules, optional tools, and experiments outside the core
+- `design/`: language evolution artifacts (proposals, rejections, syntax, bytecode)
+
 ## How to download and make it work (current project)
 
 ### 1) Download the project
