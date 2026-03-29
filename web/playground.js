@@ -3,8 +3,8 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmAnalyzer = null;
 let wasmLoadError = null;
+const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
-const loadedClassicScripts = new Set();
 const SCRIPT_BASE_URL = (() => {
   const scriptSrc = document.currentScript && document.currentScript.src
     ? document.currentScript.src
@@ -59,7 +59,10 @@ function ensureProjectShape(raw) {
 
 async function loadWasmCompiler() {
   const attempts = [];
-  const loaderCandidates = ['./magphos_wasm_singlefile.js', './magphos_wasm.js'];
+  const isFileProtocol = window.location.protocol === 'file:';
+  const loaderCandidates = isFileProtocol
+    ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
+    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
   const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
   const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
   const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
@@ -79,6 +82,7 @@ async function loadWasmCompiler() {
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Single-file loader initialized, but compileMagPhos export is missing.');
         }
+        assertRealWasmCompiler(classicModule.compileMagPhos);
         wasmCompiler = classicModule.compileMagPhos;
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
@@ -112,6 +116,7 @@ async function loadWasmCompiler() {
           if (typeof wasmModule.compileMagPhos !== 'function') {
             throw new Error('WASM module loaded, but compileMagPhos export is missing.');
           }
+          assertRealWasmCompiler(wasmModule.compileMagPhos);
           wasmCompiler = wasmModule.compileMagPhos;
           wasmAnalyzer = typeof wasmModule.analyzeMagPhos === 'function'
             ? wasmModule.analyzeMagPhos
@@ -124,6 +129,7 @@ async function loadWasmCompiler() {
         if (typeof classicModule.compileMagPhos !== 'function') {
           throw new Error('Classic WASM loader initialized, but compileMagPhos export is missing.');
         }
+        assertRealWasmCompiler(classicModule.compileMagPhos);
         wasmCompiler = classicModule.compileMagPhos;
         wasmAnalyzer = typeof classicModule.analyzeMagPhos === 'function'
           ? classicModule.analyzeMagPhos
@@ -140,7 +146,23 @@ async function loadWasmCompiler() {
   wasmLoadError = attempts.join(' | ');
 }
 
+function assertRealWasmCompiler(compileFn) {
+  const probeOutput = String(compileFn('print "__MAGPHOS_WASM_PROBE__"'));
+  if (probeOutput.includes(FALLBACK_BANNER)) {
+    throw new Error(
+      'Detected bundled fallback loader instead of compiled C++ WASM artifact. Build real WASM via ./tools/scripts/build_web.sh.'
+    );
+  }
+}
+
 async function validateArtifactSize(url, minBytes, label) {
+  const parsedUrl = new URL(url, window.location.href);
+  if (parsedUrl.protocol === 'file:') {
+    // `fetch(file://...)` is blocked in many browsers. For direct file usage,
+    // skip size preflight and let script/module loading determine validity.
+    return;
+  }
+
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`${label} failed to load (${response.status}).`);
@@ -202,36 +224,29 @@ function loadClassicScriptModule(loaderUrl, wasmUrl) {
       }
     };
 
-    if (!loadedClassicScripts.has(loaderUrl)) {
-      const script = document.createElement('script');
-      script.src = loaderUrl;
-      script.async = true;
-      script.dataset.magphosLoader = loaderUrl;
-      script.addEventListener('error', () => {
-        settleReject(`Failed to load script: ${loaderUrl}`);
-      });
-      script.addEventListener('load', () => {
-        // If runtime is already initialized before callback wiring, resolve here.
-        if (window.Module && typeof window.Module.compileMagPhos === 'function') {
-          settleResolve(window.Module);
-        }
-      });
-      document.head.appendChild(script);
-      loadedClassicScripts.add(loaderUrl);
-      return;
-    }
+    const script = document.createElement('script');
+    const bust = `magphos_retry=${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const joiner = loaderUrl.includes('?') ? '&' : '?';
+    script.src = `${loaderUrl}${joiner}${bust}`;
+    script.async = true;
+    script.dataset.magphosLoader = loaderUrl;
+    script.addEventListener('error', () => {
+      settleReject(`Failed to load script: ${loaderUrl}`);
+    });
+    script.addEventListener('load', () => {
+      // If runtime is already initialized before callback wiring, resolve here.
+      if (window.Module && typeof window.Module.compileMagPhos === 'function') {
+        settleResolve(window.Module);
+      }
+    });
+    document.head.appendChild(script);
 
-    // Script was already injected; runtime might already be ready.
-    if (window.Module && typeof window.Module.compileMagPhos === 'function') {
-      settleResolve(window.Module);
-      return;
-    }
     // Give runtime initialization callback a short chance to fire.
     setTimeout(() => {
       if (window.Module && typeof window.Module.compileMagPhos === 'function') {
         settleResolve(window.Module);
       } else {
-        settleReject('Classic loader was present, but runtime did not initialize compileMagPhos.');
+        settleReject('Classic loader runtime did not initialize compileMagPhos.');
       }
     }, 1200);
   });
@@ -324,13 +339,31 @@ function ensureParentFolders(project, filePath) {
 }
 
 const sourceEl = document.getElementById('source');
-const compiledEl = document.getElementById('compiled');
-const outputEl = document.getElementById('output');
+const consoleOutputEl = document.getElementById('consoleOutput');
+const terminalOutputEl = document.getElementById('terminalOutput');
+const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
-const compileBtn = document.getElementById('compileBtn');
 const runBtn = document.getElementById('runBtn');
 const enableFallbackBtn = document.getElementById('enableFallbackBtn');
+const consoleTabBtn = document.getElementById('consoleTabBtn');
+const terminalTabBtn = document.getElementById('terminalTabBtn');
+runBtn.disabled = true;
+
+let outputMode = 'console';
+
+function setOutputMode(mode) {
+  outputMode = mode === 'terminal' ? 'terminal' : 'console';
+  const showConsole = outputMode === 'console';
+  consoleOutputEl.hidden = !showConsole;
+  terminalOutputEl.hidden = showConsole;
+  outputTitleEl.textContent = showConsole ? 'Console' : 'Terminal';
+}
+
+function setOutputs(message, terminalMessage = '') {
+  consoleOutputEl.textContent = message;
+  terminalOutputEl.textContent = terminalMessage || message;
+}
 
 let project = loadProject();
 
@@ -388,10 +421,10 @@ function syncFileFromEditor() {
   saveProject(project);
 }
 
-function doCompile() {
+function doRun() {
   syncFileFromEditor();
   if (!wasmCompiler) {
-    throw new Error('WASM compiler is not loaded yet. Build web/magphos_wasm_singlefile.js from C++ using ./tools/scripts/build_web.sh to keep web and native behavior in sync.');
+    throw new Error('Compiler is still initializing. Wait a moment, then press Run again.');
   }
   if (wasmAnalyzer) {
     const analysis = wasmAnalyzer(sourceEl.value);
@@ -399,41 +432,40 @@ function doCompile() {
       throw new Error(analysis);
     }
   }
+
   const js = compileMagPhos(sourceEl.value);
-  compiledEl.textContent = js;
-  return js;
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (...args) => logs.push(args.join(' '));
+  try {
+    new Function(js)();
+  } finally {
+    console.log = originalLog;
+  }
+
+  const runOutput = logs.join('\n') || '(no output)';
+  setOutputs(
+    runOutput,
+    `$ mp run ${project.activeFile}\n${runOutput}`
+  );
+  return runOutput;
 }
 
 sourceEl.addEventListener('input', () => {
   syncFileFromEditor();
 });
 
-compileBtn.addEventListener('click', () => {
-  outputEl.textContent = '';
+runBtn.addEventListener('click', () => {
+  setOutputs('', '');
   try {
-    doCompile();
+    doRun();
   } catch (err) {
-    outputEl.textContent = err.message;
+    setOutputs(err.message, `$ mp run ${project.activeFile}\n${err.message}`);
   }
 });
 
-runBtn.addEventListener('click', () => {
-  outputEl.textContent = '';
-  try {
-    const js = doCompile();
-    const logs = [];
-    const originalLog = console.log;
-    console.log = (...args) => logs.push(args.join(' '));
-    try {
-      new Function(js)();
-    } finally {
-      console.log = originalLog;
-    }
-    outputEl.textContent = logs.join('\n') || '(no output)';
-  } catch (err) {
-    outputEl.textContent = err.message;
-  }
-});
+consoleTabBtn.addEventListener('click', () => setOutputMode('console'));
+terminalTabBtn.addEventListener('click', () => setOutputMode('terminal'));
 
 document.getElementById('newFolderBtn').addEventListener('click', () => {
   const raw = prompt('New folder path (example: src/utils)');
@@ -508,8 +540,7 @@ document.getElementById('newProjectBtn').addEventListener('click', () => {
   saveProject(project);
   syncEditorFromFile();
   renderFileList();
-  compiledEl.textContent = '';
-  outputEl.textContent = '';
+  setOutputs('', '');
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -539,9 +570,9 @@ document.getElementById('importInput').addEventListener('change', async (event) 
     saveProject(project);
     syncEditorFromFile();
     renderFileList();
-    outputEl.textContent = `Imported ${file.name}`;
+    setOutputs(`Imported ${file.name}`, `$ mp import ${file.name}\nImported.`);
   } catch (err) {
-    outputEl.textContent = err.message;
+    setOutputs(err.message, err.message);
   } finally {
     event.target.value = '';
   }
@@ -556,38 +587,32 @@ async function init() {
   if (!wasmCompiler) {
     wasmCompiler = compileWithFallbackTranspiler;
     wasmAnalyzer = () => 'ok';
-    compileBtn.disabled = false;
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
-    outputEl.textContent = [
-      'WASM compiler not found. Fallback transpiler mode enabled automatically.',
-      'Warning: fallback mode does not guarantee parity with the C++ compiler.',
-      'Expected loader in repo: web/magphos_wasm_singlefile.js (preferred) or web/magphos_wasm.js',
-      'Expected wasm in repo (if using modular loader): web/magphos_wasm.wasm',
-      'Build with Emscripten: ./tools/scripts/build_web.sh',
+    setOutputs([
+      'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
+      'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.',
+      'Build with Emscripten: ./tools/scripts/build_web.sh.',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
-    ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n'));
   } else {
-    compileBtn.disabled = false;
     runBtn.disabled = false;
     enableFallbackBtn.hidden = true;
-    outputEl.textContent = 'C++ WASM compiler connected. Web compile is linked to native parser/semantic/compiler pipeline.';
+    setOutputs('C++ WASM compiler connected. Press Run to execute MagPhos code.');
   }
-
-  compileBtn.click();
 }
 
 enableFallbackBtn.addEventListener('click', () => {
   wasmCompiler = compileWithFallbackTranspiler;
   wasmAnalyzer = () => 'ok';
-  compileBtn.disabled = false;
   runBtn.disabled = false;
   enableFallbackBtn.hidden = true;
-  outputEl.textContent = [
+  setOutputs([
     'Fallback transpiler mode enabled manually.',
     'Warning: this does not guarantee parity with the C++ compiler.',
     'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
-  ].join('\n');
+  ].join('\n'));
 });
 
+setOutputMode('console');
 init();
