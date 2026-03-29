@@ -1,8 +1,2 @@
-magphos.wasm
-magphos_wasm.js
-web/magphos.wasm
-web/magphos_wasm.js
-web/magphos_wasm.wasm
-web/magphos_wasm_singlefile.js
 .tools/
 build-web/

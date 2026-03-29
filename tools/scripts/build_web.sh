@@ -125,17 +125,17 @@ assert_min_bytes() {
 }
 
 require_nonempty_file web/magphos_wasm.js
-require_nonempty_file web/magphos_wasm.wasm
+require_nonempty_file web/magphos_wasm.wasm.64
 require_nonempty_file web/magphos_wasm_singlefile.js
 
 assert_not_fallback_loader web/magphos_wasm.js
 assert_not_fallback_loader web/magphos_wasm_singlefile.js
-assert_wasm_binary_header web/magphos_wasm.wasm
+assert_wasm_binary_header web/magphos_wasm.wasm.64
 assert_min_bytes web/magphos_wasm.js "${MIN_JS_BYTES}"
-assert_min_bytes web/magphos_wasm.wasm "${MIN_WASM_BYTES}"
+assert_min_bytes web/magphos_wasm.wasm.64 "${MIN_WASM_BYTES}"
 assert_min_bytes web/magphos_wasm_singlefile.js "${MIN_SINGLEFILE_JS_BYTES}"
 
 echo "Web artifacts ready (strict validation passed):"
 echo "  - web/magphos_wasm.js ($(wc -c < web/magphos_wasm.js) bytes)"
-echo "  - web/magphos_wasm.wasm ($(wc -c < web/magphos_wasm.wasm) bytes)"
+echo "  - web/magphos_wasm.wasm.64 ($(wc -c < web/magphos_wasm.wasm.64) bytes)"
 echo "  - web/magphos_wasm_singlefile.js ($(wc -c < web/magphos_wasm_singlefile.js) bytes)"

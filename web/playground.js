@@ -61,11 +61,23 @@ async function loadWasmCompiler() {
   const attempts = [];
   const isFileProtocol = window.location.protocol === 'file:';
   const loaderCandidates = isFileProtocol
-    ? ['./magphos_wasm_singlefile.js', './magphos_wasm.js']
-    : ['./magphos_wasm.js', './magphos_wasm_singlefile.js'];
-  const wasmCandidates = [null, './magphos_wasm.wasm', './magphos.wasm'];
-  const loaderUrls = loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href);
-  const wasmUrls = wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null));
+    ? [
+      './magphos_wasm_singlefile.js', './magphos_wasm.js',
+      '../magphos_wasm_singlefile.js', '../magphos_wasm.js'
+    ]
+    : [
+      './magphos_wasm.js', './magphos_wasm_singlefile.js',
+      '../magphos_wasm.js', '../magphos_wasm_singlefile.js',
+      '/magphos_wasm.js', '/magphos_wasm_singlefile.js'
+    ];
+  const wasmCandidates = [
+    null,
+    './magphos_wasm.wasm.64', './magphos_wasm.wasm', './magphos.wasm.64', './magphos.wasm',
+    '../magphos_wasm.wasm.64', '../magphos_wasm.wasm', '../magphos.wasm.64', '../magphos.wasm',
+    '/magphos_wasm.wasm.64', '/magphos_wasm.wasm', '/magphos.wasm.64', '/magphos.wasm'
+  ];
+  const loaderUrls = [...new Set(loaderCandidates.map((path) => new URL(path, SCRIPT_BASE_URL).href))];
+  const wasmUrls = [...new Set(wasmCandidates.map((path) => (path ? new URL(path, SCRIPT_BASE_URL).href : null)))];
 
   for (const loaderUrl of loaderUrls) {
     const isSingleFileLoader = loaderUrl.includes('magphos_wasm_singlefile.js');
@@ -260,37 +272,6 @@ function compileMagPhos(source) {
   return wasmCompiler(source);
 }
 
-function compileWithFallbackTranspiler(source) {
-  const lines = source.split('\n');
-  const out = [
-    '// Fallback compiler mode (WASM unavailable).',
-    '// Behavior may differ from native MagPhos compiler.'
-  ];
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    if (line.startsWith('fn ')) {
-      out.push(rawLine.replace(/\bfn\b/, 'function'));
-      continue;
-    }
-
-    if (line.startsWith('print ')) {
-      out.push(rawLine.replace(/\bprint\b/, 'console.log') + ';');
-      continue;
-    }
-
-    out.push(rawLine);
-  }
-
-  return out.join('\n');
-}
-
-const fallbackCompiler = typeof compileWithFallbackTranspiler === 'function'
-  ? compileWithFallbackTranspiler
-  : (source) => String(source ?? '');
-
 function createDefaultProject() {
   const template = document.getElementById('defaultProgram').content.textContent;
   return {
@@ -352,7 +333,6 @@ const outputTitleEl = document.getElementById('outputTitle');
 const fileListEl = document.getElementById('fileList');
 const activeFileLabel = document.getElementById('activeFileLabel');
 const runBtn = document.getElementById('runBtn');
-const enableFallbackBtn = document.getElementById('enableFallbackBtn');
 const consoleTabBtn = document.getElementById('consoleTabBtn');
 const terminalTabBtn = document.getElementById('terminalTabBtn');
 const deleteFolderBtn = document.getElementById('deleteFolderBtn');
@@ -646,7 +626,8 @@ function runTerminalCommand(rawCommand) {
 function doRun() {
   syncFileFromEditor();
   if (!wasmCompiler) {
-    throw new Error('Compiler is still initializing. Wait a moment, then press Run again.');
+    const why = wasmLoadError ? `\nLoader error: ${wasmLoadError}` : '';
+    throw new Error(`C++ WASM compiler is not loaded yet. Build/publish web WASM artifacts and refresh.${why}`);
   }
   if (wasmAnalyzer) {
     const analysis = wasmAnalyzer(sourceEl.value);
@@ -880,34 +861,22 @@ async function init() {
   await loadWasmCompiler();
 
   if (!wasmCompiler) {
-    wasmCompiler = fallbackCompiler;
-    wasmAnalyzer = () => 'ok';
-    runBtn.disabled = false;
-    enableFallbackBtn.hidden = true;
-    setOutputs([
-      'C++ WASM compiler was not loaded, so fallback transpiler mode is active.',
-      'For native parity: build and publish real web/magphos_wasm_singlefile.js or web/magphos_wasm.js + web/magphos_wasm.wasm.',
+    runBtn.disabled = true;
+    const lines = [
+      'C++ WASM compiler failed to load. Run is disabled until compiler artifacts are published.',
+      'Required artifacts: web/magphos_wasm_singlefile.js OR web/magphos_wasm.js + web/magphos_wasm.wasm.64 (or .wasm).',
       'Build with Emscripten: ./tools/scripts/build_web.sh.',
       wasmLoadError ? `Loader error: ${wasmLoadError}` : ''
-    ].filter(Boolean).join('\n'));
+    ];
+    if (wasmLoadError && wasmLoadError.includes('404')) {
+      lines.push('Detected 404 loading WASM JS loader. Publish/commit web/magphos_wasm.js and web/magphos_wasm_singlefile.js.');
+    }
+    setOutputs(lines.filter(Boolean).join('\n'));
   } else {
     runBtn.disabled = false;
-    enableFallbackBtn.hidden = true;
     setOutputs('C++ WASM compiler connected. Press Run to execute MagPhos code.');
   }
 }
-
-enableFallbackBtn.addEventListener('click', () => {
-  wasmCompiler = fallbackCompiler;
-  wasmAnalyzer = () => 'ok';
-  runBtn.disabled = false;
-  enableFallbackBtn.hidden = true;
-  setOutputs([
-    'Fallback transpiler mode enabled manually.',
-    'Warning: this does not guarantee parity with the C++ compiler.',
-    'For C++ parity, rebuild and ship real web/magphos_wasm_singlefile.js (or web/magphos_wasm.js + web/magphos_wasm.wasm).'
-  ].join('\n'));
-});
 
 setOutputMode('console');
 init();
