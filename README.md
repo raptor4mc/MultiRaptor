@@ -136,7 +136,9 @@ If needed, you can tune those size gates with:
 If you run `-DMAGPHOS_BUILD_WASM=ON` manually without Emscripten (`emcmake`), CMake now fails immediately with a clear error instead of silently skipping the web target.
 
 Important: generated `web/magphos_wasm*.js` and `web/magphos_wasm.wasm.64` artifacts **can be committed** when you host from a plain branch/static folder (no build step). Build them locally with `./tools/scripts/build_web.sh`, then commit those files so `/web/playground.html` can load the C++ WASM compiler without 404s.
-If wasm artifacts are missing at runtime, the playground now falls back to a minimal JS transpiler mode so editing/testing is still possible (but behavior is not identical to the real C++ compiler).
+If wasm artifacts are missing at runtime, the playground keeps Run disabled and shows a loader error until the real C++ WASM artifacts are published.
+
+If you see `JavaScript loader failed to load (404)` in the playground, it means the generated loader files are not published at `web/magphos_wasm.js` and/or `web/magphos_wasm_singlefile.js`. Build with `./tools/scripts/build_web.sh` and publish (or commit) those generated files.
 
 If you see `JavaScript loader failed to load (404)` in the playground, it means the generated loader files are not published at `web/magphos_wasm.js` and/or `web/magphos_wasm_singlefile.js`. Build with `./tools/scripts/build_web.sh` and publish (or commit) those generated files.
 
