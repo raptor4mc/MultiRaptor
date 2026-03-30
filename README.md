@@ -173,10 +173,21 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/examples.md`
 - `docs/stdlib.md`
 - `docs/error_guide.md`
+- `docs/error_observability_contract.md`
 - `docs/roadmap.md`
+- `docs/versioning_policy.md`
+- `docs/language_contract.md`
+- `docs/dependency_determinism.md`
+- `docs/ci_quality_gates.md`
+- `docs/lts_support_policy.md`
+- `docs/production_hardening.md`
+- `docs/breaking_change_playbook.md`
+- `docs/runtime_correctness_contract.md`
 - `docs/repl.md`
 - `docs/game_api.md`
 - `info/rules.txt` (consistency/simplicity/predictability/safety rules)
+
+Security reporting and disclosure process: `SECURITY.md`.
 
 ## Sample programs (new)
 
@@ -191,6 +202,12 @@ MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh
 - `mp.sh repl`
 
 Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
+
+Deterministic dependency groundwork now includes:
+
+- `mp.lock.json` lockfile (canonical JSON format),
+- checksum/integrity policy in `docs/dependency_determinism.md`,
+- CI enforcement in `.github/workflows/dependency-determinism.yml`.
 
 Native CLI tool (`magphos_cli`) now supports:
 

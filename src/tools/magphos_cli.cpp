@@ -1,5 +1,6 @@
 #include <fstream>
 #include <filesystem>
+#include <chrono>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -94,6 +95,12 @@ enum class ErrorFormat {
 };
 
 struct CliResponse {
+    struct LogEntry {
+        std::string level;
+        std::string code;
+        std::string message;
+    };
+
     bool ok = false;
     std::string command;
     int code = 0;
@@ -104,7 +111,35 @@ struct CliResponse {
     std::vector<std::tuple<std::string, std::string, std::string>> moduleEdges;
     std::string stdoutText;
     std::string runtimeErrorCode;
+    std::string errorDomain;
+    std::string errorCode;
+    std::string traceId;
+    std::vector<std::string> stackTrace;
+    std::vector<LogEntry> logs;
 };
+
+std::string makeTraceId() {
+    static unsigned long long counter = 0;
+    const auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::ostringstream out;
+    out << "trace-" << now << "-" << (++counter);
+    return out.str();
+}
+
+CliResponse makeResponse(std::string command) {
+    CliResponse response;
+    response.command = std::move(command);
+    response.traceId = makeTraceId();
+    response.logs.push_back({"info", "CLI_REQUEST_STARTED", "Started command " + response.command});
+    return response;
+}
+
+void setErrorContract(CliResponse& response, std::string domain, std::string code, std::string message) {
+    response.errorDomain = std::move(domain);
+    response.errorCode = std::move(code);
+    response.message = std::move(message);
+    response.logs.push_back({"error", response.errorCode, response.message});
+}
 
 std::string shortenError(const std::string& text) {
     const std::size_t newline = text.find('\n');
@@ -155,6 +190,26 @@ void emitResponse(const CliResponse& response, bool jsonMode, ErrorFormat errorF
         std::cout << "]";
         std::cout << ",\"stdout\":\"" << jsonEscape(response.stdoutText) << "\"";
         std::cout << ",\"runtimeErrorCode\":\"" << jsonEscape(response.runtimeErrorCode) << "\"";
+        std::cout << ",\"errorDomain\":\"" << jsonEscape(response.errorDomain) << "\"";
+        std::cout << ",\"errorCode\":\"" << jsonEscape(response.errorCode) << "\"";
+        std::cout << ",\"traceId\":\"" << jsonEscape(response.traceId) << "\"";
+        std::cout << ",\"stackTrace\":[";
+        for (std::size_t i = 0; i < response.stackTrace.size(); ++i) {
+            if (i) std::cout << ",";
+            std::cout << "\"" << jsonEscape(response.stackTrace[i]) << "\"";
+        }
+        std::cout << "]";
+        std::cout << ",\"logs\":[";
+        for (std::size_t i = 0; i < response.logs.size(); ++i) {
+            if (i) std::cout << ",";
+            std::cout << "{"
+                      << "\"level\":\"" << jsonEscape(response.logs[i].level) << "\","
+                      << "\"code\":\"" << jsonEscape(response.logs[i].code) << "\","
+                      << "\"message\":\"" << jsonEscape(response.logs[i].message) << "\","
+                      << "\"traceId\":\"" << jsonEscape(response.traceId) << "\""
+                      << "}";
+        }
+        std::cout << "]";
         std::cout << "}\n";
         return;
     }
@@ -260,12 +315,11 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (cmd == "--check" && positional.size() >= 2) {
-        CliResponse response;
-        response.command = "--check";
+        CliResponse response = makeResponse("--check");
         const auto source = readFile(positional[1]);
         if (!source.has_value()) {
             response.code = 2;
-            response.message = "Cannot read file: " + positional[1];
+            setErrorContract(response, "cli", "CLI_IO_ERROR", "Cannot read file: " + positional[1]);
             response.errors.push_back(response.message);
             emitResponse(response, jsonMode, errorFormat);
             return 2;
@@ -274,22 +328,26 @@ int main(int argc, char** argv) {
         if (result == "ok") {
             response.ok = true;
             response.message = "ok";
+            response.logs.push_back({"info", "CHECK_OK", "Analysis completed successfully"});
             emitResponse(response, jsonMode, errorFormat);
             return 0;
         }
         response.code = 3;
-        response.message = "analysis failed";
+        if (result.find("Semantic error:") != std::string::npos) {
+            setErrorContract(response, "semantic", "SEMANTIC_ANALYSIS_ERROR", "semantic analysis failed");
+        } else {
+            setErrorContract(response, "parser", "PARSER_PARSE_ERROR", "parse failed");
+        }
         response.errors.push_back(result);
         emitResponse(response, jsonMode, errorFormat);
         return 3;
     }
     if (cmd == "--run" && positional.size() >= 2) {
-        CliResponse response;
-        response.command = "--run";
+        CliResponse response = makeResponse("--run");
         const auto source = readFile(positional[1]);
         if (!source.has_value()) {
             response.code = 2;
-            response.message = "Cannot read file: " + positional[1];
+            setErrorContract(response, "cli", "CLI_IO_ERROR", "Cannot read file: " + positional[1]);
             response.errors.push_back(response.message);
             emitResponse(response, jsonMode, errorFormat);
             return 2;
@@ -299,7 +357,7 @@ int main(int argc, char** argv) {
         const auto parsed = parser.parse(lexer.tokenize(*source));
         if (!parsed.errors.empty()) {
             response.code = 3;
-            response.message = "parse failed";
+            setErrorContract(response, "parser", "PARSER_PARSE_ERROR", "parse failed");
             response.errors.push_back(magphos::parser::renderErrors(parsed.errors, *source));
             emitResponse(response, jsonMode, errorFormat);
             return 3;
@@ -307,7 +365,7 @@ int main(int argc, char** argv) {
         const auto semanticIssues = magphos::semantic::analyze(parsed.program);
         if (!semanticIssues.empty()) {
             response.code = 3;
-            response.message = "semantic analysis failed";
+            setErrorContract(response, "semantic", "SEMANTIC_ANALYSIS_ERROR", "semantic analysis failed");
             response.errors.push_back(magphos::semantic::renderIssues(semanticIssues));
             emitResponse(response, jsonMode, errorFormat);
             return 3;
@@ -320,16 +378,19 @@ int main(int argc, char** argv) {
         } catch (const magphos::runtime::RuntimeError& runtimeError) {
             std::cout.rdbuf(oldOut);
             response.code = 3;
-            response.message = "runtime failed";
+            setErrorContract(response, "runtime", "RUNTIME_EXECUTION_ERROR", "runtime failed");
             response.runtimeErrorCode = magphos::runtime::runtimeErrorCodeName(runtimeError.code());
             response.errors.push_back(magphos::runtime::renderRuntimeError(runtimeError));
+            response.stackTrace.push_back("magphos_cli::--run");
+            response.stackTrace.push_back("runtime::RuntimeEngine::loadProgram");
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         } catch (const std::exception& ex) {
             std::cout.rdbuf(oldOut);
             response.code = 3;
-            response.message = "runtime failed";
+            setErrorContract(response, "runtime", "RUNTIME_UNHANDLED_EXCEPTION", "runtime failed");
             response.errors.push_back(ex.what());
+            response.stackTrace.push_back("magphos_cli::--run");
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }
@@ -341,12 +402,11 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (cmd == "--tokens" && positional.size() >= 2) {
-        CliResponse response;
-        response.command = "--tokens";
+        CliResponse response = makeResponse("--tokens");
         const auto source = readFile(positional[1]);
         if (!source.has_value()) {
             response.code = 2;
-            response.message = "Cannot read file: " + positional[1];
+            setErrorContract(response, "cli", "CLI_IO_ERROR", "Cannot read file: " + positional[1]);
             response.errors.push_back(response.message);
             emitResponse(response, jsonMode, errorFormat);
             return 2;
@@ -360,12 +420,11 @@ int main(int argc, char** argv) {
         return 0;
     }
     if ((cmd == "--deps" || cmd == "--module-graph") && positional.size() >= 2) {
-        CliResponse response;
-        response.command = cmd;
+        CliResponse response = makeResponse(cmd);
         const auto source = readFile(positional[1]);
         if (!source.has_value()) {
             response.code = 2;
-            response.message = "Cannot read file: " + positional[1];
+            setErrorContract(response, "cli", "CLI_IO_ERROR", "Cannot read file: " + positional[1]);
             response.errors.push_back(response.message);
             emitResponse(response, jsonMode, errorFormat);
             return 2;
@@ -375,7 +434,7 @@ int main(int argc, char** argv) {
         const auto parsed = parser.parse(lexer.tokenize(*source));
         if (!parsed.errors.empty()) {
             response.code = 3;
-            response.message = "parse failed";
+            setErrorContract(response, "parser", "PARSER_PARSE_ERROR", "parse failed");
             response.errors.push_back(magphos::parser::renderErrors(parsed.errors, *source));
             emitResponse(response, jsonMode, errorFormat);
             return 3;
@@ -406,10 +465,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    CliResponse response;
-    response.command = cmd;
+    CliResponse response = makeResponse(cmd);
     response.code = 2;
-    response.message = "Unknown command: " + cmd;
+    setErrorContract(response, "cli", "CLI_UNKNOWN_COMMAND", "Unknown command: " + cmd);
     response.errors.push_back(response.message);
     response.errors.push_back("Run --help to see available commands.");
     emitResponse(response, jsonMode, errorFormat);

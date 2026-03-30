@@ -5,6 +5,7 @@
 #include <memory>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -198,7 +199,12 @@ int main() {
     assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
     assert(moduleSystem.loadUsePath("utils.mp", modBase).find("print 3") != std::string::npos);
     assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos); // cache path
+
+    // Cache determinism: content should remain stable until cache clear.
+    stdlib.call("writeFile", {Value(modBase + "/math.mp"), Value(std::string("print 99\n"))});
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 1") != std::string::npos);
     moduleSystem.clearCache();
+    assert(moduleSystem.loadImportedModule("math", modBase).find("print 99") != std::string::npos);
 
     const std::string depSource = "import game.engine\nuse \"utils.mp\"\nprint 1\n";
     magphos::lexer::Lexer depLexer;
@@ -208,6 +214,18 @@ int main() {
     assert(deps.size() == 2);
     assert(deps[0] == "game.engine");
     assert(deps[1] == "utils.mp");
+
+    // Cycle detection should be deterministic and explicit.
+    stdlib.call("writeFile", {Value(modBase + "/cycle_a.mp"), Value(std::string("import cycle_b\nprint 1\n"))});
+    stdlib.call("writeFile", {Value(modBase + "/cycle_b.mp"), Value(std::string("import cycle_a\nprint 2\n"))});
+    bool cycleRaised = false;
+    try {
+        moduleSystem.clearCache();
+        (void)moduleSystem.loadImportedModule("cycle_a", modBase);
+    } catch (const std::runtime_error& ex) {
+        cycleRaised = std::string(ex.what()).find("cyclic import/use detected") != std::string::npos;
+    }
+    assert(cycleRaised);
 
     // Real runtime: function calling + scoping + runtime error types.
     const std::string runtimeSource = R"(
@@ -307,6 +325,18 @@ var x = add(1)
     assert(badReturn.find("'return' is only allowed inside functions") != std::string::npos);
     const std::string badSet = magphos::interpreter::analyzeProgram("set y = 1\n");
     assert(badSet.find("'set' requires an existing variable") != std::string::npos);
+
+    // Runtime error-code semantics should be stable.
+    bool unknownFunctionRaised = false;
+    try {
+        RuntimeEngine unknownFnEngine;
+        const auto parsed = runtimeParser.parse(runtimeLexer.tokenize("var x = unknownFn(1)\n"));
+        unknownFnEngine.loadProgram(parsed.program);
+    } catch (const RuntimeError& ex) {
+        unknownFunctionRaised = ex.code() == RuntimeErrorCode::NameError;
+        assert(magphos::runtime::runtimeErrorCodeName(ex.code()) == "RUNTIME_NAME_ERROR");
+    }
+    assert(unknownFunctionRaised);
 
     return 0;
 }

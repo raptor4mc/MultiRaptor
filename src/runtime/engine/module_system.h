@@ -22,6 +22,7 @@ class ModuleSystem {
     void clearCache();
 
   private:
+    std::string loadPathInternal(const std::string& path) const;
     mutable std::unordered_map<std::string, std::string> cache_;
     mutable std::unordered_set<std::string> loadStack_;
 };

@@ -6,6 +6,8 @@
 #include <stdexcept>
 
 #include "compiler/ast/nodes.h"
+#include "compiler/lexer/lexer.h"
+#include "compiler/parser/parser.h"
 
 namespace magphos::runtime {
 
@@ -43,34 +45,50 @@ std::string ModuleSystem::resolveUsePath(const std::string& relativePath, const 
 
 std::string ModuleSystem::loadImportedModule(const std::string& moduleName, const std::string& baseDir) const {
     const std::string path = resolveModulePath(moduleName, baseDir);
-    const auto cached = cache_.find(path);
-    if (cached != cache_.end()) {
-        return cached->second;
-    }
-    if (loadStack_.find(path) != loadStack_.end()) {
-        throw std::runtime_error("ModuleSystem: cyclic import detected for " + path);
-    }
-    loadStack_.insert(path);
-    const std::string content = readFile(path);
-    cache_[path] = content;
-    loadStack_.erase(path);
-    return content;
+    return loadPathInternal(path);
 }
 
 std::string ModuleSystem::loadUsePath(const std::string& relativePath, const std::string& baseDir) const {
     const std::string path = resolveUsePath(relativePath, baseDir);
+    return loadPathInternal(path);
+}
+
+std::string ModuleSystem::loadPathInternal(const std::string& path) const {
     const auto cached = cache_.find(path);
     if (cached != cache_.end()) {
         return cached->second;
     }
     if (loadStack_.find(path) != loadStack_.end()) {
-        throw std::runtime_error("ModuleSystem: cyclic use-path detected for " + path);
+        throw std::runtime_error("ModuleSystem: cyclic import/use detected for " + path);
     }
+
     loadStack_.insert(path);
-    const std::string content = readFile(path);
-    cache_[path] = content;
-    loadStack_.erase(path);
-    return content;
+    try {
+        const std::string content = readFile(path);
+
+        lexer::Lexer lexer;
+        parser::Parser parser;
+        const auto parseResult = parser.parse(lexer.tokenize(content));
+        if (parseResult.errors.empty()) {
+            const std::string childBaseDir = std::filesystem::path(path).parent_path().string();
+            for (const auto& statement : parseResult.program.statements) {
+                if (statement.kind == ast::StmtKind::Import) {
+                    const std::string depPath = resolveModulePath(statement.name, childBaseDir);
+                    (void)loadPathInternal(depPath);
+                } else if (statement.kind == ast::StmtKind::Use) {
+                    const std::string depPath = resolveUsePath(statement.name, childBaseDir);
+                    (void)loadPathInternal(depPath);
+                }
+            }
+        }
+
+        cache_[path] = content;
+        loadStack_.erase(path);
+        return content;
+    } catch (...) {
+        loadStack_.erase(path);
+        throw;
+    }
 }
 
 std::vector<std::string> ModuleSystem::collectDependencies(const parser::ParseResult& parseResult) const {
