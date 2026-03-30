@@ -1,0 +1,18 @@
+name: policy-checks
+
+on:
+  pull_request:
+  push:
+    branches: [ main, work ]
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install formatter
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Policy gates
+        run: bash tools/scripts/check_policy_gates.sh
+      - name: Migration audit (non-blocking report)
+        run: python3 tools/scripts/migration_audit.py --root .

@@ -5,6 +5,8 @@
 - Publish and enforce SemVer language/version stability policy (minor-line syntax/AST freeze, deprecation windows, migration guides).
 - Formalize error model + observability contract (machine-readable codes, trace IDs, structured logs, stack traces).
 - Enforce CI quality gates: sanitizers, fuzzing, coverage thresholds, performance regression checks, and cross-platform matrix.
+- Establish LTS lifecycle policy, security patch SLAs, and CVE/responsible-disclosure process.
+- Publish production hardening guide and breaking-change playbook with migration tooling.
 - Expand runtime execution coverage beyond arithmetic/function calls.
 - Improve module loading (caching + cycle detection).
 - Improve stdlib API consistency and docs examples.
