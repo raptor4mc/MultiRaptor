@@ -1,5 +1,4 @@
 #include <fstream>
-#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -12,7 +11,6 @@
 #include "compiler/parser/parser.h"
 #include "runtime/engine/engine.h"
 #include "runtime/engine/errors.h"
-#include "runtime/engine/module_system.h"
 #include "compiler/semantic/analyzer.h"
 
 namespace {
@@ -380,10 +378,6 @@ int main(int argc, char** argv) {
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }
-        const std::string baseDir = positional.size() >= 3
-            ? positional[2]
-            : std::filesystem::path(positional[1]).parent_path().string();
-        magphos::runtime::ModuleSystem modules;
         response.ok = true;
         response.message = "ok";
         for (const auto& statement : parsed.program.statements) {
@@ -392,14 +386,10 @@ int main(int argc, char** argv) {
             }
 
             const bool isImport = statement.kind == magphos::ast::StmtKind::Import;
-            const std::string depPath = isImport
-                ? modules.resolveModulePath(statement.name, baseDir)
-                : modules.resolveUsePath(statement.name, baseDir);
-
             if (cmd == "--module-graph") {
-                response.moduleEdges.push_back({positional[1], depPath, isImport ? "import" : "use"});
+                response.moduleEdges.push_back({positional[1], statement.name, isImport ? "import" : "use"});
             } else {
-                response.deps.push_back(depPath);
+                response.deps.push_back(statement.name);
             }
         }
         emitResponse(response, jsonMode, errorFormat);
