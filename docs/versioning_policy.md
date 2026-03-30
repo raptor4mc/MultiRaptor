@@ -15,6 +15,7 @@ For a given minor line (example: `1.4.x`):
 - Accepted syntax is frozen for all patch releases in that line.
 - AST shape/field semantics are frozen for compiler/analysis consumers in that line.
 - Existing valid source must continue to parse and analyze the same way (except for bug-fix diagnostics).
+- Frozen signatures are tracked in `contracts/language_contract.json` and enforced in CI.
 
 If a syntax or AST change would break this guarantee, it must be deferred to the next MAJOR (or guarded behind an explicit opt-in flag).
 

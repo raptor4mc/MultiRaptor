@@ -2,6 +2,7 @@
 
 ## Near-term
 - Stabilize parser grammar and AST compatibility.
+- Enforce per-release grammar/AST freeze via language contract signatures in CI.
 - Publish and enforce SemVer language/version stability policy (minor-line syntax/AST freeze, deprecation windows, migration guides).
 - Formalize error model + observability contract (machine-readable codes, trace IDs, structured logs, stack traces).
 - Enforce CI quality gates: sanitizers, fuzzing, coverage thresholds, performance regression checks, and cross-platform matrix.
