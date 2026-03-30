@@ -174,6 +174,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/examples.md`
 - `docs/stdlib.md`
 - `docs/error_guide.md`
+- `docs/error_observability_contract.md`
 - `docs/roadmap.md`
 - `docs/versioning_policy.md`
 - `docs/dependency_determinism.md`

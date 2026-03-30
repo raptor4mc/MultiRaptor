@@ -3,6 +3,7 @@
 ## Near-term
 - Stabilize parser grammar and AST compatibility.
 - Publish and enforce SemVer language/version stability policy (minor-line syntax/AST freeze, deprecation windows, migration guides).
+- Formalize error model + observability contract (machine-readable codes, trace IDs, structured logs, stack traces).
 - Expand runtime execution coverage beyond arithmetic/function calls.
 - Improve module loading (caching + cycle detection).
 - Improve stdlib API consistency and docs examples.
