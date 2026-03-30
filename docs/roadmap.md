@@ -9,10 +9,10 @@
 
 ## Mid-term
 - Bytecode or IR layer for optimized execution.
-- Real package registry + lock file format.
+- Real package registry + lock file format (checksums + reproducible installs).
 - WASM distribution workflow and web playground unification.
 
 ## Long-term
 - Language server support.
-- Package ecosystem, version constraints, dependency solver.
+- Package ecosystem, version constraints, dependency solver, and enterprise-grade deterministic resolution guarantees.
 - Multi-backend runtime targets.
