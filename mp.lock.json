@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-03-30T00:00:00Z",
+  "packages": [],
+  "resolver": {
+    "algorithm": "deterministic-graph-v1",
+    "registry": "https://registry.magphos.dev"
+  },
+  "schemaVersion": 1
+}
