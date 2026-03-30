@@ -51,7 +51,7 @@ int main() {
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --deps " + sourcePath + " >/tmp/cli_deps.txt").c_str());
     assert(exitCodeOf(rc) == 0);
-    assert(readFile("/tmp/cli_deps.txt").find("game.engine") != std::string::npos);
+    assert(readFile("/tmp/cli_deps.txt").find("/tmp/game/engine.mp") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --tokens " + sourcePath + " >/tmp/cli_tokens.txt").c_str());
     assert(exitCodeOf(rc) == 0);
@@ -69,10 +69,14 @@ int main() {
     assert(exitCodeOf(rc) == 3);
     assert(readFile("/tmp/cli_check_bad_json.txt").find("\"ok\":false") != std::string::npos);
     assert(readFile("/tmp/cli_check_bad_json.txt").find("\"errors\"") != std::string::npos);
+    assert(readFile("/tmp/cli_check_bad_json.txt").find("\"errorDomain\":\"parser\"") != std::string::npos);
+    assert(readFile("/tmp/cli_check_bad_json.txt").find("\"errorCode\":\"PARSER_PARSE_ERROR\"") != std::string::npos);
+    assert(readFile("/tmp/cli_check_bad_json.txt").find("\"traceId\":\"trace-") != std::string::npos);
+    assert(readFile("/tmp/cli_check_bad_json.txt").find("\"logs\":[") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --deps --json " + sourcePath + " >/tmp/cli_deps_json.txt").c_str());
     assert(exitCodeOf(rc) == 0);
-    assert(readFile("/tmp/cli_deps_json.txt").find("\"deps\":[\"game.engine\"]") != std::string::npos);
+    assert(readFile("/tmp/cli_deps_json.txt").find("\"deps\":[\"/tmp/game/engine.mp\"]") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --tokens --json " + sourcePath + " >/tmp/cli_tokens_json.txt").c_str());
     assert(exitCodeOf(rc) == 0);
@@ -85,11 +89,14 @@ int main() {
     rc = std::system(("/tmp/magphos_tests/magphos_cli --module-graph --json " + sourcePath + " >/tmp/cli_module_graph_json.txt").c_str());
     assert(exitCodeOf(rc) == 0);
     assert(readFile("/tmp/cli_module_graph_json.txt").find("\"moduleGraph\"") != std::string::npos);
-    assert(readFile("/tmp/cli_module_graph_json.txt").find("game.engine") != std::string::npos);
+    assert(readFile("/tmp/cli_module_graph_json.txt").find("/tmp/game/engine.mp") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --run --json " + runtimeFailPath + " >/tmp/cli_run_runtime_fail_json.txt 2>/tmp/cli_run_runtime_fail_json_err.txt").c_str());
     assert(exitCodeOf(rc) == 3);
     assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("\"runtimeErrorCode\":\"RUNTIME_FAILURE\"") != std::string::npos);
+    assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("\"errorDomain\":\"runtime\"") != std::string::npos);
+    assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("\"errorCode\":\"RUNTIME_EXECUTION_ERROR\"") != std::string::npos);
+    assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("\"stackTrace\":[\"magphos_cli::--run\"") != std::string::npos);
     assert(readFile("/tmp/cli_run_runtime_fail_json.txt").find("Division by zero") != std::string::npos);
 
     rc = std::system("/tmp/magphos_tests/magphos_cli --check /tmp/does_not_exist.mp >/tmp/cli_missing.txt 2>/tmp/cli_missing_err.txt");

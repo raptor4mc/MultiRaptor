@@ -1,0 +1,24 @@
+name: fuzz
+
+on:
+  pull_request:
+  push:
+    branches: [ main, work ]
+
+jobs:
+  lexer-parser-fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang
+        run: sudo apt-get update && sudo apt-get install -y clang
+      - name: Build fuzz targets
+        run: |
+          clang++ -std=c++17 -fsanitize=fuzzer,address -Iinclude -Isrc \
+            tests/fuzz/fuzz_lexer.cpp src/compiler/lexer/lexer.cpp -o /tmp/fuzz_lexer
+          clang++ -std=c++17 -fsanitize=fuzzer,address -Iinclude -Isrc \
+            tests/fuzz/fuzz_parser.cpp src/compiler/lexer/lexer.cpp src/compiler/parser/parser.cpp src/compiler/ast/nodes.cpp src/utils/string_utils.cpp -o /tmp/fuzz_parser
+      - name: Run fuzz smoke
+        run: |
+          /tmp/fuzz_lexer -max_total_time=20 -runs=0
+          /tmp/fuzz_parser -max_total_time=20 -runs=0

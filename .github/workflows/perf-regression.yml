@@ -1,0 +1,14 @@
+name: perf-regression
+
+on:
+  pull_request:
+  push:
+    branches: [ main, work ]
+
+jobs:
+  perf-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Performance regression check
+        run: bash tools/scripts/check_perf_regression.sh perf/baseline.json
