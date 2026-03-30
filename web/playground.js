@@ -3,6 +3,7 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmAnalyzer = null;
 let wasmPreviewRenderer = null;
+let wasmSourcePreviewRenderer = null;
 let wasmLoadError = null;
 const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
@@ -98,6 +99,9 @@ async function loadWasmCompiler() {
         wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
           ? classicModule.renderPreviewShell
           : null;
+        wasmSourcePreviewRenderer = typeof classicModule.renderPreviewFromSource === 'function'
+          ? classicModule.renderPreviewFromSource
+          : null;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -135,6 +139,9 @@ async function loadWasmCompiler() {
           wasmPreviewRenderer = typeof wasmModule.renderPreviewShell === 'function'
             ? wasmModule.renderPreviewShell
             : null;
+          wasmSourcePreviewRenderer = typeof wasmModule.renderPreviewFromSource === 'function'
+            ? wasmModule.renderPreviewFromSource
+            : null;
           wasmLoadError = null;
           return;
         }
@@ -150,6 +157,9 @@ async function loadWasmCompiler() {
           : null;
         wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
           ? classicModule.renderPreviewShell
+          : null;
+        wasmSourcePreviewRenderer = typeof classicModule.renderPreviewFromSource === 'function'
+          ? classicModule.renderPreviewFromSource
           : null;
         wasmLoadError = null;
         return;
@@ -709,30 +719,22 @@ function findPreviewHtml() {
     if (project.files[path]) return project.files[path];
   }
 
-  const preferredMagphos = ['preview/index.mp', 'game/index.mp', project.activeFile];
-  for (const path of preferredMagphos) {
-    if (!path || !project.files[path]) continue;
-    const converted = convertMagphosMarkupToHtml(project.files[path]);
-    if (converted) return converted;
-  }
+  if (wasmSourcePreviewRenderer) {
+    const previewCandidates = ['preview/index.mp', 'game/index.mp', 'preview/style.mp', 'game/style.mp', project.activeFile];
+    const seen = new Set();
 
-  const magphosEntry = Object.entries(project.files)
-    .find(([, content]) => Boolean(convertMagphosMarkupToHtml(content)));
-  if (magphosEntry) {
-    return convertMagphosMarkupToHtml(magphosEntry[1]);
-  }
+    for (const path of previewCandidates) {
+      if (!path || seen.has(path) || !project.files[path]) continue;
+      seen.add(path);
+      const converted = String(wasmSourcePreviewRenderer(project.files[path]) || '');
+      if (converted.trim()) return converted;
+    }
 
-  const preferredCssxd = ['preview/style.mp', 'game/style.mp', project.activeFile];
-  for (const path of preferredCssxd) {
-    if (!path || !project.files[path]) continue;
-    const converted = convertCssxdToPreviewHtml(project.files[path]);
-    if (converted) return converted;
-  }
-
-  const cssxdEntry = Object.entries(project.files)
-    .find(([, content]) => Boolean(convertCssxdToPreviewHtml(content)));
-  if (cssxdEntry) {
-    return convertCssxdToPreviewHtml(cssxdEntry[1]);
+    for (const [path, content] of Object.entries(project.files)) {
+      if (seen.has(path)) continue;
+      const converted = String(wasmSourcePreviewRenderer(content) || '');
+      if (converted.trim()) return converted;
+    }
   }
 
   const htmlEntry = Object.entries(project.files)
