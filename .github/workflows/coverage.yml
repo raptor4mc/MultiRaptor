@@ -1,0 +1,14 @@
+name: coverage
+
+on:
+  pull_request:
+  push:
+    branches: [ main, work ]
+
+jobs:
+  line-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Coverage threshold
+        run: bash tools/scripts/check_coverage.sh 65

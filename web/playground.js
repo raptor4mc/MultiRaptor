@@ -3,6 +3,7 @@ const STORAGE_KEY = 'magphos-web-studio-v2';
 let wasmCompiler = null;
 let wasmAnalyzer = null;
 let wasmPreviewRenderer = null;
+let wasmSourcePreviewRenderer = null;
 let wasmLoadError = null;
 const FALLBACK_BANNER = 'Repo bundled fallback loader (WASM artifact not built).';
 
@@ -98,6 +99,9 @@ async function loadWasmCompiler() {
         wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
           ? classicModule.renderPreviewShell
           : null;
+        wasmSourcePreviewRenderer = typeof classicModule.renderPreviewFromSource === 'function'
+          ? classicModule.renderPreviewFromSource
+          : null;
         wasmLoadError = null;
         return;
       } catch (err) {
@@ -135,6 +139,9 @@ async function loadWasmCompiler() {
           wasmPreviewRenderer = typeof wasmModule.renderPreviewShell === 'function'
             ? wasmModule.renderPreviewShell
             : null;
+          wasmSourcePreviewRenderer = typeof wasmModule.renderPreviewFromSource === 'function'
+            ? wasmModule.renderPreviewFromSource
+            : null;
           wasmLoadError = null;
           return;
         }
@@ -150,6 +157,9 @@ async function loadWasmCompiler() {
           : null;
         wasmPreviewRenderer = typeof classicModule.renderPreviewShell === 'function'
           ? classicModule.renderPreviewShell
+          : null;
+        wasmSourcePreviewRenderer = typeof classicModule.renderPreviewFromSource === 'function'
+          ? classicModule.renderPreviewFromSource
           : null;
         wasmLoadError = null;
         return;
@@ -678,6 +688,25 @@ function findPreviewHtml() {
   for (const path of preferred) {
     if (project.files[path]) return project.files[path];
   }
+
+  if (wasmSourcePreviewRenderer) {
+    const previewCandidates = ['preview/index.mp', 'game/index.mp', 'preview/style.mp', 'game/style.mp', project.activeFile];
+    const seen = new Set();
+
+    for (const path of previewCandidates) {
+      if (!path || seen.has(path) || !project.files[path]) continue;
+      seen.add(path);
+      const converted = String(wasmSourcePreviewRenderer(project.files[path]) || '');
+      if (converted.trim()) return converted;
+    }
+
+    for (const [path, content] of Object.entries(project.files)) {
+      if (seen.has(path)) continue;
+      const converted = String(wasmSourcePreviewRenderer(content) || '');
+      if (converted.trim()) return converted;
+    }
+  }
+
   const htmlEntry = Object.entries(project.files)
     .find(([path]) => path.toLowerCase().endsWith('.html'));
   return htmlEntry ? htmlEntry[1] : '';
