@@ -32,6 +32,7 @@ Replace `<owner>/<repo>` with your real GitHub path.
 - `src/runtime/`: runtime engine, interpreter, stdlib
 - `src/platform/`: platform-specific adapters and launchers (including VSCode)
 - `src/htmlxd/`: MagPhos-owned HTML abstraction utilities used by Web Studio preview generation
+- `src/cssxd/`: MagPhos-owned CSS abstraction utilities for Web Studio styling/runtime integration
 - `contrib/`: community modules, optional tools, and experiments outside the core
 - `design/`: language evolution artifacts (proposals, rejections, syntax, bytecode)
 
