@@ -14,6 +14,7 @@ COMMON_SRCS=(
   src/runtime/engine/engine.cpp
   src/compiler/semantic/analyzer.cpp
   src/utils/string_utils.cpp
+  src/utils/file_utils.cpp
 )
 
 mkdir -p /tmp/magphos_tests
