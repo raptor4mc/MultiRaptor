@@ -9,7 +9,8 @@
 - Establish LTS lifecycle policy, security patch SLAs, and CVE/responsible-disclosure process.
 - Publish production hardening guide and breaking-change playbook with migration tooling.
 - Expand runtime execution coverage beyond arithmetic/function calls.
-- Improve module loading (caching + cycle detection).
+- Lock down runtime determinism + edge-case error semantics with contract tests.
+- Improve module loading (deterministic cache behavior + explicit cycle detection).
 - Improve stdlib API consistency and docs examples.
 
 ## Mid-term

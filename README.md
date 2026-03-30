@@ -183,6 +183,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/lts_support_policy.md`
 - `docs/production_hardening.md`
 - `docs/breaking_change_playbook.md`
+- `docs/runtime_correctness_contract.md`
 - `docs/repl.md`
 - `docs/game_api.md`
 - `info/rules.txt` (consistency/simplicity/predictability/safety rules)
