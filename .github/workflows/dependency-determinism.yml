@@ -1,0 +1,21 @@
+name: dependency-determinism
+
+on:
+  pull_request:
+  push:
+    branches: [ main, work ]
+
+jobs:
+  lockfile-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate deterministic lockfile
+        run: python3 tools/scripts/check_lockfile_determinism.py

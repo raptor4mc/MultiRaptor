@@ -53,6 +53,7 @@ set(MAGPHOS_CORE_SOURCES
   src/compiler/semantic/analyzer.cpp
   src/htmlxd/dom.cpp
   src/web/htmlxd_preview.cpp
+  src/web/source_preview.cpp
   src/utils/error.cpp
   src/utils/file_utils.cpp
   src/utils/string_utils.cpp
