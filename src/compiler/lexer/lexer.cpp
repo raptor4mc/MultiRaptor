@@ -137,6 +137,9 @@ std::vector<Token> Lexer::tokenize(const std::string& source) const {
             case '.':
                 pushSimple(tokens, TokenType::Dot, c, line, startColumn);
                 break;
+            case '@':
+                pushSimple(tokens, TokenType::At, c, line, startColumn);
+                break;
             case ';':
                 pushSimple(tokens, TokenType::Semicolon, c, line, startColumn);
                 break;

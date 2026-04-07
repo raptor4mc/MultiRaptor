@@ -97,6 +97,7 @@ class Analyzer {
                 popScope();
                 return;
             case ast::StmtKind::Variable:
+            case ast::StmtKind::Timeline:
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }
@@ -174,6 +175,7 @@ class Analyzer {
                 return;
             case ast::StmtKind::Switch:
             case ast::StmtKind::Match:
+            case ast::StmtKind::MatchAll:
                 if (statement.condition) {
                     analyzeExpr(*statement.condition);
                 }
@@ -187,6 +189,40 @@ class Analyzer {
                 }
                 if (!statement.elseBody.empty()) {
                     analyzeBlock(statement.elseBody);
+                }
+                return;
+            case ast::StmtKind::Because:
+                if (statement.condition) {
+                    analyzeExpr(*statement.condition);
+                }
+                if (statement.expression) {
+                    analyzeExpr(*statement.expression);
+                }
+                analyzeBlock(statement.body);
+                if (!statement.elseBody.empty()) {
+                    analyzeBlock(statement.elseBody);
+                }
+                return;
+            case ast::StmtKind::WhatIf:
+                if (statement.expression) {
+                    analyzeExpr(*statement.expression);
+                }
+                if (statement.condition) {
+                    analyzeExpr(*statement.condition);
+                }
+                analyzeBlock(statement.body);
+                analyzeBlock(statement.elseBody);
+                return;
+            case ast::StmtKind::Mood:
+                if (statement.expression) {
+                    analyzeExpr(*statement.expression);
+                }
+                return;
+            case ast::StmtKind::Negotiate:
+                for (const auto& capability : statement.paramDefaults) {
+                    if (capability) {
+                        analyzeExpr(*capability);
+                    }
                 }
                 return;
             case ast::StmtKind::For:
@@ -209,6 +245,16 @@ class Analyzer {
     }
 
     void analyzeExpr(const ast::Expr& expr) {
+        if (expr.kind == ast::ExprKind::TimelineAccess) {
+            if (!expr.children.empty() && expr.children[0]) {
+                analyzeExpr(*expr.children[0]);
+            }
+            if (expr.children.size() > 1 && expr.children[1] && expr.children[1]->kind == ast::ExprKind::Identifier &&
+                expr.children[1]->value != "now") {
+                issues_.push_back({"Timeline access only supports numeric ticks or 'now'"});
+            }
+            return;
+        }
         if (expr.kind == ast::ExprKind::Identifier) {
             if (expr.value != "true" && expr.value != "false" && expr.value != "null" && !isDefined(expr.value)) {
                 issues_.push_back({"Undefined identifier: " + expr.value});

@@ -17,6 +17,7 @@ enum class ExprKind {
     Grouping,
     Call,
     ArrayLiteral,
+    TimelineAccess,
 };
 
 enum class StmtKind {
@@ -41,6 +42,12 @@ enum class StmtKind {
     Switch,
     Match,
     Namespace,
+    Timeline,
+    Because,
+    WhatIf,
+    Mood,
+    MatchAll,
+    Negotiate,
 };
 
 struct Expr {
