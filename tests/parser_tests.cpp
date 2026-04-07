@@ -25,6 +25,9 @@ namespace game {
   }
 }
 
+timeline hp = 100
+mood diagnostics = "mentor"
+
 if true and not false {
   var cond = 1
 } else {
@@ -77,7 +80,31 @@ match x {
   }
 }
 
+because score from "trusted.sensor.v2" {
+  print score
+} else {
+  print "blocked"
+}
+
+whatif world {
+  print "simulate"
+} compare {
+  print "compare"
+} commit_if (true)
+
+match all parse("1/2/03") {
+  case date_us(x) => print x
+  case date_eu(x) => print x
+}
+
+negotiate runtime {
+  require "deterministic_rng"
+  prefer "simd128"
+  fallback "portable_scalar"
+}
+
 var arr = [1, 2, 3]
+print hp@now
 
 var x = (a + b) * c;
 print (x + y) / 2
@@ -90,7 +117,7 @@ print (x + y) / 2
     const auto result = parser.parse(tokens);
 
     assert(result.errors.empty());
-    assert(result.program.statements.size() >= 17);
+    assert(result.program.statements.size() >= 22);
     assert(result.program.statements[0].kind == magphos::ast::StmtKind::Import);
     assert(result.program.statements[0].name == "math");
     assert(result.program.statements[1].name == "game.engine");
@@ -105,6 +132,12 @@ print (x + y) / 2
     bool sawRepeatWhile = false;
     bool sawAsk = false;
     bool sawNamespace = false;
+    bool sawTimeline = false;
+    bool sawBecause = false;
+    bool sawWhatIf = false;
+    bool sawMood = false;
+    bool sawMatchAll = false;
+    bool sawNegotiate = false;
     for (const auto& statement : result.program.statements) {
         if (statement.kind == magphos::ast::StmtKind::TryCatch) sawTry = true;
         if (statement.kind == magphos::ast::StmtKind::Switch) sawSwitch = true;
@@ -114,6 +147,12 @@ print (x + y) / 2
         if (statement.kind == magphos::ast::StmtKind::RepeatWhile) sawRepeatWhile = true;
         if (statement.kind == magphos::ast::StmtKind::Ask) sawAsk = true;
         if (statement.kind == magphos::ast::StmtKind::Namespace) sawNamespace = true;
+        if (statement.kind == magphos::ast::StmtKind::Timeline) sawTimeline = true;
+        if (statement.kind == magphos::ast::StmtKind::Because) sawBecause = true;
+        if (statement.kind == magphos::ast::StmtKind::WhatIf) sawWhatIf = true;
+        if (statement.kind == magphos::ast::StmtKind::Mood) sawMood = true;
+        if (statement.kind == magphos::ast::StmtKind::MatchAll) sawMatchAll = true;
+        if (statement.kind == magphos::ast::StmtKind::Negotiate) sawNegotiate = true;
     }
     assert(sawTry);
     assert(sawSwitch);
@@ -123,5 +162,11 @@ print (x + y) / 2
     assert(sawRepeatWhile);
     assert(sawAsk);
     assert(sawNamespace);
+    assert(sawTimeline);
+    assert(sawBecause);
+    assert(sawWhatIf);
+    assert(sawMood);
+    assert(sawMatchAll);
+    assert(sawNegotiate);
     return 0;
 }

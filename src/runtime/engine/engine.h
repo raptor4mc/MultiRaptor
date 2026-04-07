@@ -30,6 +30,7 @@ class RuntimeEngine {
     std::shared_ptr<Environment> globals_;
     std::shared_ptr<Environment> current_;
     std::unordered_map<std::string, const ast::Statement*> userFunctions_;
+    std::unordered_map<std::string, std::vector<Value>> timelineHistory_;
 
     void executeStatement(const ast::Statement& statement);
     void executeBlock(const std::vector<ast::Statement>& statements, std::shared_ptr<Environment> scope);

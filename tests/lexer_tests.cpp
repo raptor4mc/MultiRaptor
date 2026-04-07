@@ -14,7 +14,8 @@ int main() {
         "}\n"
         "// comment line\n"
         "# comment line\n"
-        "arr = [1, 2, 3]\n");
+        "arr = [1, 2, 3]\n"
+        "print hp@now\n");
 
     assert(!tokens.empty());
     assert(tokens[0].type == magphos::lexer::TokenType::Identifier);
@@ -26,6 +27,7 @@ int main() {
     bool sawBangEqual = false;
     bool sawLeftBracket = false;
     bool sawRightBracket = false;
+    bool sawAt = false;
     for (const auto& token : tokens) {
         if (token.type == magphos::lexer::TokenType::Semicolon) {
             sawSemicolon = true;
@@ -48,6 +50,9 @@ int main() {
         if (token.type == magphos::lexer::TokenType::RightBracket) {
             sawRightBracket = true;
         }
+        if (token.type == magphos::lexer::TokenType::At) {
+            sawAt = true;
+        }
     }
 
     assert(sawSemicolon);
@@ -57,5 +62,6 @@ int main() {
     assert(sawBangEqual);
     assert(sawLeftBracket);
     assert(sawRightBracket);
+    assert(sawAt);
     return 0;
 }

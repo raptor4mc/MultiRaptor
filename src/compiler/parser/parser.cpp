@@ -123,6 +123,9 @@ class ParserImpl {
         if (matchKeyword("fn")) {
             return parseFunctionDeclaration();
         }
+        if (matchKeyword("timeline")) {
+            return parseTimelineDeclaration();
+        }
         return parseStatement();
     }
 
@@ -226,6 +229,18 @@ class ParserImpl {
     }
 
     std::optional<ast::Statement> parseStatement() {
+        if (matchKeyword("because")) {
+            return parseBecauseStatement();
+        }
+        if (matchKeyword("whatif")) {
+            return parseWhatIfStatement();
+        }
+        if (matchKeyword("mood")) {
+            return parseMoodStatement();
+        }
+        if (matchKeyword("negotiate")) {
+            return parseNegotiateStatement();
+        }
         if (matchKeyword("if")) {
             return parseIfStatement();
         }
@@ -257,6 +272,9 @@ class ParserImpl {
             return parseSwitchLikeStatement(ast::StmtKind::Switch);
         }
         if (matchKeyword("match")) {
+            if (matchKeyword("all")) {
+                return parseMatchAllStatement();
+            }
             return parseSwitchLikeStatement(ast::StmtKind::Match);
         }
         if (matchKeyword("var") || matchKeyword("const")) {
@@ -272,6 +290,207 @@ class ParserImpl {
             return parseBlockStatement();
         }
         return parseAssignmentOrExpression();
+    }
+
+    std::optional<ast::Statement> parseTimelineDeclaration() {
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected variable name after 'timeline'.");
+        }
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Timeline;
+        statement.name = advance().lexeme;
+        if (!match(TokenType::Equal)) {
+            return errorAtCurrent("Expected '=' after timeline variable name.");
+        }
+        auto expr = parseExpression();
+        if (!expr) {
+            return std::nullopt;
+        }
+        statement.expression = std::move(expr);
+        consumeTerminator("Expected ';' or newline after timeline declaration.");
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseBecauseStatement() {
+        auto guardedExpr = parseExpression();
+        if (!guardedExpr) {
+            return std::nullopt;
+        }
+        if (!matchKeyword("from")) {
+            return errorAtCurrent("Expected 'from' in because statement.");
+        }
+        if (!check(TokenType::String)) {
+            return errorAtCurrent("Expected source string after 'from'.");
+        }
+
+        auto sourceExpr = std::make_unique<ast::Expr>();
+        sourceExpr->kind = ast::ExprKind::StringLiteral;
+        sourceExpr->value = advance().lexeme;
+
+        auto thenBlock = parseBlockStatement();
+        if (!thenBlock.has_value()) {
+            return std::nullopt;
+        }
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Because;
+        statement.condition = std::move(guardedExpr);
+        statement.expression = std::move(sourceExpr);
+        statement.body = std::move(thenBlock->body);
+
+        if (matchKeyword("else")) {
+            auto elseBlock = parseBlockStatement();
+            if (!elseBlock.has_value()) {
+                return std::nullopt;
+            }
+            statement.elseBody = std::move(elseBlock->body);
+        }
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseWhatIfStatement() {
+        auto base = parseExpression();
+        if (!base) {
+            return std::nullopt;
+        }
+        auto whatIfBlock = parseBlockStatement();
+        if (!whatIfBlock.has_value()) {
+            return std::nullopt;
+        }
+        if (!matchKeyword("compare")) {
+            return errorAtCurrent("Expected 'compare' block in whatif statement.");
+        }
+        auto compareBlock = parseBlockStatement();
+        if (!compareBlock.has_value()) {
+            return std::nullopt;
+        }
+        if (!matchKeyword("commit_if")) {
+            return errorAtCurrent("Expected 'commit_if' in whatif statement.");
+        }
+        if (!match(TokenType::LeftParen)) {
+            return errorAtCurrent("Expected '(' after 'commit_if'.");
+        }
+        auto commitCondition = parseExpression();
+        if (!commitCondition) {
+            return std::nullopt;
+        }
+        if (!match(TokenType::RightParen)) {
+            return errorAtCurrent("Expected ')' after commit condition.");
+        }
+        skipTerminators();
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::WhatIf;
+        statement.expression = std::move(base);
+        statement.body = std::move(whatIfBlock->body);
+        statement.elseBody = std::move(compareBlock->body);
+        statement.condition = std::move(commitCondition);
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseMoodStatement() {
+        if (!matchKeyword("diagnostics")) {
+            return errorAtCurrent("Expected 'diagnostics' after 'mood'.");
+        }
+        if (!match(TokenType::Equal)) {
+            return errorAtCurrent("Expected '=' after 'mood diagnostics'.");
+        }
+        if (!check(TokenType::String)) {
+            return errorAtCurrent("Expected diagnostic mood string.");
+        }
+        auto moodExpr = std::make_unique<ast::Expr>();
+        moodExpr->kind = ast::ExprKind::StringLiteral;
+        moodExpr->value = advance().lexeme;
+
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Mood;
+        statement.expression = std::move(moodExpr);
+        consumeTerminator("Expected ';' or newline after mood statement.");
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseNegotiateStatement() {
+        if (!check(TokenType::Identifier)) {
+            return errorAtCurrent("Expected negotiation target after 'negotiate'.");
+        }
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::Negotiate;
+        statement.name = advance().lexeme;
+        if (!match(TokenType::LeftBrace)) {
+            return errorAtCurrent("Expected '{' after negotiate target.");
+        }
+        while (!check(TokenType::RightBrace) && !isAtEnd()) {
+            skipTerminators();
+            if (check(TokenType::RightBrace)) {
+                break;
+            }
+            if (!check(TokenType::Identifier)) {
+                return errorAtCurrent("Expected negotiate clause keyword.");
+            }
+            const std::string clause = advance().lexeme;
+            if (clause != "require" && clause != "prefer" && clause != "fallback") {
+                return errorAtCurrent("Expected require/prefer/fallback clause in negotiate block.");
+            }
+            if (!check(TokenType::String)) {
+                return errorAtCurrent("Expected quoted capability in negotiate clause.");
+            }
+            statement.params.push_back(clause);
+            auto capabilityExpr = std::make_unique<ast::Expr>();
+            capabilityExpr->kind = ast::ExprKind::StringLiteral;
+            capabilityExpr->value = advance().lexeme;
+            statement.paramDefaults.push_back(std::move(capabilityExpr));
+            if (!consumeTerminator("Expected ';' or newline after negotiate clause.")) {
+                return std::nullopt;
+            }
+        }
+        if (!match(TokenType::RightBrace)) {
+            return errorAtCurrent("Expected '}' after negotiate block.");
+        }
+        skipTerminators();
+        return statement;
+    }
+
+    std::optional<ast::Statement> parseMatchAllStatement() {
+        auto condition = parseExpression();
+        if (!condition) {
+            return std::nullopt;
+        }
+        if (!match(TokenType::LeftBrace)) {
+            return errorAtCurrent("Expected '{' after match all expression.");
+        }
+        ast::Statement statement;
+        statement.kind = ast::StmtKind::MatchAll;
+        statement.condition = std::move(condition);
+        while (!check(TokenType::RightBrace) && !isAtEnd()) {
+            skipTerminators();
+            if (check(TokenType::RightBrace)) {
+                break;
+            }
+            if (!matchKeyword("case")) {
+                return errorAtCurrent("Expected 'case' in match all.");
+            }
+            auto caseExpr = parseExpression();
+            if (!caseExpr) {
+                return std::nullopt;
+            }
+            if (!match(TokenType::Equal) || !match(TokenType::Greater)) {
+                return errorAtCurrent("Expected '=>' after match all case expression.");
+            }
+            auto caseStmt = parseStatement();
+            if (!caseStmt.has_value()) {
+                return std::nullopt;
+            }
+            std::vector<ast::Statement> caseBody;
+            caseBody.push_back(std::move(caseStmt.value()));
+            statement.caseConditions.push_back(std::move(caseExpr));
+            statement.caseBodies.push_back(std::move(caseBody));
+            skipTerminators();
+        }
+        if (!match(TokenType::RightBrace)) {
+            return errorAtCurrent("Expected '}' after match all.");
+        }
+        skipTerminators();
+        return statement;
     }
 
     std::optional<ast::Statement> parseTryCatchStatement() {
@@ -848,26 +1067,53 @@ class ParserImpl {
             return nullptr;
         }
 
-        while (match(TokenType::LeftParen)) {
-            auto call = std::make_unique<ast::Expr>();
-            call->kind = ast::ExprKind::Call;
-            call->children.push_back(std::move(expr));
+        while (true) {
+            if (match(TokenType::LeftParen)) {
+                auto call = std::make_unique<ast::Expr>();
+                call->kind = ast::ExprKind::Call;
+                call->children.push_back(std::move(expr));
 
-            if (!check(TokenType::RightParen)) {
-                do {
-                    auto argument = parseExpression();
-                    if (!argument) {
-                        return nullptr;
+                if (!check(TokenType::RightParen)) {
+                    do {
+                        auto argument = parseExpression();
+                        if (!argument) {
+                            return nullptr;
+                        }
+                        call->children.push_back(std::move(argument));
+                    } while (match(TokenType::Comma));
+                }
+
+                if (!match(TokenType::RightParen)) {
+                    return errorExprAtCurrent("Expected ')' after arguments.");
+                }
+
+                expr = std::move(call);
+                continue;
+            }
+            if (match(TokenType::At)) {
+                if (!(check(TokenType::Number) || check(TokenType::Identifier))) {
+                    return errorExprAtCurrent("Expected number or 'now' after '@'.");
+                }
+                auto indexExpr = std::make_unique<ast::Expr>();
+                if (match(TokenType::Number)) {
+                    indexExpr->kind = ast::ExprKind::NumberLiteral;
+                    indexExpr->value = previous().lexeme;
+                } else {
+                    if (peek().lexeme != "now") {
+                        return errorExprAtCurrent("Expected 'now' after '@' identifier access.");
                     }
-                    call->children.push_back(std::move(argument));
-                } while (match(TokenType::Comma));
+                    match(TokenType::Identifier);
+                    indexExpr->kind = ast::ExprKind::Identifier;
+                    indexExpr->value = "now";
+                }
+                auto timelineAccess = std::make_unique<ast::Expr>();
+                timelineAccess->kind = ast::ExprKind::TimelineAccess;
+                timelineAccess->children.push_back(std::move(expr));
+                timelineAccess->children.push_back(std::move(indexExpr));
+                expr = std::move(timelineAccess);
+                continue;
             }
-
-            if (!match(TokenType::RightParen)) {
-                return errorExprAtCurrent("Expected ')' after arguments.");
-            }
-
-            expr = std::move(call);
+            break;
         }
 
         return expr;
@@ -974,7 +1220,9 @@ class ParserImpl {
                 checkKeyword("if") || checkKeyword("else") || checkKeyword("while") || checkKeyword("for") || checkKeyword("when") ||
                 checkKeyword("loop") || checkKeyword("repeat") || checkKeyword("set") || checkKeyword("ask") || checkKeyword("try") ||
                 checkKeyword("catch") || checkKeyword("switch") || checkKeyword("match") || checkKeyword("case") || checkKeyword("default") ||
-                checkKeyword("namespace") || checkKeyword("public") || checkKeyword("private")) {
+                checkKeyword("namespace") || checkKeyword("public") || checkKeyword("private") || checkKeyword("timeline") ||
+                checkKeyword("because") || checkKeyword("from") || checkKeyword("whatif") || checkKeyword("compare") ||
+                checkKeyword("commit_if") || checkKeyword("mood") || checkKeyword("diagnostics") || checkKeyword("negotiate")) {
                 return;
             }
 

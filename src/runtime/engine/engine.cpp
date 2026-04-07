@@ -53,6 +53,27 @@ Value RuntimeEngine::evaluateExpression(const ast::Expr& expr) {
             }
             return Value::makeArray(array);
         }
+        case ast::ExprKind::TimelineAccess: {
+            if (expr.children.size() < 2 || expr.children[0]->kind != ast::ExprKind::Identifier) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Timeline access expects identifier@index.");
+            }
+            const std::string& timelineName = expr.children[0]->value;
+            const auto it = timelineHistory_.find(timelineName);
+            if (it == timelineHistory_.end() || it->second.empty()) {
+                throw RuntimeError(RuntimeErrorCode::NameError, "Unknown timeline variable: " + timelineName);
+            }
+            if (expr.children[1]->kind == ast::ExprKind::Identifier && expr.children[1]->value == "now") {
+                return it->second.back();
+            }
+            if (expr.children[1]->kind != ast::ExprKind::NumberLiteral) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Timeline index must be numeric or 'now'.");
+            }
+            const std::size_t idx = static_cast<std::size_t>(std::stoll(expr.children[1]->value));
+            if (idx >= it->second.size()) {
+                throw RuntimeError(RuntimeErrorCode::RuntimeFailure, "Timeline index out of range.");
+            }
+            return it->second[idx];
+        }
     }
 
     throw RuntimeError(RuntimeErrorCode::RuntimeFailure, "Unknown expression kind.");
@@ -78,12 +99,25 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             current_->define(statement.name, evaluateExpression(*statement.expression));
             return;
         }
+        case ast::StmtKind::Timeline: {
+            if (!statement.expression) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Timeline declaration missing expression.");
+            }
+            const Value initial = evaluateExpression(*statement.expression);
+            current_->define(statement.name, initial);
+            timelineHistory_[statement.name] = {initial};
+            return;
+        }
         case ast::StmtKind::Assignment: {
             if (!statement.expression) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Assignment missing expression.");
             }
             const Value value = evaluateExpression(*statement.expression);
             current_->assign(statement.name, value);
+            const auto history = timelineHistory_.find(statement.name);
+            if (history != timelineHistory_.end()) {
+                history->second.push_back(value);
+            }
             return;
         }
         case ast::StmtKind::Expression: {
@@ -159,6 +193,10 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             }
             const Value value = evaluateExpression(*statement.expression);
             current_->assign(statement.name, value);
+            const auto history = timelineHistory_.find(statement.name);
+            if (history != timelineHistory_.end()) {
+                history->second.push_back(value);
+            }
             return;
         }
         case ast::StmtKind::Ask: {
@@ -234,6 +272,42 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             executeBlock(statement.body, std::make_shared<Environment>(current_));
             return;
         }
+        case ast::StmtKind::Because: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Because statement missing guarded expression.");
+            }
+            if (isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } else if (!statement.elseBody.empty()) {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::WhatIf: {
+            if (statement.condition && isTruthy(evaluateExpression(*statement.condition))) {
+                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            } else {
+                executeBlock(statement.elseBody, std::make_shared<Environment>(current_));
+            }
+            return;
+        }
+        case ast::StmtKind::Mood:
+            return;
+        case ast::StmtKind::MatchAll: {
+            if (!statement.condition) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "Match all statement missing condition.");
+            }
+            const Value key = evaluateExpression(*statement.condition);
+            for (std::size_t i = 0; i < statement.caseConditions.size(); ++i) {
+                const Value caseValue = evaluateExpression(*statement.caseConditions[i]);
+                if (valuesEqual(key, caseValue) && !statement.caseBodies[i].empty()) {
+                    executeStatement(statement.caseBodies[i][0]);
+                }
+            }
+            return;
+        }
+        case ast::StmtKind::Negotiate:
+            return;
     }
 }
 

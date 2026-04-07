@@ -72,3 +72,29 @@ number         = NUMBER ;
 ```
 
 > Note: this grammar reflects currently implemented parser behavior and will evolve.
+
+
+## Experimental grammar extensions (opt-in, not part of current parser)
+
+When the experimental feature set is enabled, the following productions are proposed:
+
+```ebnf
+experimentalDecl = timelineDecl | moodDecl | negotiateStmt ;
+experimentalStmt = becauseStmt | whatifStmt | matchAllStmt ;
+
+timelineDecl   = "timeline" ident "=" expression terminator ;
+timelineRead   = ident "@" (number | "now") ;
+
+becauseStmt    = "because" expression "from" string block [ "else" block ] ;
+
+whatifStmt     = "whatif" expression block "compare" block "commit_if" "(" expression ")" ;
+
+moodDecl       = "mood" "diagnostics" "=" string terminator ;
+
+matchAllStmt   = "match" "all" expression "{" { "case" expression "=>" statement } "}" ;
+
+negotiateStmt  = "negotiate" ident "{" { negotiateClause } "}" ;
+negotiateClause = ("require" | "prefer" | "fallback") string terminator ;
+```
+
+These rules are documentation targets for implementation work and are excluded from the current language contract freeze.
