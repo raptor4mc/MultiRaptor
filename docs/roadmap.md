@@ -13,6 +13,11 @@
 - Improve module loading (deterministic cache behavior + explicit cycle detection).
 - Improve stdlib API consistency and docs examples.
 
+
+## Experimental track (language innovation)
+- Prototype novel syntax and semantics in `docs/novel_language_experiments.md` (timeline variables, causality guards, counterfactual blocks, ambiguity-preserving pattern matching, and compile-time negotiation).
+- Keep innovation features gated behind explicit experimental flags until deterministic runtime semantics and migration guarantees are proven.
+
 ## Mid-term
 - Bytecode or IR layer for optimized execution.
 - Real package registry + lock file format (checksums + reproducible installs).

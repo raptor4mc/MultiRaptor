@@ -13,3 +13,8 @@ Shows `fn`, parameter passing, and call expressions.
 1. Read examples in this folder.
 2. Parse-check them with `./tools/scripts/run_tests.sh` (includes example tests).
 3. Run with `./tools/scripts/mp.sh run <example.mp>`.
+
+
+## Experimental concept walkthrough
+See `docs/novel_language_experiments.md` for non-stable examples that intentionally explore new language territory.
+These snippets are design references and are not expected to pass the current parser test suite.

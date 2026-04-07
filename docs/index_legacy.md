@@ -7,6 +7,7 @@ Core docs:
 - `docs/stdlib.md` — standard library reference
 - `docs/error_guide.md` — parse/runtime error guide
 - `docs/roadmap.md` — roadmap
+- `docs/novel_language_experiments.md` — experimental never-before-seen language concepts
 - `docs/game_api.md` — game/graphics API preview
 - `docs/repl.md` — REPL guide
 
