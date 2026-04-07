@@ -70,3 +70,44 @@ use "utils.mp"
 Statements can end with:
 - newline
 - semicolon (`;`)
+
+
+## Experimental syntax (opt-in)
+The following constructs are proposed and tracked in `docs/novel_language_experiments.md`.
+They are **not** part of the stable grammar contract unless an explicit experimental flag enables them.
+
+```mp
+# 1) Time-travel variable snapshots
+timeline hp = 100
+print hp@0
+
+# 2) Causality guard
+because score from "trusted.sensor.v2" {
+  grant_reward(score)
+} else {
+  audit("untrusted")
+}
+
+# 3) Counterfactual branch
+whatif base {
+  spawn_boss("Hydra")
+} compare {
+  print diff(world)
+} commit_if (diff(world).fun_score > 0.8)
+
+# 4) Diagnostics tone preference
+mood diagnostics = "mentor"
+
+# 5) Ambiguity-preserving pattern matching
+match all parse("1/2/03") {
+  case date_us(d)  => print(d)
+  case date_eu(d)  => print(d)
+}
+
+# 6) Compile-time capability negotiation
+negotiate runtime {
+  require "deterministic_rng"
+  prefer "simd128"
+  fallback "portable_scalar"
+}
+```

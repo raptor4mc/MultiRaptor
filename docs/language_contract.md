@@ -25,3 +25,8 @@ If a change is intentional:
 ```bash
 python3 tools/scripts/check_language_contract.py --update
 ```
+
+
+## Experimental exclusions
+
+Any syntax documented as experimental (for example `docs/novel_language_experiments.md` and the experimental appendix in `docs/grammar.md`) is excluded from contract freeze checks until promoted to stable.
