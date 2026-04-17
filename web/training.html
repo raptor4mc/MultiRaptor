@@ -3,77 +3,249 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MagPhos Training - How Code Works</title>
+  <title>MagPhos Academy - Full Training + Hard Mode</title>
   <link rel="stylesheet" href="playground.css" />
   <style>
-    .training-wrap {
-      max-width: 980px;
-      margin: 1.2rem auto;
-      padding: 0 1rem 2rem;
-      width: 100%;
+    .academy-shell {
+      width: min(1200px, 96vw);
+      margin: 1rem auto 1.5rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0.9rem;
+      min-height: calc(100vh - 140px);
     }
 
-    .training-card {
+    .academy-side,
+    .academy-main,
+    .academy-card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 1rem;
-      margin-bottom: 0.9rem;
     }
 
-    .training-card h2 {
-      font-size: 1rem;
-      margin-bottom: 0.45rem;
+    .academy-side {
+      padding: 0.8rem;
+      position: sticky;
+      top: 0.8rem;
+      height: fit-content;
+    }
+
+    .academy-main {
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .academy-card {
+      padding: 0.9rem;
+    }
+
+    .academy-card h2,
+    .academy-card h3 {
+      margin: 0 0 0.5rem;
       color: #dbe7ff;
     }
 
-    .training-card p,
-    .training-card li {
+    .academy-card p,
+    .academy-card li,
+    .academy-side li {
       color: #cdd6df;
       line-height: 1.45;
-      margin-top: 0.35rem;
     }
 
-    .step-list {
-      counter-reset: lesson;
+    .academy-side ul {
+      list-style: none;
       margin: 0;
       padding: 0;
-      list-style: none;
     }
 
-    .step-list li {
-      margin: 0.65rem 0;
-      padding: 0.7rem 0.8rem;
-      border-left: 3px solid #0e639c;
-      background: #1f2227;
-      border-radius: 4px;
+    .academy-side li {
+      margin: 0.35rem 0;
     }
 
-    .code-box {
+    .academy-side a {
+      color: #9cd6ff;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .academy-side a:hover {
+      text-decoration: underline;
+    }
+
+    .academy-side .progress-pill {
+      margin-top: 0.7rem;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #2f4858;
+      border-radius: 999px;
+      background: #13202a;
+      color: #a5d8ff;
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    .lesson-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: 0.7rem;
+    }
+
+    .lesson {
+      border: 1px solid var(--line-soft);
+      border-radius: 5px;
+      background: #20232a;
+      padding: 0.65rem;
+    }
+
+    .lesson h4 {
+      margin: 0 0 0.35rem;
+      color: #d2e8ff;
+      font-size: 0.95rem;
+    }
+
+    .code-box,
+    textarea,
+    pre,
+    select,
+    input {
+      font-family: "Consolas", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .code-box,
+    pre {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 4px;
-      padding: 0.8rem;
-      font-family: "Consolas", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
+      padding: 0.65rem;
+      color: #e2e8f0;
       white-space: pre-wrap;
       overflow-x: auto;
-      color: #dfdfdf;
     }
 
-    .row {
+    .lab-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
+      gap: 0.75rem;
     }
 
-    .back-row {
+    .control-row {
       display: flex;
-      justify-content: flex-end;
-      margin-top: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.45rem 0;
     }
 
-    @media (max-width: 840px) {
-      .row {
+    .academy-btn {
+      border: 1px solid #0a5e9a;
+      border-radius: 3px;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.84rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .academy-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .academy-btn.secondary {
+      background: #2b3139;
+      border-color: #3f4b57;
+      color: #d2d8de;
+    }
+
+    .academy-btn.secondary:hover {
+      background: #35404a;
+    }
+
+    .status-ok {
+      color: #7ee787;
+      font-weight: 600;
+    }
+
+    .status-warn {
+      color: #ffd479;
+      font-weight: 600;
+    }
+
+    .status-bad {
+      color: #ff9b9b;
+      font-weight: 600;
+    }
+
+    .hard-mode-box {
+      border: 1px solid #5a2d2d;
+      background: #231516;
+      border-radius: 6px;
+      padding: 0.75rem;
+    }
+
+    .top-note {
+      border: 1px solid #2f4858;
+      border-radius: 5px;
+      background: #152432;
+      padding: 0.65rem;
+      margin-bottom: 0.7rem;
+      color: #c7d7e8;
+    }
+
+    .meter {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #23272f;
+      border: 1px solid var(--line-soft);
+      overflow: hidden;
+      margin-top: 0.4rem;
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #007acc, #3ad29f);
+      transition: width 200ms ease;
+    }
+
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--card);
+      color: #dce3ea;
+      padding: 0.55rem;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.4;
+      tab-size: 2;
+    }
+
+    .split-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(200px, 1fr));
+      gap: 0.65rem;
+    }
+
+    @media (max-width: 1080px) {
+      .academy-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .academy-side {
+        position: static;
+      }
+
+      .lesson-grid,
+      .lab-grid,
+      .split-row {
         grid-template-columns: 1fr;
       }
     }
@@ -82,77 +254,485 @@
 <body>
   <header class="topbar">
     <div class="brand-wrap">
-      <h1>MAGPHOS TRAINING</h1>
-      <p class="muted">How MagPhos code moves from source to output</p>
+      <h1>MAGPHOS ACADEMY</h1>
+      <p class="muted">Train until you can write MagPhos with confidence.</p>
     </div>
-    <div class="command-center">Learning Mode: Code Flow + Predictability</div>
+    <div class="command-center">Full Language Training + Hard Mode Error Fixing</div>
     <div class="actions">
       <a class="ui-link-btn" href="playground.html">Back to Playground</a>
     </div>
   </header>
 
-  <main class="training-wrap">
-    <section class="training-card">
-      <h2>1) Write code in <code>.mp</code></h2>
-      <p>
-        MagPhos programs use readable syntax with explicit blocks and control statements like
-        <code>if</code>, <code>while</code>, <code>for</code>, <code>match</code>, and functions with <code>fn</code>.
-      </p>
-      <div class="code-box">fn greet(name) {
-  print "Hi " + name
-}
-
-var player = "Raptor"
-greet(player)</div>
-    </section>
-
-    <section class="training-card">
-      <h2>2) Compiler pipeline checks your program</h2>
-      <ol class="step-list">
-        <li><strong>Lexer</strong> reads characters and makes tokens.</li>
-        <li><strong>Parser</strong> builds syntax structures from tokens.</li>
-        <li><strong>Semantic analysis</strong> validates rules like declared variables and valid return usage.</li>
-        <li><strong>Runtime/interpreter</strong> executes valid code and returns output.</li>
-      </ol>
-    </section>
-
-    <section class="training-card row">
-      <div>
-        <h2>3) Predictability rules (important)</h2>
-        <ul>
-          <li>Variables must be declared before assignment.</li>
-          <li><code>return</code> is only valid inside functions.</li>
-          <li>Same input and environment should produce deterministic behavior.</li>
-        </ul>
-      </div>
-      <div>
-        <h2>4) Why this helps game scripting</h2>
-        <ul>
-          <li>Fewer hidden side effects during gameplay logic.</li>
-          <li>Easier debugging for quests, AI behavior, and events.</li>
-          <li>Consistent behavior between runs (great for testing and replays).</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="training-card">
-      <h2>5) Training checklist</h2>
+  <main class="academy-shell">
+    <aside class="academy-side">
+      <h2>Curriculum</h2>
       <ul>
-        <li>Create a variable with <code>var</code> and update it safely.</li>
-        <li>Write one function with parameters and a <code>return</code>.</li>
-        <li>Add one loop and one conditional branch.</li>
-        <li>Run and confirm output in the Playground.</li>
+        <li><a href="#full-map">1) Full Language Map</a></li>
+        <li><a href="#how-code-runs">2) How Code Runs</a></li>
+        <li><a href="#self-trainer">3) Self Trainer</a></li>
+        <li><a href="#hard-mode">4) Hard Mode Debugging</a></li>
+        <li><a href="#mastery">5) Mastery Checklist</a></li>
       </ul>
-      <div class="back-row">
-        <a class="ui-link-btn" href="playground.html">Try this in Web Studio</a>
-      </div>
+      <div class="progress-pill" id="globalProgress">Progress: 0/0 completed</div>
+      <div class="meter"><span id="progressBar"></span></div>
+    </aside>
+
+    <section class="academy-main">
+      <section class="academy-card" id="full-map">
+        <h2>1) Full Language Map (Core + Extended)</h2>
+        <p class="top-note">
+          This training covers the core MagPhos building blocks: declarations, functions, control flow, modules,
+          expressions, safety rules, and debugging workflows. Use this as your complete learning map.
+        </p>
+        <div class="lesson-grid">
+          <article class="lesson">
+            <h4>Declarations & Assignment</h4>
+            <p>Use <code>var</code> and <code>const</code>. Assignment updates existing names.</p>
+            <pre>var hp = 100
+const maxHp = 100
+hp = hp - 10</pre>
+          </article>
+          <article class="lesson">
+            <h4>Functions</h4>
+            <p>Use <code>fn name(args) { ... }</code>. Return values with <code>return</code>.</p>
+            <pre>fn heal(current, amount) {
+  return current + amount
+}</pre>
+          </article>
+          <article class="lesson">
+            <h4>Conditionals</h4>
+            <p>Branch with <code>if</code>/<code>else</code>, and <code>when</code> for conditional blocks.</p>
+            <pre>if hp <= 0 {
+  print "game over"
+} else {
+  print "fight"
+}</pre>
+          </article>
+          <article class="lesson">
+            <h4>Loops</h4>
+            <p>Use <code>while</code>, <code>for</code>, <code>loop</code>, <code>repeat while</code>.</p>
+            <pre>for (var i = 0; i &lt; 3; i = i + 1) {
+  print i
+}</pre>
+          </article>
+          <article class="lesson">
+            <h4>Switch/Match</h4>
+            <p>Choose by value with <code>switch</code> or <code>match</code> and <code>case</code>.</p>
+            <pre>switch state {
+  case "idle" { print "wait" }
+  default { print "run" }
+}</pre>
+          </article>
+          <article class="lesson">
+            <h4>Try/Catch</h4>
+            <p>Guard risky logic with <code>try { ... } catch { ... }</code>.</p>
+            <pre>try {
+  print dangerous()
+} catch {
+  print "recovered"
+}</pre>
+          </article>
+          <article class="lesson">
+            <h4>Modules</h4>
+            <p>Import module namespaces or use file-based module scripts.</p>
+            <pre>import game.engine
+use "combat_utils.mp"</pre>
+          </article>
+          <article class="lesson">
+            <h4>Ask/Set + IO style</h4>
+            <p><code>ask</code> writes input into existing vars. <code>set</code> updates existing vars.</p>
+            <pre>var name = ""
+ask "Name?" -&gt; name
+set name = name + "!"</pre>
+          </article>
+          <article class="lesson">
+            <h4>Expressions & Literals</h4>
+            <p>Numbers, strings, booleans, null, array literals, arithmetic and logical operators.</p>
+            <pre>var ok = (score &gt;= 10) and not failed
+var loot = ["coin", "potion", "key"]</pre>
+          </article>
+          <article class="lesson">
+            <h4>Namespaces + visibility</h4>
+            <p>Use <code>namespace</code> blocks and visibility tags like <code>public</code>/<code>private</code>.</p>
+            <pre>public fn boot() {
+  print "ready"
+}</pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="academy-card" id="how-code-runs">
+        <h2>2) How your code runs</h2>
+        <div class="split-row">
+          <article class="lesson">
+            <h4>Lexer phase</h4>
+            <p>Converts source text into tokens.</p>
+          </article>
+          <article class="lesson">
+            <h4>Parser phase</h4>
+            <p>Builds structured statements and expressions.</p>
+          </article>
+          <article class="lesson">
+            <h4>Semantic phase</h4>
+            <p>Rejects undefined names, bad returns, and duplicate declarations.</p>
+          </article>
+          <article class="lesson">
+            <h4>Runtime phase</h4>
+            <p>Executes valid code and surfaces structured runtime errors.</p>
+          </article>
+          <article class="lesson">
+            <h4>Predictability contract</h4>
+            <p>Same source + environment should produce deterministic behavior.</p>
+          </article>
+          <article class="lesson">
+            <h4>Why it matters for games</h4>
+            <p>Reliable simulation behavior and easier debugging of gameplay state.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="academy-card" id="self-trainer">
+        <h2>3) Self Trainer (Practice until perfect)</h2>
+        <p>Choose a drill, write/fix code, and run the trainer checker. Repeat until every drill passes.</p>
+        <div class="lab-grid">
+          <div>
+            <label for="drillSelect">Drill</label>
+            <select id="drillSelect"></select>
+            <div class="control-row">
+              <button class="academy-btn secondary" id="loadStarterBtn">Load Starter</button>
+              <button class="academy-btn" id="checkDrillBtn">Check Drill</button>
+              <button class="academy-btn secondary" id="nextDrillBtn">Next Drill</button>
+            </div>
+            <div id="drillPrompt" class="code-box"></div>
+            <textarea id="drillCode"></textarea>
+          </div>
+          <div>
+            <h3>Trainer Output</h3>
+            <pre id="drillOutput">Pick a drill and run Check Drill.</pre>
+            <h3>Hints</h3>
+            <pre id="drillHints">Hints will appear here.</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="academy-card hard-mode-box" id="hard-mode">
+        <h2>4) Hard Mode: Fix Errors to Unlock Next</h2>
+        <p>
+          You get broken code snippets. Fix the bug, run check, and unlock the next level.
+          Keep going until all hard mode levels are cleared.
+        </p>
+        <div class="lab-grid">
+          <div>
+            <div class="control-row">
+              <button class="academy-btn secondary" id="loadBugBtn">Load Current Bug</button>
+              <button class="academy-btn" id="checkBugBtn">Check Fix</button>
+              <button class="academy-btn secondary" id="resetHardBtn">Reset Hard Mode</button>
+            </div>
+            <div id="bugTitle" class="code-box"></div>
+            <textarea id="bugCode"></textarea>
+          </div>
+          <div>
+            <h3>Hard Mode Status</h3>
+            <pre id="bugOutput">Load Current Bug to begin.</pre>
+            <h3>Expected Concept</h3>
+            <pre id="bugConcept">Concept notes appear here.</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="academy-card" id="mastery">
+        <h2>5) Mastery Checklist</h2>
+        <ul>
+          <li>Pass all regular drills (syntax + semantics + structure).</li>
+          <li>Pass all hard mode bug fixes.</li>
+          <li>Create one small game loop (input, state updates, win/lose branch, output).</li>
+          <li>Refactor it into functions and modules.</li>
+          <li>Repeat until you can code without hints.</li>
+        </ul>
+        <div class="top-note">
+          When your progress bar reaches 100%, open the Playground and build your own mini game challenge from scratch.
+        </div>
+      </section>
     </section>
   </main>
 
   <footer class="status-bar">
-    <span>MagPhos Training</span>
-    <span>Tutorial</span>
-    <span>v1</span>
+    <span>MagPhos Academy</span>
+    <span>Training + Hard Mode</span>
+    <span id="footerProgress">0%</span>
   </footer>
+
+  <script>
+    const DRILLS = [
+      {
+        name: "1. Variable basics",
+        prompt: "Create var score = 0 and then update score = score + 5.",
+        starter: "# TODO: declare and update score\n",
+        hints: "Need both declaration and update. Use var first, then assignment.",
+        check: (code) => /\bvar\s+score\s*=\s*0\b/.test(code) && /\bscore\s*=\s*score\s*\+\s*5\b/.test(code)
+      },
+      {
+        name: "2. Function + return",
+        prompt: "Create fn add(a, b) returning a + b, then call it into result.",
+        starter: "# TODO\n",
+        hints: "Use fn add(a, b) { return a + b } and result = add(2, 3).",
+        check: (code) => /\bfn\s+add\s*\(\s*a\s*,\s*b\s*\)/.test(code) && /\breturn\s+a\s*\+\s*b\b/.test(code) && /\bresult\s*=\s*add\s*\(/.test(code)
+      },
+      {
+        name: "3. If/else branch",
+        prompt: "Write if hp <= 0 { print \"dead\" } else { print \"alive\" }.",
+        starter: "var hp = 5\n# TODO\n",
+        hints: "Need if condition, else block, and both print statements.",
+        check: (code) => /\bif\s+hp\s*<=\s*0\s*\{/.test(code) && /\belse\s*\{/.test(code) && /print\s+"dead"/.test(code) && /print\s+"alive"/.test(code)
+      },
+      {
+        name: "4. For loop",
+        prompt: "Write a for loop printing i from 0 to 2.",
+        starter: "# TODO\n",
+        hints: "Use for (var i = 0; i < 3; i = i + 1) { print i }.",
+        check: (code) => /\bfor\s*\(\s*var\s+i\s*=\s*0\s*;\s*i\s*<\s*3\s*;\s*i\s*=\s*i\s*\+\s*1\s*\)\s*\{/.test(code) && /\bprint\s+i\b/.test(code)
+      },
+      {
+        name: "5. While loop",
+        prompt: "Start with var hp = 3 and while hp > 0 { hp = hp - 1 }.",
+        starter: "# TODO\n",
+        hints: "Need declaration, while condition, and decrement assignment.",
+        check: (code) => /\bvar\s+hp\s*=\s*3\b/.test(code) && /\bwhile\s+hp\s*>\s*0\s*\{/.test(code) && /\bhp\s*=\s*hp\s*-\s*1\b/.test(code)
+      },
+      {
+        name: "6. Module usage",
+        prompt: "Import game.engine and use \"combat_utils.mp\".",
+        starter: "# TODO\n",
+        hints: "Two lines: import ... and use \"...\".",
+        check: (code) => /\bimport\s+game\.engine\b/.test(code) && /\buse\s+"combat_utils\.mp"\b/.test(code)
+      },
+      {
+        name: "7. Ask + set",
+        prompt: "Declare name, ask for it, then set name = name + \"!\".",
+        starter: "# TODO\n",
+        hints: "Use var name = \"\" before ask and set.",
+        check: (code) => /\bvar\s+name\s*=\s*""\b/.test(code) && /\bask\s+".*"\s*->\s*name\b/.test(code) && /\bset\s+name\s*=\s*name\s*\+\s*"!"\b/.test(code)
+      },
+      {
+        name: "8. Switch/default",
+        prompt: "Write switch state with one case \"idle\" and default.",
+        starter: "var state = \"idle\"\n# TODO\n",
+        hints: "Need switch block with case and default blocks.",
+        check: (code) => /\bswitch\s+state\s*\{/.test(code) && /\bcase\s+"idle"\s*\{/.test(code) && /\bdefault\s*\{/.test(code)
+      },
+      {
+        name: "9. Match/default",
+        prompt: "Write match mood with case \"happy\" and default.",
+        starter: "var mood = \"happy\"\n# TODO\n",
+        hints: "Use match <expr> with case and default blocks.",
+        check: (code) => /\bmatch\s+mood\s*\{/.test(code) && /\bcase\s+"happy"\s*\{/.test(code) && /\bdefault\s*\{/.test(code)
+      },
+      {
+        name: "10. Try/catch",
+        prompt: "Write try { print risky() } catch { print \"safe\" }.",
+        starter: "# TODO\n",
+        hints: "Need both try block and catch block.",
+        check: (code) => /\btry\s*\{/.test(code) && /\bcatch\s*\{/.test(code) && /print\s+"safe"/.test(code)
+      }
+    ];
+
+    const HARD_LEVELS = [
+      {
+        title: "Hard 1: Missing declaration",
+        concept: "Assignment should update existing variable. Declare first.",
+        broken: "score = 10\nprint score",
+        hint: "Add a variable declaration before assignment.",
+        check: (code) => /\bvar\s+score\s*=/.test(code) && /\bprint\s+score\b/.test(code)
+      },
+      {
+        title: "Hard 2: Return outside function",
+        concept: "return is valid only inside fn blocks.",
+        broken: "return 42",
+        hint: "Wrap the return in a function and call it.",
+        check: (code) => /\bfn\s+\w+\s*\(/.test(code) && /\breturn\s+42\b/.test(code)
+      },
+      {
+        title: "Hard 3: Broken loop update",
+        concept: "Loop variable should update correctly.",
+        broken: "for (var i = 0; i < 5; i + 1) {\n  print i\n}",
+        hint: "Use i = i + 1 in increment section.",
+        check: (code) => /\bfor\s*\(.*i\s*=\s*i\s*\+\s*1\s*\)/s.test(code)
+      },
+      {
+        title: "Hard 4: Wrong ask target",
+        concept: "ask writes to an existing identifier.",
+        broken: "ask \"Name?\" -> playerName",
+        hint: "Declare playerName before ask.",
+        check: (code) => /\bvar\s+playerName\b/.test(code) && /\bask\s+".*"\s*->\s*playerName\b/.test(code)
+      },
+      {
+        title: "Hard 5: Switch missing default",
+        concept: "Include fallback logic with default.",
+        broken: "switch mode {\n  case \"easy\" { print \"ok\" }\n}",
+        hint: "Add a default branch.",
+        check: (code) => /\bswitch\s+\w+\s*\{/.test(code) && /\bdefault\s*\{/.test(code)
+      },
+      {
+        title: "Hard 6: Final boss - mixed repairs",
+        concept: "Fix declaration, control flow, and function return together.",
+        broken: "hp = 10\nfn damage(x) {\n  x - 2\n}\nif hp > 0\n  print damage(hp)",
+        hint: "Declare hp, return in damage, and add braces for if block.",
+        check: (code) => /\bvar\s+hp\s*=\s*10\b/.test(code)
+          && /\bfn\s+damage\s*\(\s*x\s*\)\s*\{[\s\S]*\breturn\s+x\s*-\s*2\b/.test(code)
+          && /\bif\s+hp\s*>\s*0\s*\{[\s\S]*print\s+damage\s*\(\s*hp\s*\)/.test(code)
+      }
+    ];
+
+    const state = {
+      drillIndex: 0,
+      hardIndex: Number(localStorage.getItem("magphos_hard_index") || 0),
+      passedDrills: JSON.parse(localStorage.getItem("magphos_passed_drills") || "[]")
+    };
+
+    const drillSelect = document.getElementById("drillSelect");
+    const drillPrompt = document.getElementById("drillPrompt");
+    const drillCode = document.getElementById("drillCode");
+    const drillOutput = document.getElementById("drillOutput");
+    const drillHints = document.getElementById("drillHints");
+    const bugTitle = document.getElementById("bugTitle");
+    const bugCode = document.getElementById("bugCode");
+    const bugOutput = document.getElementById("bugOutput");
+    const bugConcept = document.getElementById("bugConcept");
+    const globalProgress = document.getElementById("globalProgress");
+    const progressBar = document.getElementById("progressBar");
+    const footerProgress = document.getElementById("footerProgress");
+
+    function saveState() {
+      localStorage.setItem("magphos_hard_index", String(state.hardIndex));
+      localStorage.setItem("magphos_passed_drills", JSON.stringify(state.passedDrills));
+    }
+
+    function ensurePassedDrill(index) {
+      if (!state.passedDrills.includes(index)) {
+        state.passedDrills.push(index);
+        state.passedDrills.sort((a, b) => a - b);
+      }
+    }
+
+    function renderProgress() {
+      const total = DRILLS.length + HARD_LEVELS.length;
+      const done = state.passedDrills.length + Math.min(state.hardIndex, HARD_LEVELS.length);
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+      globalProgress.textContent = `Progress: ${done}/${total} completed`;
+      progressBar.style.width = `${percent}%`;
+      footerProgress.textContent = `${percent}%`;
+    }
+
+    function renderDrillOptions() {
+      drillSelect.innerHTML = "";
+      DRILLS.forEach((drill, i) => {
+        const opt = document.createElement("option");
+        const passed = state.passedDrills.includes(i) ? " ✅" : "";
+        opt.value = String(i);
+        opt.textContent = `${drill.name}${passed}`;
+        drillSelect.appendChild(opt);
+      });
+      drillSelect.value = String(state.drillIndex);
+    }
+
+    function loadDrill(index, loadStarter = true) {
+      state.drillIndex = index;
+      const drill = DRILLS[index];
+      drillPrompt.textContent = `Task: ${drill.prompt}`;
+      drillHints.textContent = drill.hints;
+      if (loadStarter) {
+        drillCode.value = drill.starter;
+      }
+      drillOutput.textContent = `Loaded ${drill.name}.`;
+      renderDrillOptions();
+      renderProgress();
+      saveState();
+    }
+
+    function checkDrill() {
+      const drill = DRILLS[state.drillIndex];
+      const code = drillCode.value;
+      const passed = drill.check(code);
+      if (passed) {
+        ensurePassedDrill(state.drillIndex);
+        drillOutput.innerHTML = `<span class="status-ok">PASS</span> - Great work. Drill solved.`;
+      } else {
+        drillOutput.innerHTML = `<span class="status-bad">NOT YET</span> - Keep refining this drill.`;
+      }
+      renderDrillOptions();
+      renderProgress();
+      saveState();
+    }
+
+    function nextDrill() {
+      const next = (state.drillIndex + 1) % DRILLS.length;
+      loadDrill(next, true);
+    }
+
+    function clampHardIndex() {
+      if (state.hardIndex < 0) state.hardIndex = 0;
+      if (state.hardIndex > HARD_LEVELS.length) state.hardIndex = HARD_LEVELS.length;
+    }
+
+    function loadHardLevel() {
+      clampHardIndex();
+      if (state.hardIndex >= HARD_LEVELS.length) {
+        bugTitle.textContent = "All hard mode levels cleared!";
+        bugCode.value = "# You beat hard mode. Go build your own broken snippets and fix them.";
+        bugConcept.textContent = "Mastered: declaration safety, return placement, loop correctness, ask targets, and fallbacks.";
+        bugOutput.innerHTML = `<span class="status-ok">COMPLETE</span> - You unlocked full hard mode completion.`;
+        renderProgress();
+        saveState();
+        return;
+      }
+
+      const level = HARD_LEVELS[state.hardIndex];
+      bugTitle.textContent = `${level.title} (${state.hardIndex + 1}/${HARD_LEVELS.length})`;
+      bugConcept.textContent = `${level.concept}\nHint: ${level.hint}`;
+      bugCode.value = level.broken;
+      bugOutput.textContent = "Fix the code, then press Check Fix.";
+      renderProgress();
+      saveState();
+    }
+
+    function checkHardLevel() {
+      clampHardIndex();
+      if (state.hardIndex >= HARD_LEVELS.length) {
+        bugOutput.innerHTML = `<span class="status-ok">Already complete.</span>`;
+        return;
+      }
+
+      const level = HARD_LEVELS[state.hardIndex];
+      const passed = level.check(bugCode.value);
+      if (passed) {
+        state.hardIndex += 1;
+        bugOutput.innerHTML = `<span class="status-ok">PASS</span> - Fixed! Loading next error level...`;
+        renderProgress();
+        saveState();
+        setTimeout(loadHardLevel, 350);
+      } else {
+        bugOutput.innerHTML = `<span class="status-bad">Still failing.</span> Read the concept and hint, then try again.`;
+      }
+    }
+
+    function resetHardMode() {
+      state.hardIndex = 0;
+      saveState();
+      loadHardLevel();
+    }
+
+    document.getElementById("loadStarterBtn").addEventListener("click", () => loadDrill(state.drillIndex, true));
+    document.getElementById("checkDrillBtn").addEventListener("click", checkDrill);
+    document.getElementById("nextDrillBtn").addEventListener("click", nextDrill);
+    drillSelect.addEventListener("change", (e) => loadDrill(Number(e.target.value), true));
+
+    document.getElementById("loadBugBtn").addEventListener("click", loadHardLevel);
+    document.getElementById("checkBugBtn").addEventListener("click", checkHardLevel);
+    document.getElementById("resetHardBtn").addEventListener("click", resetHardMode);
+
+    renderDrillOptions();
+    loadDrill(0, true);
+    loadHardLevel();
+  </script>
 </body>
 </html>
