@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdlib>
 #include <string>
 
 #include "compiler/ast/nodes.h"
@@ -6,6 +7,12 @@
 #include "compiler/parser/parser.h"
 
 int main() {
+#if defined(_WIN32)
+    _putenv_s("MAGPHOS_ENABLE_EXPERIMENTAL", "1");
+#else
+    setenv("MAGPHOS_ENABLE_EXPERIMENTAL", "1", 1);
+#endif
+
     const std::string source = R"(
 import math
 import game.engine

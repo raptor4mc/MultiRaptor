@@ -13,6 +13,7 @@
 #include "compiler/parser/parser.h"
 #include "runtime/engine/engine.h"
 #include "runtime/engine/errors.h"
+#include "runtime/engine/module_system.h"
 #include "compiler/semantic/analyzer.h"
 
 namespace {
@@ -440,16 +441,25 @@ int main(int argc, char** argv) {
         }
         response.ok = true;
         response.message = "ok";
+        magphos::runtime::ModuleSystem moduleSystem;
+        const std::filesystem::path sourcePath(positional[1]);
+        const std::string baseDir = positional.size() >= 3
+            ? positional[2]
+            : sourcePath.parent_path().string();
+
         for (const auto& statement : parsed.program.statements) {
             if (statement.kind != magphos::ast::StmtKind::Import && statement.kind != magphos::ast::StmtKind::Use) {
                 continue;
             }
 
             const bool isImport = statement.kind == magphos::ast::StmtKind::Import;
+            const std::string resolvedDependency = isImport
+                ? moduleSystem.resolveModulePath(statement.name, baseDir)
+                : moduleSystem.resolveUsePath(statement.name, baseDir);
             if (cmd == "--module-graph") {
-                response.moduleEdges.push_back({positional[1], statement.name, isImport ? "import" : "use"});
+                response.moduleEdges.push_back({positional[1], resolvedDependency, isImport ? "import" : "use"});
             } else {
-                response.deps.push_back(statement.name);
+                response.deps.push_back(resolvedDependency);
             }
         }
         emitResponse(response, jsonMode, errorFormat);

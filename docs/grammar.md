@@ -76,7 +76,7 @@ number         = NUMBER ;
 
 ## Experimental grammar extensions (opt-in, not part of current parser)
 
-When the experimental feature set is enabled, the following productions are proposed:
+When the experimental feature set is enabled (`MAGPHOS_ENABLE_EXPERIMENTAL=1`), the following productions are proposed:
 
 ```ebnf
 experimentalDecl = timelineDecl | moodDecl | negotiateStmt ;

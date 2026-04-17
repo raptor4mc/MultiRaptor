@@ -75,6 +75,7 @@ Statements can end with:
 ## Experimental syntax (opt-in)
 The following constructs are proposed and tracked in `docs/novel_language_experiments.md`.
 They are **not** part of the stable grammar contract unless an explicit experimental flag enables them.
+Current parser/runtime gate: `MAGPHOS_ENABLE_EXPERIMENTAL=1`.
 
 ```mp
 # 1) Time-travel variable snapshots
