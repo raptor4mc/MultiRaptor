@@ -61,5 +61,5 @@ HTML and CSS are foundational web technologies, but they are not full general-pu
 2. Ship a reliable **package manager + registry + lockfile workflow**.
 3. Improve **LSP/IDE tooling + diagnostics UX**.
 4. Build a **small but high-quality stdlib** with deterministic behavior.
-5. Target one initial domain where MagPhos can win clearly (for example: education, game scripting, or embedded local-first tooling).
-
+5. Target one initial domain where MagPhos can win clearly.
+   - **Chosen direction: game scripting** (short feedback loops, predictable runtime semantics, and creator-friendly syntax).
