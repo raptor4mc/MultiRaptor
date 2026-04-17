@@ -4,6 +4,7 @@
 #include <sstream>
 #include <optional>
 #include <utility>
+#include <cstdlib>
 
 #include "utils/string_utils.h"
 
@@ -15,7 +16,7 @@ using lexer::TokenType;
 
 class ParserImpl {
   public:
-    explicit ParserImpl(const std::vector<Token>& tokens) : tokens_(tokens) {}
+    explicit ParserImpl(const std::vector<Token>& tokens) : tokens_(tokens), experimentalEnabled_(isExperimentalEnabled()) {}
 
     ParseResult parseProgram() {
         ParseResult result;
@@ -38,6 +39,7 @@ class ParserImpl {
 
   private:
     const std::vector<Token>& tokens_;
+    bool experimentalEnabled_ = false;
     std::size_t current_ = 0;
     ParseError lastError_{1, 1, "Unknown parse error", "Check the syntax near this token."};
 
@@ -107,6 +109,23 @@ class ParserImpl {
         }
     }
 
+    static bool isExperimentalEnabled() {
+        const char* value = std::getenv("MAGPHOS_ENABLE_EXPERIMENTAL");
+        if (value == nullptr) {
+            return false;
+        }
+        const std::string flag(value);
+        return flag == "1" || flag == "true" || flag == "TRUE" || flag == "on" || flag == "ON";
+    }
+
+    std::optional<ast::Statement> experimentalFeatureDisabled(const std::string& feature) {
+        return errorAtCurrent(feature + " is experimental. Set MAGPHOS_ENABLE_EXPERIMENTAL=1 to enable it.");
+    }
+
+    std::unique_ptr<ast::Expr> experimentalExprDisabled(const std::string& feature) {
+        return errorExprAtCurrent(feature + " is experimental. Set MAGPHOS_ENABLE_EXPERIMENTAL=1 to enable it.");
+    }
+
     std::optional<ast::Statement> parseDeclaration() {
         if (matchKeyword("public") || matchKeyword("private")) {
             return parseDeclaration();
@@ -124,6 +143,9 @@ class ParserImpl {
             return parseFunctionDeclaration();
         }
         if (matchKeyword("timeline")) {
+            if (!experimentalEnabled_) {
+                return experimentalFeatureDisabled("'timeline'");
+            }
             return parseTimelineDeclaration();
         }
         return parseStatement();
@@ -230,15 +252,27 @@ class ParserImpl {
 
     std::optional<ast::Statement> parseStatement() {
         if (matchKeyword("because")) {
+            if (!experimentalEnabled_) {
+                return experimentalFeatureDisabled("'because'");
+            }
             return parseBecauseStatement();
         }
         if (matchKeyword("whatif")) {
+            if (!experimentalEnabled_) {
+                return experimentalFeatureDisabled("'whatif'");
+            }
             return parseWhatIfStatement();
         }
         if (matchKeyword("mood")) {
+            if (!experimentalEnabled_) {
+                return experimentalFeatureDisabled("'mood diagnostics'");
+            }
             return parseMoodStatement();
         }
         if (matchKeyword("negotiate")) {
+            if (!experimentalEnabled_) {
+                return experimentalFeatureDisabled("'negotiate'");
+            }
             return parseNegotiateStatement();
         }
         if (matchKeyword("if")) {
@@ -273,6 +307,9 @@ class ParserImpl {
         }
         if (matchKeyword("match")) {
             if (matchKeyword("all")) {
+                if (!experimentalEnabled_) {
+                    return experimentalFeatureDisabled("'match all'");
+                }
                 return parseMatchAllStatement();
             }
             return parseSwitchLikeStatement(ast::StmtKind::Match);
@@ -1091,6 +1128,9 @@ class ParserImpl {
                 continue;
             }
             if (match(TokenType::At)) {
+                if (!experimentalEnabled_) {
+                    return experimentalExprDisabled("Timeline access '@'");
+                }
                 if (!(check(TokenType::Number) || check(TokenType::Identifier))) {
                     return errorExprAtCurrent("Expected number or 'now' after '@'.");
                 }
