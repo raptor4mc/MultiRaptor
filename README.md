@@ -192,6 +192,7 @@ This is support mode (especially useful on Chromebook). The primary workflow rem
 - `docs/runtime_correctness_contract.md`
 - `docs/repl.md`
 - `docs/game_api.md`
+- `docs/language_positioning.md`
 - `info/rules.txt` (consistency/simplicity/predictability/safety rules)
 
 Security reporting and disclosure process: `SECURITY.md`.
