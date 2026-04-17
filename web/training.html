@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagPhos Training - How Code Works</title>
+  <link rel="stylesheet" href="playground.css" />
+  <style>
+    .training-wrap {
+      max-width: 980px;
+      margin: 1.2rem auto;
+      padding: 0 1rem 2rem;
+      width: 100%;
+    }
+
+    .training-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .training-card h2 {
+      font-size: 1rem;
+      margin-bottom: 0.45rem;
+      color: #dbe7ff;
+    }
+
+    .training-card p,
+    .training-card li {
+      color: #cdd6df;
+      line-height: 1.45;
+      margin-top: 0.35rem;
+    }
+
+    .step-list {
+      counter-reset: lesson;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .step-list li {
+      margin: 0.65rem 0;
+      padding: 0.7rem 0.8rem;
+      border-left: 3px solid #0e639c;
+      background: #1f2227;
+      border-radius: 4px;
+    }
+
+    .code-box {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.8rem;
+      font-family: "Consolas", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      color: #dfdfdf;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .back-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.75rem;
+    }
+
+    @media (max-width: 840px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <h1>MAGPHOS TRAINING</h1>
+      <p class="muted">How MagPhos code moves from source to output</p>
+    </div>
+    <div class="command-center">Learning Mode: Code Flow + Predictability</div>
+    <div class="actions">
+      <a class="ui-link-btn" href="playground.html">Back to Playground</a>
+    </div>
+  </header>
+
+  <main class="training-wrap">
+    <section class="training-card">
+      <h2>1) Write code in <code>.mp</code></h2>
+      <p>
+        MagPhos programs use readable syntax with explicit blocks and control statements like
+        <code>if</code>, <code>while</code>, <code>for</code>, <code>match</code>, and functions with <code>fn</code>.
+      </p>
+      <div class="code-box">fn greet(name) {
+  print "Hi " + name
+}
+
+var player = "Raptor"
+greet(player)</div>
+    </section>
+
+    <section class="training-card">
+      <h2>2) Compiler pipeline checks your program</h2>
+      <ol class="step-list">
+        <li><strong>Lexer</strong> reads characters and makes tokens.</li>
+        <li><strong>Parser</strong> builds syntax structures from tokens.</li>
+        <li><strong>Semantic analysis</strong> validates rules like declared variables and valid return usage.</li>
+        <li><strong>Runtime/interpreter</strong> executes valid code and returns output.</li>
+      </ol>
+    </section>
+
+    <section class="training-card row">
+      <div>
+        <h2>3) Predictability rules (important)</h2>
+        <ul>
+          <li>Variables must be declared before assignment.</li>
+          <li><code>return</code> is only valid inside functions.</li>
+          <li>Same input and environment should produce deterministic behavior.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>4) Why this helps game scripting</h2>
+        <ul>
+          <li>Fewer hidden side effects during gameplay logic.</li>
+          <li>Easier debugging for quests, AI behavior, and events.</li>
+          <li>Consistent behavior between runs (great for testing and replays).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="training-card">
+      <h2>5) Training checklist</h2>
+      <ul>
+        <li>Create a variable with <code>var</code> and update it safely.</li>
+        <li>Write one function with parameters and a <code>return</code>.</li>
+        <li>Add one loop and one conditional branch.</li>
+        <li>Run and confirm output in the Playground.</li>
+      </ul>
+      <div class="back-row">
+        <a class="ui-link-btn" href="playground.html">Try this in Web Studio</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status-bar">
+    <span>MagPhos Training</span>
+    <span>Tutorial</span>
+    <span>v1</span>
+  </footer>
+</body>
+</html>

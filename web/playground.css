@@ -334,6 +334,27 @@ button:hover,
   background: var(--accent-hover);
 }
 
+.ui-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.topbar .ui-link-btn {
+  background: var(--accent);
+  border: 1px solid #0a5e9a;
+  color: #fff;
+  border-radius: 2px;
+  padding: 0.42rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.topbar .ui-link-btn:hover {
+  background: var(--accent-hover);
+}
+
 .run-btn {
   min-width: 84px;
 }
