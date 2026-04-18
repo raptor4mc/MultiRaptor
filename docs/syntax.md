@@ -45,12 +45,15 @@ fn greet(name = "friend", ...rest) {
 - `namespace <name> { ... }`
 - `set <name> = <expr>`
 - `ask "<prompt>" -> <name>`
+- `stop` (break out of nearest loop)
+- `next` (continue nearest loop iteration)
 - comments: `# ...` and `// ...`
 
 Safety notes:
 - `name = expr` and `set name = expr` require `name` to already exist.
 - `ask "<prompt>" -> name` currently requires a string literal prompt and `name` to already exist.
 - `return` is only valid inside `fn` blocks.
+- `stop` and `next` are only valid inside loop bodies (`while`, `for`, `loop`, `repeat while`).
 - visibility markers `public`/`private` are accepted before declarations.
 
 ## Modules

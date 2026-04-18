@@ -48,6 +48,8 @@ enum class StmtKind {
     Mood,
     MatchAll,
     Negotiate,
+    Stop,
+    Next,
 };
 
 struct Expr {

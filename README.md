@@ -386,10 +386,9 @@ Supported top-level declarations and statements (today):
 - declarations: `fn`, `var`, `const`, `namespace`, and visibility markers (`public` / `private`) before declarations
 - control flow: `if` / `else`, `while`, `for (...)`, `when`, `loop`, `repeat while`
 - branching/error handling: `switch`, `match`, `try` / `catch`
+- loop control: `stop`, `next`
 - statements: assignment (`name = expr`), `set`, `ask`, `print`, `return`, block statements (`{ ... }`)
 - expression statements (e.g. `greet(name)`)
 - expression forms: numbers, strings, booleans, `null`, identifiers, unary (`-`, `not`, `!`), arithmetic, comparisons, equality, logical (`and` / `or`), grouping, calls, arrays
 - comments: `# ...` and `// ...`
 - terminators: newline or `;`
-
-Not implemented yet in parser/lexer (stable path): `stop` and `next`.

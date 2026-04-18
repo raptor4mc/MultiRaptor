@@ -25,6 +25,8 @@ statement      = ifStmt
                | forStmt
                | askStmt
                | setStmt
+               | stopStmt
+               | nextStmt
                | printStmt
                | returnStmt
                | assignmentOrExpr
@@ -45,6 +47,8 @@ assignmentOrExprNoTerminator = ident "=" expression | expression ;
 
 askStmt        = "ask" string "->" ident terminator ;
 setStmt        = "set" ident "=" expression terminator ;
+stopStmt       = "stop" terminator ;
+nextStmt       = "next" terminator ;
 printStmt      = "print" expression terminator ;
 returnStmt     = "return" expression terminator ;
 assignmentOrExpr = ident "=" expression terminator
