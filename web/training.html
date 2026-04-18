@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagPhos Academy - Assignment Path</title>
+  <link rel="stylesheet" href="playground.css" />
+  <link rel="stylesheet" href="training/common.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>MAGPHOS ACADEMY ASSIGNMENT PATH</h1>
+      <p>Deep training with one assignment per page, editor, terminal feedback, and progression unlocks.</p>
+    </div>
+    <div>
+      <a class="link-btn" href="playground.html">Back to Playground</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>How this training works</h2>
+      <p>
+        Each assignment has its own dedicated page with a long explanation about exactly one coding topic.
+        You will get a focused task, a small code editor, and a terminal output area under it.
+        When your solution passes, the next assignment unlocks.
+      </p>
+      <p>
+        This flow trains you step-by-step until you can write the patterns confidently,
+        then ends with a tougher debugging assignment where you repair broken code.
+      </p>
+      <div class="progress-pill" id="hubProgress">Progress: 0/6 assignments passed</div>
+    </section>
+
+    <section class="card">
+      <h2>Assignments</h2>
+      <ul id="lessonList" class="lesson-list"></ul>
+    </section>
+  </main>
+
+  <script src="training/lesson.js"></script>
+</body>
+</html>
