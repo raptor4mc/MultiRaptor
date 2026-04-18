@@ -1,3 +1,4 @@
 fn panic(message) {
-  __core_panic(message)
+  print "panic: " + toString(message)
+  return null
 }

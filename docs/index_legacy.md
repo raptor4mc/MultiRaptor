@@ -15,3 +15,5 @@ Internals:
 - `docs/internals/compiler_architecture.md`
 - `docs/internals/bytecode_design.md`
 - `docs/internals/error_system.md`
+
+- `docs/lib_audit.md` — Lib wrapper + markdown function audit
