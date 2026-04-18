@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagPhos Assignment 1</title>
+  <link rel="stylesheet" href="../playground.css" />
+  <link rel="stylesheet" href="common.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="lessonTitle">Assignment 1</h1>
+      <p id="lessonObjective">Objective loads here.</p>
+    </div>
+    <div>
+      <a class="link-btn" href="../training.html">Back to Academy</a>
+    </div>
+  </header>
+
+  <main id="lessonRoot" data-lesson="1">
+    <section class="card">
+      <h2>Deep explanation for this assignment</h2>
+      <div id="lessonExplanation"></div>
+      <h3>Your exact task</h3>
+      <pre id="lessonTask"></pre>
+      <div class="progress-pill" id="lessonProgress">Progress: 0/6 assignments passed</div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>Code editor</h2>
+        <textarea id="lessonEditor"></textarea>
+        <div class="next-wrap">
+          <button id="loadStarterBtn" class="secondary">Load Starter</button>
+          <button id="runCheckBtn">Run Check</button>
+        </div>
+      </div>
+      <div>
+        <h2>Terminal + explanation output</h2>
+        <pre id="lessonTerminal"></pre>
+        <p id="lessonStatus" class="muted">Run Check to validate this assignment.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="next-wrap">
+        <a class="link-btn" href="../training.html">Back to Assignment List</a>
+        <button id="nextLessonBtn" disabled>Complete current assignment to unlock next</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="lesson.js"></script>
+</body>
+</html>
