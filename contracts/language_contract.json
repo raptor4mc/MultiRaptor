@@ -2,7 +2,7 @@
   "breakingChangePolicyDoc": "docs/breaking_change_playbook.md",
   "frozen": {
     "astSha256": "fd217cff8fb726bf1e420be2293692a989145bf0480d69d4ec987f7118e180a1",
-    "grammarSha256": "9c9e5e500d8b8be61bf8456f09d6dc828ab81ac1d312878a806a1aa167fb222b"
+    "grammarSha256": "cf7a0f3afaef28f00e003d15f50d85efe8e722dd501ab4e4941175f72ed5fdc7"
   },
   "releaseLine": "0.1.x",
   "semverPolicyDoc": "docs/versioning_policy.md"

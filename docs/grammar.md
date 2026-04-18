@@ -43,7 +43,7 @@ forInitializer = varDeclNoTerminator | assignmentOrExprNoTerminator ;
 varDeclNoTerminator = ("var" | "const") ident "=" expression ;
 assignmentOrExprNoTerminator = ident "=" expression | expression ;
 
-askStmt        = "ask" expression "->" ident terminator ;
+askStmt        = "ask" string "->" ident terminator ;
 setStmt        = "set" ident "=" expression terminator ;
 printStmt      = "print" expression terminator ;
 returnStmt     = "return" expression terminator ;
