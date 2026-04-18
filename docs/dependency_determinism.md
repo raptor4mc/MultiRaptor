@@ -50,3 +50,21 @@ MagPhos CI runs `tools/scripts/check_lockfile_determinism.py` to validate:
 - integrity checksum format.
 
 Any violation fails CI to block non-reproducible dependency state from landing.
+
+
+## `mp.sh` workflow (current)
+
+Deterministic package workflow commands:
+
+- `./tools/scripts/mp.sh init <project_name>`
+- `./tools/scripts/mp.sh install <name[@version]>`
+- `./tools/scripts/mp.sh update <name[@version]>`
+- `./tools/scripts/mp.sh list`
+- `./tools/scripts/mp.sh verify`
+
+Behavior guarantees:
+
+- install/update records package entries in `mp.lock.json` sorted by `(name, version)`
+- lock entries include `integrity` as `sha256-...`
+- package manifests are stored at `.mp_packages/<name>/PACKAGE.txt`
+- `verify` recomputes checksums from installed manifests and fails fast on mismatch
