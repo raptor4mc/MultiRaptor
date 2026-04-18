@@ -2,7 +2,7 @@ fn read_all(handle) {
   return readFile(handle)
 }
 
-fn write(handle, chunk) {
+fn write_all(handle, chunk) {
   return appendFile(handle, chunk)
 }
 

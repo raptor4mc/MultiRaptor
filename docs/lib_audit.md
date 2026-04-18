@@ -1,23 +1,27 @@
-# Lib and Markdown Function Audit
+# Lib, Code, and Documentation Audit
 
 Date: 2026-04-18
 
 ## Scope
-- Reviewed all `Lib/**/*.mp` wrappers for runtime builtin compatibility.
-- Cross-checked markdown function-call references (``name(...)``) against:
-  - `Lib/**/*.mp` functions
-  - runtime builtins in `src/runtime/stdlib/stdlib.cpp`
-  - runtime/module API symbols in `src/runtime/engine/*.h/.cpp`
-  - semantic builtin allow-list in `src/compiler/semantic/analyzer.cpp`
+- Reviewed all `Lib/**/*.mp` modules for syntax/runtime-builtin compatibility.
+- Reviewed runtime/semantic sources that define callable APIs:
+  - `src/runtime/stdlib/stdlib.cpp`
+  - `src/runtime/engine/errors.{h,cpp}`
+  - `src/runtime/engine/module_system.{h,cpp}`
+  - `src/compiler/semantic/analyzer.cpp`
+- Audited **all markdown files** in the repository (42 total) for function and path consistency.
+
+## What was verified
+1. `Lib/` wrappers only call implemented MagPhos builtins (no `__core_*` calls remain).
+2. Markdown function references written as ``name(...)`` resolve to real symbols (runtime builtins, runtime C++ APIs, or `Lib` functions).
+3. Markdown path references are valid, except intentionally compressed notation such as brace-expanded docs in README.
 
 ## Findings
-- Replaced non-existent `__core_*` calls in `Lib/` with supported runtime builtins.
-- Fixed `Lib/math/random.mp` to avoid unsupported `%` usage.
-- Verified runtime-contract API names referenced in docs exist in C++ runtime code:
-  - `runtimeErrorCodeName(...)`
-  - `ModuleSystem::clearCache()`
-- Non-runtime examples like `greet(...)`, `name(...)`, and `for(...)` in markdown are sample syntax, not stdlib/runtime API promises.
+- No unresolved markdown function references remain after audit.
+- `Lib` wrappers are aligned to available builtins.
+- Remaining README path-style shorthand (for example `src/runtime/errors.{h,cpp}`) is intentional notation, not missing files.
 
-## Current status
-- `Lib/` wrappers now parse with current MagPhos syntax and only use known runtime primitives.
-- Intentionally simplified wrapper behavior is documented in `docs/stdlib.md`.
+## Notes on current `Lib` behavior
+- `Lib/json.mp` is currently a minimal compatibility shim (`encode -> toString`, `decode -> identity`).
+- `Lib/io/stream.mp` currently uses file-path semantics for handles.
+- `Lib/core/panic.mp` currently prints a panic message and returns `null`.
