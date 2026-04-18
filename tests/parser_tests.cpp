@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdlib>
+#include <functional>
 #include <string>
 
 #include "compiler/ast/nodes.h"
@@ -55,10 +56,14 @@ when x > 1 {
 
 loop 2 {
   print "tick"
+  next
 }
 
 repeat while x < 20 {
   set x = x + 1
+  if x == 5 {
+    stop
+  }
 }
 
 ask "name?" -> player
@@ -145,7 +150,10 @@ print (x + y) / 2
     bool sawMood = false;
     bool sawMatchAll = false;
     bool sawNegotiate = false;
-    for (const auto& statement : result.program.statements) {
+    bool sawStop = false;
+    bool sawNext = false;
+    std::function<void(const magphos::ast::Statement&)> scanStatement;
+    scanStatement = [&](const magphos::ast::Statement& statement) {
         if (statement.kind == magphos::ast::StmtKind::TryCatch) sawTry = true;
         if (statement.kind == magphos::ast::StmtKind::Switch) sawSwitch = true;
         if (statement.kind == magphos::ast::StmtKind::Match) sawMatch = true;
@@ -160,6 +168,22 @@ print (x + y) / 2
         if (statement.kind == magphos::ast::StmtKind::Mood) sawMood = true;
         if (statement.kind == magphos::ast::StmtKind::MatchAll) sawMatchAll = true;
         if (statement.kind == magphos::ast::StmtKind::Negotiate) sawNegotiate = true;
+        if (statement.kind == magphos::ast::StmtKind::Stop) sawStop = true;
+        if (statement.kind == magphos::ast::StmtKind::Next) sawNext = true;
+        for (const auto& inner : statement.body) {
+            scanStatement(inner);
+        }
+        for (const auto& inner : statement.elseBody) {
+            scanStatement(inner);
+        }
+        for (const auto& caseBody : statement.caseBodies) {
+            for (const auto& inner : caseBody) {
+                scanStatement(inner);
+            }
+        }
+    };
+    for (const auto& statement : result.program.statements) {
+        scanStatement(statement);
     }
     assert(sawTry);
     assert(sawSwitch);
@@ -175,5 +199,7 @@ print (x + y) / 2
     assert(sawMood);
     assert(sawMatchAll);
     assert(sawNegotiate);
+    assert(sawStop);
+    assert(sawNext);
     return 0;
 }

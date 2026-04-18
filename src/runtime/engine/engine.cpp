@@ -161,29 +161,55 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
             if (!statement.condition) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "While statement missing condition.");
             }
-            while (isTruthy(evaluateExpression(*statement.condition))) {
-                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            ++loopDepth_;
+            try {
+                while (isTruthy(evaluateExpression(*statement.condition))) {
+                    try {
+                        executeBlock(statement.body, std::make_shared<Environment>(current_));
+                    } catch (const NextSignal&) {
+                        continue;
+                    } catch (const StopSignal&) {
+                        break;
+                    }
+                }
+            } catch (...) {
+                --loopDepth_;
+                throw;
             }
+            --loopDepth_;
             return;
         }
         case ast::StmtKind::For: {
             auto loopScope = std::make_shared<Environment>(current_);
             const auto previous = current_;
             current_ = loopScope;
+            ++loopDepth_;
             try {
                 if (statement.initializer) {
                     executeStatement(*statement.initializer);
                 }
                 while (!statement.condition || isTruthy(evaluateExpression(*statement.condition))) {
-                    executeBlock(statement.body, std::make_shared<Environment>(loopScope));
+                    bool shouldContinue = false;
+                    try {
+                        executeBlock(statement.body, std::make_shared<Environment>(loopScope));
+                    } catch (const NextSignal&) {
+                        shouldContinue = true;
+                    } catch (const StopSignal&) {
+                        break;
+                    }
                     if (statement.increment) {
                         executeStatement(*statement.increment);
                     }
+                    if (shouldContinue) {
+                        continue;
+                    }
                 }
             } catch (...) {
+                --loopDepth_;
                 current_ = previous;
                 throw;
             }
+            --loopDepth_;
             current_ = previous;
             return;
         }
@@ -228,18 +254,44 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Loop count must evaluate to a number.");
             }
             const long long count = static_cast<long long>(countValue.asNumber());
-            for (long long i = 0; i < count; ++i) {
-                executeBlock(statement.body, std::make_shared<Environment>(current_));
+            ++loopDepth_;
+            try {
+                for (long long i = 0; i < count; ++i) {
+                    try {
+                        executeBlock(statement.body, std::make_shared<Environment>(current_));
+                    } catch (const NextSignal&) {
+                        continue;
+                    } catch (const StopSignal&) {
+                        break;
+                    }
+                }
+            } catch (...) {
+                --loopDepth_;
+                throw;
             }
+            --loopDepth_;
             return;
         }
         case ast::StmtKind::RepeatWhile: {
             if (!statement.condition) {
                 throw RuntimeError(RuntimeErrorCode::TypeError, "Repeat while statement missing condition.");
             }
-            do {
-                executeBlock(statement.body, std::make_shared<Environment>(current_));
-            } while (isTruthy(evaluateExpression(*statement.condition)));
+            ++loopDepth_;
+            try {
+                do {
+                    try {
+                        executeBlock(statement.body, std::make_shared<Environment>(current_));
+                    } catch (const NextSignal&) {
+                        continue;
+                    } catch (const StopSignal&) {
+                        break;
+                    }
+                } while (isTruthy(evaluateExpression(*statement.condition)));
+            } catch (...) {
+                --loopDepth_;
+                throw;
+            }
+            --loopDepth_;
             return;
         }
         case ast::StmtKind::TryCatch: {
@@ -308,6 +360,16 @@ void RuntimeEngine::executeStatement(const ast::Statement& statement) {
         }
         case ast::StmtKind::Negotiate:
             return;
+        case ast::StmtKind::Stop:
+            if (loopDepth_ <= 0) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "'stop' is only allowed inside loops.");
+            }
+            throw StopSignal{};
+        case ast::StmtKind::Next:
+            if (loopDepth_ <= 0) {
+                throw RuntimeError(RuntimeErrorCode::TypeError, "'next' is only allowed inside loops.");
+            }
+            throw NextSignal{};
     }
 }
 

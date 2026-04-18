@@ -25,6 +25,8 @@ statement      = ifStmt
                | forStmt
                | askStmt
                | setStmt
+               | stopStmt
+               | nextStmt
                | printStmt
                | returnStmt
                | assignmentOrExpr
@@ -43,8 +45,10 @@ forInitializer = varDeclNoTerminator | assignmentOrExprNoTerminator ;
 varDeclNoTerminator = ("var" | "const") ident "=" expression ;
 assignmentOrExprNoTerminator = ident "=" expression | expression ;
 
-askStmt        = "ask" expression "->" ident terminator ;
+askStmt        = "ask" string "->" ident terminator ;
 setStmt        = "set" ident "=" expression terminator ;
+stopStmt       = "stop" terminator ;
+nextStmt       = "next" terminator ;
 printStmt      = "print" expression terminator ;
 returnStmt     = "return" expression terminator ;
 assignmentOrExpr = ident "=" expression terminator

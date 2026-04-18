@@ -325,6 +325,80 @@ var x = add(1)
     assert(badReturn.find("'return' is only allowed inside functions") != std::string::npos);
     const std::string badSet = magphos::interpreter::analyzeProgram("set y = 1\n");
     assert(badSet.find("'set' requires an existing variable") != std::string::npos);
+    const std::string badStop = magphos::interpreter::analyzeProgram("stop\n");
+    assert(badStop.find("'stop' is only allowed inside loops") != std::string::npos);
+    const std::string badNext = magphos::interpreter::analyzeProgram("next\n");
+    assert(badNext.find("'next' is only allowed inside loops") != std::string::npos);
+
+    const std::string loopControlSource = R"(
+var fromWhile = 0
+var i = 0
+while i < 5 {
+  set i = i + 1
+  if i == 2 {
+    next
+  }
+  if i == 4 {
+    stop
+  }
+  set fromWhile = fromWhile + 1
+}
+
+var fromFor = 0
+for (var j = 0; j < 5; j = j + 1) {
+  if j == 1 {
+    next
+  }
+  if j == 3 {
+    stop
+  }
+  set fromFor = fromFor + j
+}
+
+var fromLoop = 0
+var k = 0
+loop 5 {
+  set k = k + 1
+  if k == 2 {
+    next
+  }
+  if k == 4 {
+    stop
+  }
+  set fromLoop = fromLoop + 1
+}
+
+var fromRepeat = 0
+var m = 0
+repeat while m < 5 {
+  set m = m + 1
+  if m == 2 {
+    next
+  }
+  if m == 4 {
+    stop
+  }
+  set fromRepeat = fromRepeat + 1
+}
+)";
+    const auto loopControlParse = runtimeParser.parse(runtimeLexer.tokenize(loopControlSource));
+    assert(loopControlParse.errors.empty());
+    RuntimeEngine loopControlEngine;
+    loopControlEngine.loadProgram(loopControlParse.program);
+    assert(loopControlEngine.globals()->get("fromWhile").asNumber() == 2.0);
+    assert(loopControlEngine.globals()->get("fromFor").asNumber() == 2.0);
+    assert(loopControlEngine.globals()->get("fromLoop").asNumber() == 2.0);
+    assert(loopControlEngine.globals()->get("fromRepeat").asNumber() == 2.0);
+
+    const auto badStopParse = runtimeParser.parse(runtimeLexer.tokenize("stop\n"));
+    bool badStopRuntimeRaised = false;
+    try {
+        RuntimeEngine badStopEngineRuntime;
+        badStopEngineRuntime.loadProgram(badStopParse.program);
+    } catch (const RuntimeError& ex) {
+        badStopRuntimeRaised = ex.code() == RuntimeErrorCode::TypeError;
+    }
+    assert(badStopRuntimeRaised);
 
     // Runtime error-code semantics should be stable.
     bool unknownFunctionRaised = false;

@@ -299,6 +299,12 @@ class ParserImpl {
         if (matchKeyword("ask")) {
             return parseAskStatement();
         }
+        if (matchKeyword("stop")) {
+            return parseLoopControlStatement(ast::StmtKind::Stop);
+        }
+        if (matchKeyword("next")) {
+            return parseLoopControlStatement(ast::StmtKind::Next);
+        }
         if (matchKeyword("try")) {
             return parseTryCatchStatement();
         }
@@ -894,6 +900,13 @@ class ParserImpl {
         return statement;
     }
 
+    std::optional<ast::Statement> parseLoopControlStatement(ast::StmtKind kind) {
+        ast::Statement statement;
+        statement.kind = kind;
+        consumeTerminator("Expected ';' or newline after loop control statement.");
+        return statement;
+    }
+
     std::optional<ast::Statement> parseAssignmentOrExpression() {
         if (check(TokenType::Identifier) && peekNext().type == TokenType::Equal) {
             ast::Statement assignment;
@@ -1258,7 +1271,8 @@ class ParserImpl {
 
             if (checkKeyword("import") || checkKeyword("use") || checkKeyword("fn") || checkKeyword("print") || checkKeyword("return") ||
                 checkKeyword("if") || checkKeyword("else") || checkKeyword("while") || checkKeyword("for") || checkKeyword("when") ||
-                checkKeyword("loop") || checkKeyword("repeat") || checkKeyword("set") || checkKeyword("ask") || checkKeyword("try") ||
+                checkKeyword("loop") || checkKeyword("repeat") || checkKeyword("set") || checkKeyword("ask") || checkKeyword("stop") ||
+                checkKeyword("next") || checkKeyword("try") ||
                 checkKeyword("catch") || checkKeyword("switch") || checkKeyword("match") || checkKeyword("case") || checkKeyword("default") ||
                 checkKeyword("namespace") || checkKeyword("public") || checkKeyword("private") || checkKeyword("timeline") ||
                 checkKeyword("because") || checkKeyword("from") || checkKeyword("whatif") || checkKeyword("compare") ||

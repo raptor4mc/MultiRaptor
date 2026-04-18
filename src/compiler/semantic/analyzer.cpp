@@ -33,6 +33,7 @@ class Analyzer {
     std::vector<Scope> scopes_;
     std::vector<SemanticIssue> issues_;
     int functionDepth_ = 0;
+    int loopDepth_ = 0;
 
     void pushScope() { scopes_.push_back(Scope{}); }
     void popScope() { scopes_.pop_back(); }
@@ -158,13 +159,17 @@ class Analyzer {
                 if (statement.condition) {
                     analyzeExpr(*statement.condition);
                 }
+                ++loopDepth_;
                 analyzeBlock(statement.body);
+                --loopDepth_;
                 return;
             case ast::StmtKind::Loop:
                 if (statement.expression) {
                     analyzeExpr(*statement.expression);
                 }
+                ++loopDepth_;
                 analyzeBlock(statement.body);
+                --loopDepth_;
                 return;
             case ast::StmtKind::TryCatch:
                 analyzeBlock(statement.body);
@@ -227,6 +232,7 @@ class Analyzer {
                 return;
             case ast::StmtKind::For:
                 pushScope();
+                ++loopDepth_;
                 if (statement.initializer) {
                     analyzeStatement(*statement.initializer);
                 }
@@ -239,7 +245,18 @@ class Analyzer {
                 for (const auto& inner : statement.body) {
                     analyzeStatement(inner);
                 }
+                --loopDepth_;
                 popScope();
+                return;
+            case ast::StmtKind::Stop:
+                if (loopDepth_ <= 0) {
+                    issues_.push_back({"Invalid control flow: 'stop' is only allowed inside loops"});
+                }
+                return;
+            case ast::StmtKind::Next:
+                if (loopDepth_ <= 0) {
+                    issues_.push_back({"Invalid control flow: 'next' is only allowed inside loops"});
+                }
                 return;
         }
     }
