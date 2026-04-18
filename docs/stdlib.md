@@ -84,6 +84,11 @@ This file documents **runtime builtins** and the current `Lib/` helper modules.
 ## `Lib/` helper modules
 
 `Lib/` provides lightweight wrapper modules that can be imported with dotted names (for example `import io.file`).
+In runtime terms, these are standard language-level modules/packages written in MagPhos itself.
+
+Import resolution behavior:
+- local project module path is checked first
+- runtime then checks standard library roots (`lib/` and `Lib/`, depending on repository layout)
 
 ### Important compatibility notes
 - The wrappers are implemented in MagPhos source (`.mp`) and must call real runtime builtins.
@@ -93,6 +98,11 @@ This file documents **runtime builtins** and the current `Lib/` helper modules.
   - `decode(text)` returns the input text unchanged
 - `Lib/io/stream.mp` currently treats handles as file paths.
 - `Lib/core/panic.mp` currently prints a panic message and returns `null`.
+
+Dependency invariant:
+- core runtime provides primitives
+- `Lib/` composes those primitives into higher-level modules
+- core does not depend on `Lib/`
 
 ## Source of truth
 - Runtime builtin registration: `src/runtime/stdlib/stdlib.cpp`

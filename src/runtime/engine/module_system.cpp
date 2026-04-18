@@ -34,13 +34,70 @@ std::string ModuleSystem::resolveModulePath(const std::string& moduleName, const
         }
     }
 
-    std::filesystem::path full = std::filesystem::path(baseDir) / (modulePath + ".mp");
-    return full.lexically_normal().string();
+    for (const auto& root : moduleSearchRoots(baseDir)) {
+        const std::filesystem::path candidate = std::filesystem::path(root) / (modulePath + ".mp");
+        if (std::filesystem::exists(candidate)) {
+            return candidate.lexically_normal().string();
+        }
+    }
+
+    // Fall back to the caller base dir path for deterministic diagnostics.
+    const std::filesystem::path fallback = std::filesystem::path(baseDir) / (modulePath + ".mp");
+    return fallback.lexically_normal().string();
 }
 
 std::string ModuleSystem::resolveUsePath(const std::string& relativePath, const std::string& baseDir) const {
     std::filesystem::path full = std::filesystem::path(baseDir) / relativePath;
     return full.lexically_normal().string();
+}
+
+std::vector<std::string> ModuleSystem::moduleSearchRoots(const std::string& baseDir) const {
+    std::vector<std::string> roots;
+
+    const std::filesystem::path base = std::filesystem::path(baseDir).lexically_normal();
+    roots.push_back(base.string());
+
+    try {
+        const std::filesystem::path cwd = std::filesystem::current_path();
+        const std::filesystem::path cwdLibLower = cwd / "lib";
+        const std::filesystem::path cwdLibUpper = cwd / "Lib";
+        if (std::filesystem::exists(cwdLibLower)) {
+            roots.push_back(cwdLibLower.lexically_normal().string());
+        }
+        if (std::filesystem::exists(cwdLibUpper)) {
+            roots.push_back(cwdLibUpper.lexically_normal().string());
+        }
+    } catch (...) {
+        // Ignore cwd probing failures; baseDir resolution still works.
+    }
+
+    // Include parent-chain stdlib folders so nested program directories still resolve lib imports.
+    std::filesystem::path cursor = base;
+    while (!cursor.empty()) {
+        const std::filesystem::path lower = cursor / "lib";
+        const std::filesystem::path upper = cursor / "Lib";
+        if (std::filesystem::exists(lower)) {
+            roots.push_back(lower.lexically_normal().string());
+        }
+        if (std::filesystem::exists(upper)) {
+            roots.push_back(upper.lexically_normal().string());
+        }
+        if (!cursor.has_parent_path() || cursor.parent_path() == cursor) {
+            break;
+        }
+        cursor = cursor.parent_path();
+    }
+
+    // Stable de-duplication while preserving search order.
+    std::unordered_set<std::string> seen;
+    std::vector<std::string> deduped;
+    deduped.reserve(roots.size());
+    for (const auto& root : roots) {
+        if (seen.insert(root).second) {
+            deduped.push_back(root);
+        }
+    }
+    return deduped;
 }
 
 std::string ModuleSystem::loadImportedModule(const std::string& moduleName, const std::string& baseDir) const {

@@ -15,11 +15,13 @@ Date: 2026-04-18
 1. `Lib/` wrappers only call implemented MagPhos builtins (no `__core_*` calls remain).
 2. Markdown function references written as ``name(...)`` resolve to real symbols (runtime builtins, runtime C++ APIs, or `Lib` functions).
 3. Markdown path references are valid, except intentionally compressed notation such as brace-expanded docs in README.
+4. Module search behavior supports project-local imports first, then stdlib roots (`lib/`/`Lib/`).
 
 ## Findings
 - No unresolved markdown function references remain after audit.
 - `Lib` wrappers are aligned to available builtins.
 - Remaining README path-style shorthand (for example `src/runtime/errors.{h,cpp}`) is intentional notation, not missing files.
+- Runtime module resolution now honors the core/lib layering model without introducing core->lib dependencies.
 
 ## Notes on current `Lib` behavior
 - `Lib/json.mp` is currently a minimal compatibility shim (`encode -> toString`, `decode -> identity`).

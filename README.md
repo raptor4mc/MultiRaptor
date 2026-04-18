@@ -270,10 +270,22 @@ MagPhos now parses module dependencies in source code:
 - `import game.engine`
 - `use "utils.mp"`
 
-Runtime helpers in `src/runtime/module_system.{h,cpp}` resolve and load these forms:
+Runtime helpers in `src/runtime/engine/module_system.{h,cpp}` resolve and load these forms:
 
-- dotted imports → `baseDir/game/engine.mp`
+- dotted imports → `baseDir/game/engine.mp` (then stdlib roots such as `lib/` or `Lib/` when not found locally)
 - use paths → `baseDir/utils.mp`
+
+Module load pipeline:
+- locate module path
+- parse source
+- compile program
+- execute
+- cache for deterministic reload behavior
+
+Layering invariant:
+- core runtime (C++) is standalone (parser/VM/memory/builtins/import system)
+- `lib/` (`Lib/` in this repository layout) contains high-level modules written in MagPhos
+- dependency direction is one-way: `core <- lib` (core never depends on lib)
 
 ## Standard library (new)
 
