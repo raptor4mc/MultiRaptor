@@ -1,8 +1,8 @@
 fn print(value) {
-  return __core_print(value)
+  print value
 }
 
 fn println(value) {
-  __core_print(value)
-  return __core_print("\n")
+  print value
+  print "\n"
 }
