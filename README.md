@@ -205,11 +205,15 @@ Official preview-ready sample snippets are in `samples/` (9 files, each with pur
 
 MagPhos now includes an early package/runtime CLI helper at `tools/scripts/mp.sh`:
 
-- `mp.sh install physics`
+- `mp.sh init my-game`
+- `mp.sh install physics@1.2.0`
+- `mp.sh update physics@1.2.1`
+- `mp.sh verify`
+- `mp.sh list`
 - `mp.sh run game.mp`
 - `mp.sh repl`
 
-Current `install` behavior is a local placeholder (`.mp_packages/<name>`), designed as the first step toward a full ecosystem package manager.
+`install/update` now write deterministic lock entries (`name/version/source/integrity`) and package manifests under `.mp_packages/<name>/PACKAGE.txt`, then update `mp.lock.json` in canonical sorted order. `verify` recomputes checksums and fails on mismatch.
 
 Deterministic dependency groundwork now includes:
 
