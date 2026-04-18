@@ -1,11 +1,11 @@
 fn exists(path) {
-  return __core_file_exists(path)
+  return fileExists(path)
 }
 
 fn remove(path) {
-  return __core_remove_file(path)
+  return exec("rm -f " + path)
 }
 
 fn mkdir(path) {
-  return __core_mkdir(path)
+  return exec("mkdir -p " + path)
 }

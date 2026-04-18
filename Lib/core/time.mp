@@ -1,7 +1,10 @@
 fn now_ms() {
-  return __core_time_ms()
+  return time()
 }
 
 fn sleep_ms(duration) {
-  return __core_sleep_ms(duration)
+  var end = time() + duration
+  while time() < end {
+  }
+  return duration
 }
