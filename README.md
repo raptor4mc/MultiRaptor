@@ -383,11 +383,13 @@ fn greet(person) {
 Supported top-level declarations and statements (today):
 
 - modules: `import`, `use`
-- declarations: `fn`, `var`, `const`
-- control flow: `if` / `else`, `while`, `for (...)`
-- statements: assignment (`name = expr`), `print`, `return`, block statements (`{ ... }`)
+- declarations: `fn`, `var`, `const`, `namespace`, and visibility markers (`public` / `private`) before declarations
+- control flow: `if` / `else`, `while`, `for (...)`, `when`, `loop`, `repeat while`
+- branching/error handling: `switch`, `match`, `try` / `catch`
+- statements: assignment (`name = expr`), `set`, `ask`, `print`, `return`, block statements (`{ ... }`)
 - expression statements (e.g. `greet(name)`)
-- expression forms: numbers, strings, booleans, `null`, identifiers, unary (`-`, `not`, `!`), arithmetic, comparisons, equality, logical (`and` / `or`), grouping, calls
+- expression forms: numbers, strings, booleans, `null`, identifiers, unary (`-`, `not`, `!`), arithmetic, comparisons, equality, logical (`and` / `or`), grouping, calls, arrays
+- comments: `# ...` and `// ...`
 - terminators: newline or `;`
 
-Not implemented yet in parser/lexer: `set`, `ask`, `when`, `loop`, `repeat while`, `stop`, `next`, or comment syntax.
+Not implemented yet in parser/lexer (stable path): `stop` and `next`.

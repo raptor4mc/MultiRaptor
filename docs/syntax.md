@@ -44,12 +44,12 @@ fn greet(name = "friend", ...rest) {
 - `match <expr> { case <expr> { ... } default { ... } }`
 - `namespace <name> { ... }`
 - `set <name> = <expr>`
-- `ask <promptExpr> -> <name>`
+- `ask "<prompt>" -> <name>`
 - comments: `# ...` and `// ...`
 
 Safety notes:
 - `name = expr` and `set name = expr` require `name` to already exist.
-- `ask "..." -> name` requires `name` to already exist.
+- `ask "<prompt>" -> name` currently requires a string literal prompt and `name` to already exist.
 - `return` is only valid inside `fn` blocks.
 - visibility markers `public`/`private` are accepted before declarations.
 
