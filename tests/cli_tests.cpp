@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include <sys/wait.h>
 
@@ -22,6 +23,7 @@ int exitCodeOf(int rc) {
 
 int main() {
     const std::string sourcePath = "/tmp/magphos_cli_test.mp";
+    const std::string importedPath = "/tmp/game/engine.mp";
     const std::string brokenPath = "/tmp/magphos_cli_broken.mp";
     const std::string runtimeFailPath = "/tmp/magphos_cli_runtime_fail.mp";
     const std::string emptyPath = "/tmp/magphos_cli_empty.mp";
@@ -29,6 +31,11 @@ int main() {
         std::ofstream out(sourcePath);
         out << "import game.engine\n";
         out << "print \"Hello\"\n";
+    }
+    std::filesystem::create_directories("/tmp/game");
+    {
+        std::ofstream out(importedPath);
+        out << "print \"Engine\"\n";
     }
     {
         std::ofstream out(brokenPath);
@@ -84,6 +91,7 @@ int main() {
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --run " + sourcePath + " >/tmp/cli_run.txt 2>/tmp/cli_run_err.txt").c_str());
     assert(exitCodeOf(rc) == 0);
+    assert(readFile("/tmp/cli_run.txt").find("Engine") != std::string::npos);
     assert(readFile("/tmp/cli_run.txt").find("Hello") != std::string::npos);
 
     rc = std::system(("/tmp/magphos_tests/magphos_cli --module-graph --json " + sourcePath + " >/tmp/cli_module_graph_json.txt").c_str());
