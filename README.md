@@ -227,6 +227,7 @@ Native CLI tool (`magphos_cli`) now supports:
 - `--version`
 - `--about`
 - `--check <program.mp>` (parse + semantic validation)
+- `--run <program.mp>` (execute runtime with import/use dependency loading)
 - `--deps <program.mp>` (list `import` / `use` dependencies)
 - `--tokens <program.mp>` (token dump for debugging)
 

@@ -354,19 +354,17 @@ int main(int argc, char** argv) {
         }
         magphos::lexer::Lexer lexer;
         magphos::parser::Parser parser;
-        const auto parsed = parser.parse(lexer.tokenize(*source));
-        if (!parsed.errors.empty()) {
+        magphos::runtime::ModuleSystem moduleSystem;
+        const std::filesystem::path entryPath = std::filesystem::path(positional[1]).lexically_normal();
+        std::vector<std::string> executionOrder;
+        try {
+            executionOrder = moduleSystem.executionOrderFromEntry(entryPath.string());
+        } catch (const std::exception& ex) {
             response.code = 3;
-            setErrorContract(response, "parser", "PARSER_PARSE_ERROR", "parse failed");
-            response.errors.push_back(magphos::parser::renderErrors(parsed.errors, *source));
-            emitResponse(response, jsonMode, errorFormat);
-            return 3;
-        }
-        const auto semanticIssues = magphos::semantic::analyze(parsed.program);
-        if (!semanticIssues.empty()) {
-            response.code = 3;
-            setErrorContract(response, "semantic", "SEMANTIC_ANALYSIS_ERROR", "semantic analysis failed");
-            response.errors.push_back(magphos::semantic::renderIssues(semanticIssues));
+            setErrorContract(response, "runtime", "RUNTIME_MODULE_RESOLUTION_ERROR", "module resolution failed");
+            response.errors.push_back(ex.what());
+            response.stackTrace.push_back("magphos_cli::--run");
+            response.stackTrace.push_back("runtime::ModuleSystem::executionOrderFromEntry");
             emitResponse(response, jsonMode, errorFormat);
             return 3;
         }
@@ -374,7 +372,23 @@ int main(int argc, char** argv) {
         auto* oldOut = std::cout.rdbuf(capture.rdbuf());
         try {
             magphos::runtime::RuntimeEngine engine;
-            engine.loadProgram(parsed.program);
+            for (const auto& modulePath : executionOrder) {
+                const auto moduleSource = readFile(modulePath);
+                if (!moduleSource.has_value()) {
+                    throw std::runtime_error("Cannot read module file: " + modulePath);
+                }
+                const auto parsed = parser.parse(lexer.tokenize(*moduleSource));
+                if (!parsed.errors.empty()) {
+                    throw std::runtime_error("Parse failed in " + modulePath + ":\n" +
+                                             magphos::parser::renderErrors(parsed.errors, *moduleSource));
+                }
+                const auto semanticIssues = magphos::semantic::analyze(parsed.program);
+                if (!semanticIssues.empty()) {
+                    throw std::runtime_error("Semantic analysis failed in " + modulePath + ":\n" +
+                                             magphos::semantic::renderIssues(semanticIssues));
+                }
+                engine.loadProgram(parsed.program);
+            }
         } catch (const magphos::runtime::RuntimeError& runtimeError) {
             std::cout.rdbuf(oldOut);
             response.code = 3;
@@ -388,7 +402,7 @@ int main(int argc, char** argv) {
         } catch (const std::exception& ex) {
             std::cout.rdbuf(oldOut);
             response.code = 3;
-            setErrorContract(response, "runtime", "RUNTIME_UNHANDLED_EXCEPTION", "runtime failed");
+            setErrorContract(response, "runtime", "RUNTIME_PIPELINE_ERROR", "runtime failed");
             response.errors.push_back(ex.what());
             response.stackTrace.push_back("magphos_cli::--run");
             emitResponse(response, jsonMode, errorFormat);

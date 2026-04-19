@@ -158,6 +158,48 @@ std::vector<std::string> ModuleSystem::collectDependencies(const parser::ParseRe
     return dependencies;
 }
 
+void ModuleSystem::collectExecutionOrder(
+    const std::string& path,
+    std::vector<std::string>& order,
+    std::unordered_set<std::string>& visiting,
+    std::unordered_set<std::string>& visited) const {
+    if (visited.find(path) != visited.end()) {
+        return;
+    }
+    if (visiting.find(path) != visiting.end()) {
+        throw std::runtime_error("ModuleSystem: cyclic import/use detected for " + path);
+    }
+
+    visiting.insert(path);
+    const std::string content = readFile(path);
+
+    lexer::Lexer lexer;
+    parser::Parser parser;
+    const auto parseResult = parser.parse(lexer.tokenize(content));
+    if (parseResult.errors.empty()) {
+        const std::string childBaseDir = std::filesystem::path(path).parent_path().string();
+        for (const auto& statement : parseResult.program.statements) {
+            if (statement.kind == ast::StmtKind::Import) {
+                collectExecutionOrder(resolveModulePath(statement.name, childBaseDir), order, visiting, visited);
+            } else if (statement.kind == ast::StmtKind::Use) {
+                collectExecutionOrder(resolveUsePath(statement.name, childBaseDir), order, visiting, visited);
+            }
+        }
+    }
+
+    visiting.erase(path);
+    visited.insert(path);
+    order.push_back(path);
+}
+
+std::vector<std::string> ModuleSystem::executionOrderFromEntry(const std::string& entryPath) const {
+    std::vector<std::string> order;
+    std::unordered_set<std::string> visiting;
+    std::unordered_set<std::string> visited;
+    collectExecutionOrder(std::filesystem::path(entryPath).lexically_normal().string(), order, visiting, visited);
+    return order;
+}
+
 void ModuleSystem::clearCache() {
     cache_.clear();
     loadStack_.clear();
